@@ -1,0 +1,8 @@
+@* Top-menu links for the screens the user may open. Rendered by NavigationMenuViewComponent. *@
+@model IReadOnlyList<NavigationItem>
+<ul class="app-nav__links">
+    @foreach (var item in Model)
+    {
+        <li><a class="app-nav__link" asp-controller="@item.Controller" asp-action="Index">@item.Title</a></li>
+    }
+</ul>

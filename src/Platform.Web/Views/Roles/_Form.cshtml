@@ -1,0 +1,8 @@
+@* Role fields for the shared CrudForm page. Capability options come from RolesController.PrepareViewAsync. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Identity
+@model IRoleFields
+<form-field asp-for="Name" />
+<checkbox-list asp-for="Capabilities"
+               items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.CapabilityOptions]!"
+               label="What this role can do" />

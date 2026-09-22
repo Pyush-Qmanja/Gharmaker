@@ -1,0 +1,10 @@
+@* Shown when the API answers 403: signed in, but the user's roles do not include this capability. *@
+@{
+    ViewData["Title"] = "Not allowed";
+}
+
+<div class="empty-state">
+    <h1 class="page-header__title">You don't have access to this</h1>
+    <p class="empty-state__text">Your roles don't include this action. Ask an administrator if you need it.</p>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Back to dashboard</a>
+</div>

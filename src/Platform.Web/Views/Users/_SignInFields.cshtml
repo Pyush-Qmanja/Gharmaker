@@ -1,0 +1,7 @@
+@* Email and initial password, shown only on the create form. The password goes to Firebase Authentication, never stored by the platform. *@
+@using Platform.Shared.Dtos.Identity
+@model CreateUserRequest
+<div class="form-grid">
+    <form-field asp-for="Email" type="email" hint="Used to sign in. Cannot be changed later." />
+    <form-field asp-for="Password" type="password" label="Initial password" hint="At least 8 characters." />
+</div>

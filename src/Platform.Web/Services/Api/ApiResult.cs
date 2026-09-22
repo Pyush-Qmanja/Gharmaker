@@ -17,6 +17,9 @@ public class ApiResult
     /// <summary>True when the token is missing or expired and the user must sign in again.</summary>
     public bool IsUnauthorized => StatusCode == HttpStatusCode.Unauthorized;
 
+    /// <summary>True when the user is signed in but lacks the capability for this call.</summary>
+    public bool IsForbidden => StatusCode == HttpStatusCode.Forbidden;
+
     /// <summary>True when the record does not exist or is out of scope.</summary>
     public bool IsNotFound => StatusCode == HttpStatusCode.NotFound;
 

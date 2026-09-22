@@ -27,6 +27,9 @@ choosing the C# name decides all of them.
 | Sort position | `DisplayOrder` | `display_order` | `int` | `SortOrder`, `Sequence`, `Position`, `Rank` |
 | Email | `Email` | `email` | `string` | `EmailAddress`, `Mail`, `EmailId` |
 | Sign-in account id | `AuthUid` | `auth_uid` | `string` (Firebase Auth uid) | `FirebaseUid`, `Uid`, `ExternalId`, `LoginId` |
+| Several references | `<Entity>Ids` (e.g. `RoleIds`) | `<entity>_ids` | `List<Guid>` | `Roles` (for ids), `RoleList`, `AssignedRoles` |
+| Capability codes | `Capabilities` | `capabilities` | `List<string>` (codes from `Capabilities`) | `Permissions`, `Rights`, `Privileges` |
+| Access areas | `Scopes` of `ScopeType` + `ScopeId` | `scopes[].scope_type`, `scopes[].scope_id` | embedded list | `Access`, `Areas`, `ScopeList` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
 | Image / file link | `<Thing>Url` | `<thing>_url` | `string` | `<Thing>Link`, `<Thing>Path`, `<Thing>Uri` |
 | Free-text notes | `Remarks` | `remarks` | `string?` | `Notes`, `Comment`, `Description` (for notes) |

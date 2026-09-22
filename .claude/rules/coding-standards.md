@@ -48,6 +48,12 @@ Before writing anything, check whether one of these already does it:
 | List/form page layout | shared `CrudIndex` / `CrudForm` views | `Web/Views/Shared` |
 | Status, row actions, pager, search, empty state | `_StatusBadge`, `_RowActions`, `_Pagination`, `_SearchBar`, `_EmptyState` | `Web/Views/Shared` |
 | Show a date | `.ToIstString()` | `Web/Extensions/DateTimeExtensions` |
+| Guard an API controller / action | `[CrudCapabilities(view, manage)]` / `[RequiresCapability(code)]` | `Api/Security/Authorization` |
+| Check capability or scope in a service | `IPermissionService.HasCapabilityAsync` / `CoversAsync` (out of scope → 404) | `Api/Security/Authorization` |
+| Show UI only when allowed | `IUserAccess.CanAsync(code)`; menus via `Navigation.Items` | `Web/Services/Auth`, `Web/Common` |
+| Multi-select field | `<checkbox-list asp-for="X" items="..." />` | `Web/TagHelpers` |
+| Lookup data for a screen | override `PrepareViewAsync` + `ViewDataKeys` | `Web/Controllers/CrudController` |
+| JSON settings | `JsonDefaults` (enums as names) | `Shared/Common` |
 | Errors from API | throw `NotFoundException` / `BusinessRuleException` | `Api/Common/Exceptions` |
 
 If you find yourself copying a block, extract it into one of these (or a new
@@ -117,7 +123,10 @@ Use the same module folder name in every layer.
 7. **Api/Services/Catalog/CategoryService.cs** — derive from `CrudService<...>`;
    override `ApplySearch` / `ApplyOrder` only if needed.
 8. **Api/Controllers/Catalog/CategoriesController.cs** — derive from
-   `CrudControllerBase<...>`, `[Route(ApiRoutes.Categories)]`. Usually empty.
+   `CrudControllerBase<...>`, `[Route(ApiRoutes.Categories)]` and
+   `[CrudCapabilities(Capabilities.CategoriesView, Capabilities.CategoriesManage)]`.
+   Usually empty. The API refuses to start if the capabilities attribute is missing.
+   First add both codes to `Shared/Constants/Capabilities.cs` (constant + `All` entry).
 9. **Api/Extensions/ServiceCollectionExtensions.cs** — one `AddCrudModule<...>()` line.
 10. **Indexes** — add a composite index to `firestore.indexes.json` for every
     ordering in `ApplyOrder` / `ApplySearch` (org_id first). Deploy with
@@ -126,5 +135,6 @@ Use the same module folder name in every layer.
     set names, implement `ToUpdateRequest`.
 12. **Web/Views/Categories/** — `_Table.cshtml` and `_Form.cshtml` only.
 13. **Web/Extensions/ServiceCollectionExtensions.cs** — one `AddCrudApiClient<...>(ApiRoutes.Categories)` line.
-14. Add the nav link in `_Layout.cshtml` and a tile in `Home/Index.cshtml`.
+14. Add one line to `Web/Common/Navigation.cs` (title, controller, view capability) —
+    the menu and dashboard tile appear for users holding that capability.
 15. `dotnet build` must pass with **0 warnings**.

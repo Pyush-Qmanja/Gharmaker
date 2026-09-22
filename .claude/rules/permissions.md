@@ -14,6 +14,19 @@ Every authorisation decision is two questions, always both:
 1. Does this user's role hold this **capability**?
 2. Is this object inside this user's **scope**?
 
+## How it is built here
+
+- Capability codes: `Platform.Shared/Constants/Capabilities.cs` (the catalogue).
+  Roles are per-organisation data holding those codes; users hold `RoleIds` and `Scopes`.
+- API guard: `[CrudCapabilities(view, manage)]` on every CRUD controller (startup
+  fails without it) or `[RequiresCapability(code)]` on other endpoints.
+- `IPermissionService` loads the user and their roles **per request** — nothing
+  about permissions is in the JWT — so revoking a role, scope or user applies at
+  once. Use `CoversAsync(scopeType, id)` in services for scoped objects and
+  return 404 when it is false.
+- The UI hides what the user cannot use (`IUserAccess`, `Navigation.Items`), but
+  that is cosmetic; the API is the enforcement point.
+
 ## Banned patterns
 
 ```csharp

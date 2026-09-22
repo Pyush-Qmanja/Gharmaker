@@ -1,0 +1,35 @@
+@* User rows for the shared CrudIndex page. Role names come from UsersController.PrepareViewAsync. *@
+@using Platform.Shared.Dtos.Identity
+@using Platform.Shared.Entities.Identity
+@model IReadOnlyList<UserDto>
+@{
+    var roleNames = ViewData[ViewDataKeys.RoleNames] as IReadOnlyDictionary<Guid, string> ?? new Dictionary<Guid, string>();
+}
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Scope</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            List<string> userRoles = user.RoleIds.Select(id => roleNames.TryGetValue(id, out var name) ? name : "Unknown role").ToList();
+            <tr>
+                <td>@user.Name</td>
+                <td>@user.Email</td>
+                <td><partial name="_Chips" model="userRoles" /></td>
+                <td>@(user.Scopes.Any(s => s.ScopeType == ScopeType.Global) ? "Everywhere" : user.Scopes.Count == 0 ? "None" : $"{user.Scopes.Count} scoped")</td>
+                <td><partial name="_StatusBadge" model="user.IsActive" /></td>
+                <td>@((user.UpdatedAt ?? user.CreatedAt).ToIstString())</td>
+                <partial name="_RowActions" model="user.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

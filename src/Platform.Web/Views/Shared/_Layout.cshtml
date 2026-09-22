@@ -15,9 +15,7 @@
             <a class="app-nav__brand" asp-controller="Home" asp-action="Index">Platform</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <ul class="app-nav__links">
-                    <li><a class="app-nav__link" asp-controller="Brands" asp-action="Index">Brands</a></li>
-                </ul>
+                <vc:navigation-menu />
                 <div class="app-nav__user">
                     <span class="app-nav__user-name">@User.Identity.Name</span>
                     <form asp-controller="Account" asp-action="Logout" method="post">

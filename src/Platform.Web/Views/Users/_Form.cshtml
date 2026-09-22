@@ -1,0 +1,20 @@
+@* User fields for the shared CrudForm page. Sign-in fields appear only when creating. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Identity
+@model IUserFields
+<div class="form-grid">
+    <form-field asp-for="Name" />
+    <form-field asp-for="Phone" type="tel" hint="International format, e.g. +919876543210" />
+</div>
+
+@if (Model is CreateUserRequest create)
+{
+    <partial name="_SignInFields" model="create" />
+}
+
+<checkbox-list asp-for="RoleIds"
+               items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.RoleOptions]!"
+               label="Roles"
+               empty-text="No active roles yet — create one under Roles first." />
+
+<partial name="_ScopesField" model="Model" />

@@ -61,6 +61,27 @@ public abstract class PlatformControllerBase : Controller
         RedirectToAction(nameof(AccountController.Login), "Account", new { returnUrl = Request.Path + Request.QueryString });
 
     /// <summary>
+    /// Turns an API "not signed in" or "not allowed" answer into the right page.
+    /// </summary>
+    /// <param name="result">Any API result.</param>
+    /// <returns>A redirect to sign-in (401), the "not allowed" page (403), or null to carry on.</returns>
+    protected IActionResult? HandleAccess(ApiResult result)
+    {
+        if (result.IsUnauthorized)
+        {
+            return RedirectToLogin();
+        }
+
+        if (result.IsForbidden)
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View("Forbidden");
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Queues a success message for the next page.
     /// </summary>
     /// <param name="message">Message to show.</param>

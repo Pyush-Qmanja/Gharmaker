@@ -12,6 +12,11 @@ namespace Platform.Web.Controllers;
 /// (<c>_Table</c> and <c>_Form</c>) in its view folder. The page layout comes
 /// from the shared <c>CrudIndex</c> and <c>CrudForm</c> views.
 /// </summary>
+/// <remarks>
+/// Permissions are enforced by the API. When it answers 403 this controller
+/// shows the shared "not allowed" page; when it answers 401 it sends the user
+/// to sign in again.
+/// </remarks>
 /// <typeparam name="TDto">Read model.</typeparam>
 /// <typeparam name="TCreate">Create request.</typeparam>
 /// <typeparam name="TUpdate">Update request.</typeparam>
@@ -62,6 +67,14 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     protected abstract TUpdate ToUpdateRequest(TDto dto);
 
     /// <summary>
+    /// Loads lookup data (e.g. role options) into ViewData before a list or
+    /// form is rendered. Default: nothing to load.
+    /// </summary>
+    /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
+    /// <returns>A task that completes when ViewData is ready.</returns>
+    protected virtual Task PrepareViewAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
     /// Shows one page of records.
     /// </summary>
     /// <param name="request">Page and search text from the query string.</param>
@@ -71,9 +84,9 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     public async Task<IActionResult> Index([FromQuery] PagedRequest request, CancellationToken cancellationToken)
     {
         var result = await Api.GetPagedAsync(request, cancellationToken);
-        if (result.IsUnauthorized)
+        if (HandleAccess(result) is { } denied)
         {
-            return RedirectToLogin();
+            return denied;
         }
 
         if (!result.IsSuccess)
@@ -82,15 +95,18 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         }
 
         var page = result.Value ?? new PagedResult<TDto> { Page = request.Page, PageSize = request.PageSize };
+        await PrepareViewAsync(cancellationToken);
         return View(IndexView, new ListViewModel<TDto>(PluralName, page, request.Search));
     }
 
     /// <summary>
     /// Shows an empty create form.
     /// </summary>
+    /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
     /// <returns>The form page.</returns>
     [HttpGet]
-    public IActionResult Create() => View(FormView, new FormViewModel($"New {SingularName.ToLowerInvariant()}", new TCreate()));
+    public Task<IActionResult> Create(CancellationToken cancellationToken) =>
+        FormAsync(new FormViewModel($"New {SingularName.ToLowerInvariant()}", new TCreate()), cancellationToken);
 
     /// <summary>
     /// Validates and creates a record.
@@ -104,19 +120,19 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         var model = new FormViewModel($"New {SingularName.ToLowerInvariant()}", form);
         if (!await ValidateAsync(_createValidator, form, cancellationToken))
         {
-            return View(FormView, model);
+            return await FormAsync(model, cancellationToken);
         }
 
         var result = await Api.CreateAsync(form, cancellationToken);
-        if (result.IsUnauthorized)
+        if (HandleAccess(result) is { } denied)
         {
-            return RedirectToLogin();
+            return denied;
         }
 
         if (!result.IsSuccess)
         {
             AddApiErrors(result);
-            return View(FormView, model);
+            return await FormAsync(model, cancellationToken);
         }
 
         FlashSuccess($"{SingularName} created.");
@@ -133,9 +149,9 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
     {
         var result = await Api.GetByIdAsync(id, cancellationToken);
-        if (result.IsUnauthorized)
+        if (HandleAccess(result) is { } denied)
         {
-            return RedirectToLogin();
+            return denied;
         }
 
         if (!result.IsSuccess || result.Value is null)
@@ -143,7 +159,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
             return NotFound();
         }
 
-        return View(FormView, new FormViewModel($"Edit {SingularName.ToLowerInvariant()}", ToUpdateRequest(result.Value), id));
+        return await FormAsync(new FormViewModel($"Edit {SingularName.ToLowerInvariant()}", ToUpdateRequest(result.Value), id), cancellationToken);
     }
 
     /// <summary>
@@ -159,13 +175,13 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         var model = new FormViewModel($"Edit {SingularName.ToLowerInvariant()}", form, id);
         if (!await ValidateAsync(_updateValidator, form, cancellationToken))
         {
-            return View(FormView, model);
+            return await FormAsync(model, cancellationToken);
         }
 
         var result = await Api.UpdateAsync(id, form, cancellationToken);
-        if (result.IsUnauthorized)
+        if (HandleAccess(result) is { } denied)
         {
-            return RedirectToLogin();
+            return denied;
         }
 
         if (result.IsNotFound)
@@ -176,7 +192,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         if (!result.IsSuccess)
         {
             AddApiErrors(result);
-            return View(FormView, model);
+            return await FormAsync(model, cancellationToken);
         }
 
         FlashSuccess($"{SingularName} saved.");
@@ -193,9 +209,9 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await Api.DeleteAsync(id, cancellationToken);
-        if (result.IsUnauthorized)
+        if (HandleAccess(result) is { } denied)
         {
-            return RedirectToLogin();
+            return denied;
         }
 
         if (result.IsSuccess)
@@ -208,5 +224,17 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Loads lookups and renders the shared form page.
+    /// </summary>
+    /// <param name="model">Form page model.</param>
+    /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
+    /// <returns>The form view.</returns>
+    private async Task<IActionResult> FormAsync(FormViewModel model, CancellationToken cancellationToken)
+    {
+        await PrepareViewAsync(cancellationToken);
+        return View(FormView, model);
     }
 }

@@ -230,6 +230,59 @@
     margin-top: var(--space-4);
 }
 
+/* ---------- Checkbox list (markup produced by <checkbox-list>) ---------- */
+.checkbox-list {
+    border: 0;
+    padding: 0;
+    margin-bottom: var(--space-4);
+}
+
+.checkbox-list__group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-2) var(--space-4);
+    margin-bottom: var(--space-3);
+}
+
+.checkbox-list__group-title {
+    grid-column: 1 / -1;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.checkbox-list__option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.checkbox-list__label {
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+/* ---------- Chips (short label lists in tables) ---------- */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.chip {
+    display: inline-block;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-chip-bg);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.chip--empty {
+    background: transparent;
+    color: var(--color-text-muted);
+}
+
 /* ---------- Empty state ---------- */
 .empty-state {
     text-align: center;

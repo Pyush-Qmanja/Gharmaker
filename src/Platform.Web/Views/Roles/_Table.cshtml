@@ -1,0 +1,26 @@
+@* Role rows for the shared CrudIndex page. *@
+@using Platform.Shared.Dtos.Identity
+@model IReadOnlyList<RoleDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Capabilities</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var role in Model)
+        {
+            <tr>
+                <td>@role.Name</td>
+                <td><partial name="_Chips" model="role.Capabilities" /></td>
+                <td><partial name="_StatusBadge" model="role.IsActive" /></td>
+                <td>@((role.UpdatedAt ?? role.CreatedAt).ToIstString())</td>
+                <partial name="_RowActions" model="role.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

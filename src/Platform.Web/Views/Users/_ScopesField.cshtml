@@ -1,0 +1,23 @@
+@* Scope picker. Only the global scope can be chosen until sites and warehouses exist; any other existing grants are kept as hidden fields so saving never drops them. *@
+@using Platform.Shared.Dtos.Identity
+@using Platform.Shared.Entities.Identity
+@model IUserFields
+@{
+    var others = Model.Scopes.Where(s => s.ScopeType != ScopeType.Global).ToList();
+    bool hasGlobal = Model.Scopes.Any(s => s.ScopeType == ScopeType.Global);
+}
+<fieldset class="form-field">
+    <legend class="form-field__label">Scope</legend>
+    @for (int i = 0; i < others.Count; i++)
+    {
+        <input type="hidden" name="Scopes[@i].ScopeType" value="@others[i].ScopeType" />
+        <input type="hidden" name="Scopes[@i].ScopeId" value="@others[i].ScopeId" />
+    }
+    <div class="checkbox-list__option">
+        <input class="form-check-input" type="checkbox" id="GlobalScope"
+               name="Scopes[@others.Count].ScopeType" value="@ScopeType.Global" checked="@hasGlobal" />
+        <label class="checkbox-list__label" for="GlobalScope">Access everywhere in the organisation (global scope)</label>
+    </div>
+    <small class="form-field__hint">Without a scope the user's roles apply nowhere. Site and warehouse scopes arrive with those modules.</small>
+    @Html.ValidationMessage("Scopes", new { @class = "form-field__error" })
+</fieldset>
