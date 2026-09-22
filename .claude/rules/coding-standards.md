@@ -80,8 +80,10 @@ generic helper next to them) instead.
 
 ## Security
 
-- Auth is JWT bearer. The API issues it (`/api/auth/login`); the UI keeps it in
-  its encrypted HttpOnly cookie and forwards it via `BearerTokenHandler`.
+- Passwords live only in **Firebase Authentication**. `/api/auth/login` asks
+  Firebase (via `IIdentityProvider`) to verify them, finds the platform user by
+  `auth_uid`, and issues the API's own JWT. Never store a password or hash in Firestore.
+- The UI keeps the JWT in its encrypted HttpOnly cookie and forwards it via `BearerTokenHandler`.
 - Every API controller is `[Authorize]` by default (via `CrudControllerBase`).
   `[AllowAnonymous]` only on sign-in.
 - Never check a role name (P6, `permissions.md`). Capability + scope arrives in Phase 1.

@@ -22,6 +22,7 @@ opacity (P1) stay enforced in one place — the API.
 | Every business row has `org_id` | `Repository<T>` filters every query and lookup by the caller's `org_id` |
 | Multi-document atomic writes | One `WriteBatch` per `SaveChangesAsync` (max 500 writes) |
 | Unique constraints | None in Firestore. `CrudService.RequireUniqueAsync` checks before writing → 409 |
+| Passwords | Firebase Authentication only; `users.auth_uid` links the account, the API issues its own JWT |
 | Money and quantity `decimal(18,4)` | Stored as invariant strings — exact, never `double` |
 | Pagination | `Count()` aggregation + `Offset`/`Limit` |
 | Search | Prefix match on a normalised field (e.g. `slug`); no "contains" search |

@@ -6,12 +6,14 @@ logins, teams, tasks, attendance, wages, wallets).
 
 ## Run it locally
 
-Prerequisites: .NET 8 SDK and a Firebase project with a Firestore database.
+Prerequisites: .NET 8 SDK and a Firebase project with a Firestore database and
+Authentication enabled (Email/Password provider).
 Database choice: `docs/adr/0002-firestore.md`.
 
 ```powershell
-# 1. Local settings (git-ignored). Set Firestore:ProjectId, Firestore:CredentialsPath
-#    (service-account JSON kept OUTSIDE the repo), Jwt:SigningKey and the Seed admin.
+# 1. Local settings (git-ignored). Set Firebase:ProjectId, Firebase:CredentialsPath
+#    (service-account JSON kept OUTSIDE the repo), Firebase:WebApiKey, Jwt:SigningKey
+#    and the Seed admin. The seed admin is created in Firebase Authentication too.
 copy src\Platform.Api\appsettings.Development.example.json src\Platform.Api\appsettings.Development.json
 
 # 2. API — seeds the first organisation + admin on first start (Development only)
@@ -36,8 +38,9 @@ The Firebase CLI's Firestore emulator lets you work without touching a real
 project. It is the only part of the setup that needs a Java runtime.
 
 ```powershell
-firebase emulators:start --only firestore --project demo-platform
-# then run the API with:  Firestore__EmulatorHost=127.0.0.1:8080  Firestore__ProjectId=demo-platform
+firebase emulators:start --only firestore,auth --project demo-platform
+# then run the API with: Firebase__ProjectId=demo-platform
+#   Firebase__FirestoreEmulatorHost=127.0.0.1:8080  Firebase__AuthEmulatorHost=127.0.0.1:9099
 ```
 
 The emulator does not enforce composite indexes; a missing index only fails

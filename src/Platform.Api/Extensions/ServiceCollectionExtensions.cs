@@ -1,8 +1,9 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
+using FirebaseAdmin;
+using FirebaseAdmin.Auth;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -31,22 +32,29 @@ namespace Platform.Api.Extensions;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>Name of the Firebase Admin app instance owned by this API.</summary>
+    private const string FirebaseAppName = "platform-api";
+
     /// <summary>
-    /// Registers the Firestore client (one per process), the generic
-    /// repositories and the unit of work.
+    /// Registers Firebase: one shared Google credential, the Firestore client
+    /// and the Firebase Authentication admin client (one of each per process),
+    /// plus the generic repositories and the unit of work.
     /// </summary>
     /// <param name="services">Service collection.</param>
-    /// <param name="configuration">Reads the <c>Firestore</c> section.</param>
+    /// <param name="configuration">Reads the <c>Firebase</c> section.</param>
     /// <returns>The service collection, for chaining.</returns>
     public static IServiceCollection AddPlatformData(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<FirestoreOptions>()
-            .Bind(configuration.GetSection(FirestoreOptions.SectionName))
+        services.AddOptions<FirebaseOptions>()
+            .Bind(configuration.GetSection(FirebaseOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddSingleton<IFirestoreContext>(sp =>
-            new FirestoreContext(BuildFirestoreDb(sp.GetRequiredService<IOptions<FirestoreOptions>>().Value)));
+        services.AddSingleton(sp => LoadCredential(sp.GetRequiredService<IOptions<FirebaseOptions>>().Value));
+        services.AddSingleton<IFirestoreContext>(sp => new FirestoreContext(
+            BuildFirestoreDb(sp.GetRequiredService<IOptions<FirebaseOptions>>().Value, sp.GetRequiredService<GoogleCredential>())));
+        services.AddSingleton(sp => BuildFirebaseAuth(
+            sp.GetRequiredService<IOptions<FirebaseOptions>>().Value, sp.GetRequiredService<GoogleCredential>()));
 
         services.AddSingleton(TimeProvider.System);
         services.AddHttpContextAccessor();
@@ -61,37 +69,72 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Builds the Firestore client: the emulator when <see cref="FirestoreOptions.EmulatorHost"/>
-    /// is set, otherwise the real project using the service-account key file.
+    /// Loads the service-account credential shared by Firestore and Authentication.
+    /// When both emulators are used, a placeholder token is returned instead.
     /// </summary>
-    /// <param name="options">Firestore settings.</param>
-    /// <returns>A ready client.</returns>
-    /// <exception cref="InvalidOperationException">Neither an emulator nor a key file is configured.</exception>
-    private static FirestoreDb BuildFirestoreDb(FirestoreOptions options)
+    /// <param name="options">Firebase settings.</param>
+    /// <returns>The credential.</returns>
+    /// <exception cref="InvalidOperationException">A real project is used but no key file is configured.</exception>
+    private static GoogleCredential LoadCredential(FirebaseOptions options)
     {
-        var builder = new FirestoreDbBuilder { ProjectId = options.ProjectId };
-
-        if (!string.IsNullOrWhiteSpace(options.EmulatorHost))
+        if (options.UseFirestoreEmulator && options.UseAuthEmulator)
         {
-            Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", options.EmulatorHost);
-            builder.EmulatorDetection = EmulatorDetection.EmulatorOnly;
-            return builder.Build();
+            // Emulators ignore credentials but the SDKs still require one.
+            return GoogleCredential.FromAccessToken("emulator");
         }
 
         if (string.IsNullOrWhiteSpace(options.CredentialsPath) || !File.Exists(options.CredentialsPath))
         {
             throw new InvalidOperationException(
-                "Firestore:CredentialsPath must point to the service-account JSON file (or set Firestore:EmulatorHost).");
+                "Firebase:CredentialsPath must point to the service-account JSON file (or configure both emulator hosts).");
         }
 
-        builder.GoogleCredential = CredentialFactory
-            .FromFile<ServiceAccountCredential>(options.CredentialsPath)
-            .ToGoogleCredential();
+        return CredentialFactory.FromFile<ServiceAccountCredential>(options.CredentialsPath).ToGoogleCredential();
+    }
+
+    /// <summary>
+    /// Builds the Firestore client for the emulator or the real project.
+    /// </summary>
+    /// <param name="options">Firebase settings.</param>
+    /// <param name="credential">Shared credential.</param>
+    /// <returns>A ready client.</returns>
+    private static FirestoreDb BuildFirestoreDb(FirebaseOptions options, GoogleCredential credential)
+    {
+        var builder = new FirestoreDbBuilder { ProjectId = options.ProjectId };
+
+        if (options.UseFirestoreEmulator)
+        {
+            Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", options.FirestoreEmulatorHost);
+            builder.EmulatorDetection = EmulatorDetection.EmulatorOnly;
+            return builder.Build();
+        }
+
+        builder.GoogleCredential = credential;
         return builder.Build();
     }
 
     /// <summary>
-    /// Registers JWT bearer authentication, the token service and password hashing.
+    /// Builds the Firebase Authentication admin client for the emulator or the real project.
+    /// </summary>
+    /// <param name="options">Firebase settings.</param>
+    /// <param name="credential">Shared credential.</param>
+    /// <returns>The admin client.</returns>
+    private static FirebaseAuth BuildFirebaseAuth(FirebaseOptions options, GoogleCredential credential)
+    {
+        if (options.UseAuthEmulator)
+        {
+            // The Admin SDK switches to the emulator when this variable is set.
+            Environment.SetEnvironmentVariable("FIREBASE_AUTH_EMULATOR_HOST", options.AuthEmulatorHost);
+        }
+
+        FirebaseApp app = FirebaseApp.GetInstance(FirebaseAppName)
+            ?? FirebaseApp.Create(new AppOptions { Credential = credential, ProjectId = options.ProjectId }, FirebaseAppName);
+        return FirebaseAuth.GetAuth(app);
+    }
+
+
+    /// <summary>
+    /// Registers JWT bearer authentication, the token service and the Firebase identity provider.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="configuration">Reads the <c>Jwt</c> section.</param>
@@ -127,7 +170,7 @@ public static class ServiceCollectionExtensions
 
         services.AddAuthorization();
         services.AddScoped<ITokenService, JwtTokenService>();
-        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddHttpClient<IIdentityProvider, FirebaseIdentityProvider>();
         services.AddScoped<IAuthService, AuthService>();
         return services;
     }

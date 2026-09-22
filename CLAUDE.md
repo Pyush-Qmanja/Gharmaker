@@ -16,6 +16,7 @@ Full blueprint: `docs/blueprint.md`. Read it before designing anything new.
 | Worker view | Page in the MVC app, plus SMS |
 | Database | Cloud Firestore only (see `docs/adr/0002-firestore.md`) |
 | Cache, holds, locks | Redis |
+| Sign-in | Firebase Authentication checks the password; the API then issues its own JWT |
 | Push notifications | Firebase Cloud Messaging |
 | Files and images | S3 |
 | Hosting | AWS ap-south-1 (Mumbai) |

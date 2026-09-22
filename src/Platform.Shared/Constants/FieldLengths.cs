@@ -24,8 +24,8 @@ public static class FieldLengths
     /// <summary>Absolute URL to a file or image.</summary>
     public const int Url = 2048;
 
-    /// <summary>Hashed password as produced by the password hasher.</summary>
-    public const int PasswordHash = 512;
+    /// <summary>Firebase Authentication user id.</summary>
+    public const int AuthUid = 128;
 
     /// <summary>Minimum length of a plain-text password.</summary>
     public const int PasswordMin = 8;

@@ -1,5 +1,4 @@
 using Google.Cloud.Firestore;
-using Microsoft.AspNetCore.Identity;
 using Platform.Api.Common.Exceptions;
 using Platform.Api.Firestore;
 using Platform.Api.Security;
@@ -14,17 +13,19 @@ namespace Platform.Api.Services.Auth;
 public interface IAuthService
 {
     /// <summary>
-    /// Verifies credentials and issues an access token.
+    /// Verifies credentials with Firebase Authentication and issues the API's access token.
     /// </summary>
     /// <param name="request">Validated credentials.</param>
     /// <param name="cancellationToken">Cancels the lookup.</param>
     /// <returns>The token and the signed-in user's details.</returns>
-    /// <exception cref="AuthenticationFailedException">Unknown email, wrong password, or inactive user or organisation.</exception>
+    /// <exception cref="AuthenticationFailedException">Wrong credentials, disabled account, no platform user, or inactive user or organisation.</exception>
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Password-based implementation of <see cref="IAuthService"/>.
+/// Implementation of <see cref="IAuthService"/>: Firebase Authentication checks
+/// the password, the <c>users</c> collection supplies the organisation and
+/// status, and the API issues its own JWT.
 /// </summary>
 /// <remarks>
 /// Sign-in happens before the caller's organisation is known, so this is one
@@ -34,19 +35,19 @@ public interface IAuthService
 public sealed class AuthService : IAuthService
 {
     private readonly IFirestoreContext _context;
-    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IIdentityProvider _identityProvider;
     private readonly ITokenService _tokenService;
 
     /// <summary>
     /// Creates the service.
     /// </summary>
     /// <param name="context">Database entry point.</param>
-    /// <param name="passwordHasher">Verifies password hashes.</param>
+    /// <param name="identityProvider">Verifies the password (Firebase Authentication).</param>
     /// <param name="tokenService">Issues the JWT.</param>
-    public AuthService(IFirestoreContext context, IPasswordHasher<User> passwordHasher, ITokenService tokenService)
+    public AuthService(IFirestoreContext context, IIdentityProvider identityProvider, ITokenService tokenService)
     {
         _context = context;
-        _passwordHasher = passwordHasher;
+        _identityProvider = identityProvider;
         _tokenService = tokenService;
     }
 
@@ -55,15 +56,11 @@ public sealed class AuthService : IAuthService
     {
         string email = request.Email.Trim().ToLowerInvariant();
 
-        QuerySnapshot matches = await _context.Collection<User>()
-            .WhereEqualTo(FirestoreNaming.Field(nameof(User.Email)), email)
-            .Limit(1)
-            .GetSnapshotAsync(cancellationToken);
+        string authUid = await _identityProvider.VerifyPasswordAsync(email, request.Password, cancellationToken)
+            ?? throw new AuthenticationFailedException();
 
-        User? user = matches.Documents.Select(DocumentConverter.FromDocument<User>).FirstOrDefault();
-        if (user is null || !user.IsActive
-            || !await IsOrganisationActiveAsync(user.OrgId, cancellationToken)
-            || _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
+        User? user = await FindUserAsync(authUid, cancellationToken);
+        if (user is null || !user.IsActive || !await IsOrganisationActiveAsync(user.OrgId, cancellationToken))
         {
             throw new AuthenticationFailedException();
         }
@@ -78,6 +75,22 @@ public sealed class AuthService : IAuthService
             Name = user.Name,
             Email = user.Email,
         };
+    }
+
+    /// <summary>
+    /// Finds the platform user linked to a Firebase account.
+    /// </summary>
+    /// <param name="authUid">Firebase Authentication uid.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The user, or null when the account has no platform user.</returns>
+    private async Task<User?> FindUserAsync(string authUid, CancellationToken cancellationToken)
+    {
+        QuerySnapshot matches = await _context.Collection<User>()
+            .WhereEqualTo(FirestoreNaming.Field(nameof(User.AuthUid)), authUid)
+            .Limit(1)
+            .GetSnapshotAsync(cancellationToken);
+
+        return matches.Documents.Select(DocumentConverter.FromDocument<User>).FirstOrDefault();
     }
 
     /// <summary>

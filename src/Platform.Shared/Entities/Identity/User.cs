@@ -3,8 +3,9 @@ using Platform.Shared.Entities.Common;
 namespace Platform.Shared.Entities.Identity;
 
 /// <summary>
-/// A person who signs in to the platform. Capabilities and scopes (P6) are
-/// attached in Phase 1; this entity carries identity only.
+/// A person who signs in to the platform. The password lives in Firebase
+/// Authentication, never here. Capabilities and scopes (P6) are attached in
+/// Phase 1; this entity carries profile and organisation only.
 /// </summary>
 public class User : BaseEntity, IOrgScoped, ISoftDeletable
 {
@@ -20,8 +21,11 @@ public class User : BaseEntity, IOrgScoped, ISoftDeletable
     /// <summary>Mobile number in E.164 format, optional.</summary>
     public string? Phone { get; set; }
 
-    /// <summary>Password hash. Never leaves the API.</summary>
-    public string PasswordHash { get; set; } = string.Empty;
+    /// <summary>
+    /// Id of the matching Firebase Authentication account. Firebase holds the
+    /// credentials; this record holds the profile and organisation.
+    /// </summary>
+    public string AuthUid { get; set; } = string.Empty;
 
     /// <inheritdoc />
     public bool IsActive { get; set; } = true;

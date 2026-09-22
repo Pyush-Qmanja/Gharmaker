@@ -26,6 +26,7 @@ choosing the C# name decides all of them.
 | Business code | `Code` | `code` | `string` | `ShortCode`, `RefCode`, `<Entity>Code` on its own entity |
 | Sort position | `DisplayOrder` | `display_order` | `int` | `SortOrder`, `Sequence`, `Position`, `Rank` |
 | Email | `Email` | `email` | `string` | `EmailAddress`, `Mail`, `EmailId` |
+| Sign-in account id | `AuthUid` | `auth_uid` | `string` (Firebase Auth uid) | `FirebaseUid`, `Uid`, `ExternalId`, `LoginId` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
 | Image / file link | `<Thing>Url` | `<thing>_url` | `string` | `<Thing>Link`, `<Thing>Path`, `<Thing>Uri` |
 | Free-text notes | `Remarks` | `remarks` | `string?` | `Notes`, `Comment`, `Description` (for notes) |
