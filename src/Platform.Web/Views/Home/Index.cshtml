@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-header">
+    <h1 class="page-header__title">Welcome, @User.Identity?.Name</h1>
+</div>
+
+<div class="tile-grid">
+    <a class="tile card" asp-controller="Brands" asp-action="Index">
+        <span class="tile__title">Brands</span>
+        <span class="tile__text">Manage the brands in the catalogue.</span>
+    </a>
+</div>

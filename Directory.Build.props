@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Settings shared by every project in the solution. Change a setting here once
+    rather than in each .csproj.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!--
+      Every public type and member must carry an XML doc comment. CS1591 (missing
+      comment) is promoted to an error so an undocumented function fails the build.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591;nullable</WarningsAsErrors>
+  </PropertyGroup>
+</Project>

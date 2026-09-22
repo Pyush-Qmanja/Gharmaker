@@ -1,0 +1,45 @@
+/*
+ * Design tokens. Every colour, spacing, radius and font size used by the UI
+ * is defined here once. site.css only ever refers to these variables, so a
+ * theme change is an edit to this file alone.
+ */
+:root {
+    /* Brand */
+    --color-primary: #1f4e79;
+    --color-primary-contrast: #ffffff;
+    --color-accent: #e8a33d;
+
+    /* Surfaces and text */
+    --color-page: #f4f6f8;
+    --color-surface: #ffffff;
+    --color-border: #dde2e7;
+    --color-text: #1d2730;
+    --color-text-muted: #5f6b76;
+
+    /* Status */
+    --color-success: #1e7b4d;
+    --color-success-bg: #e3f4ea;
+    --color-danger: #b42318;
+    --color-danger-bg: #fdecea;
+
+    /* Spacing scale */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+
+    /* Shape and type */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.5rem;
+    --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+
+    /* Layout */
+    --header-height: 56px;
+    --form-max-width: 720px;
+    --auth-max-width: 400px;
+}

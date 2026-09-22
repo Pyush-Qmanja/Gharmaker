@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,csproj,props}]
+indent_size = 2
+
+[*.cs]
+# Private fields are _camelCase; everything else follows .NET defaults.
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+
+# EF Core migrations are generated code; they are exempt from the doc-comment rule.
+[**/Migrations/*.cs]
+dotnet_diagnostic.CS1591.severity = none
+generated_code = true

@@ -1,0 +1,307 @@
+/*
+ * Component styles for the whole UI. Values come from variables.css.
+ * Class names follow BEM (block__element--modifier). Views never carry a
+ * style attribute or a <style> block — add a class here instead.
+ */
+
+/* ---------- App shell ---------- */
+.app {
+    background: var(--color-page);
+    color: var(--color-text);
+    min-height: 100vh;
+}
+
+.app-header {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+}
+
+.app-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    min-height: var(--header-height);
+}
+
+.app-nav__brand {
+    color: var(--color-primary-contrast);
+    font-weight: 600;
+    font-size: var(--font-size-md);
+    text-decoration: none;
+}
+
+.app-nav__links {
+    display: flex;
+    gap: var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+}
+
+.app-nav__link {
+    color: var(--color-primary-contrast);
+    opacity: 0.85;
+    text-decoration: none;
+}
+
+.app-nav__link:hover {
+    opacity: 1;
+}
+
+.app-nav__user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.app-nav__user-name {
+    font-size: var(--font-size-sm);
+}
+
+.app-main {
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-6);
+}
+
+/* ---------- Page header ---------- */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.page-header__title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+}
+
+.form-card {
+    max-width: var(--form-max-width);
+    padding: var(--space-5);
+}
+
+.data-card {
+    overflow-x: auto;
+}
+
+/* ---------- Tables ---------- */
+.data-table {
+    margin: 0;
+}
+
+.data-table th {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.data-table td,
+.data-table th {
+    padding: var(--space-3) var(--space-4);
+    vertical-align: middle;
+}
+
+.data-table__num {
+    text-align: right;
+}
+
+.data-table__actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.inline-form {
+    display: inline;
+}
+
+/* ---------- Status badge ---------- */
+.status-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.status-badge--active {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.status-badge--inactive {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+/* ---------- Search and pager ---------- */
+.search-bar {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    max-width: var(--form-max-width);
+}
+
+.search-bar__input {
+    flex: 1;
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-4);
+}
+
+.pager__summary {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.pager__buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* ---------- Forms (markup produced by <form-field>) ---------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-4);
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+}
+
+.form-field--check {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.form-field__label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    margin: 0;
+}
+
+.form-field__hint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.form-field__error {
+    color: var(--color-danger);
+    font-size: var(--font-size-sm);
+}
+
+.form-field__error:empty {
+    display: none;
+}
+
+.form-summary {
+    color: var(--color-danger);
+}
+
+.form-summary ul {
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-4);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+    text-align: center;
+    padding: var(--space-6) var(--space-4);
+}
+
+.empty-state__text {
+    color: var(--color-text-muted);
+}
+
+/* ---------- Dashboard tiles ---------- */
+.tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-4);
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-5);
+    color: inherit;
+    text-decoration: none;
+}
+
+.tile:hover {
+    border-color: var(--color-primary);
+}
+
+.tile__title {
+    font-weight: 600;
+}
+
+.tile__text {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* ---------- Sign-in ---------- */
+.auth-card {
+    max-width: var(--auth-max-width);
+    margin: var(--space-6) auto;
+    padding: var(--space-6);
+}
+
+.auth-card__title {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-4);
+}
+
+.auth-card__submit {
+    width: 100%;
+}
+
+/* ---------- Flash messages ---------- */
+.flash {
+    margin-bottom: var(--space-4);
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 576px) {
+    .app-nav {
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        padding-top: var(--space-2);
+        padding-bottom: var(--space-2);
+    }
+
+    .page-header,
+    .pager {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

@@ -1,0 +1,35 @@
+namespace Platform.Shared.Constants;
+
+/// <summary>
+/// Maximum lengths for string fields. Validators and EF Core configurations
+/// both read from here, so a length is changed in exactly one place.
+/// </summary>
+public static class FieldLengths
+{
+    /// <summary>Display name of any entity (brand, user, organisation...).</summary>
+    public const int Name = 200;
+
+    /// <summary>URL-safe identifier used in storefront links.</summary>
+    public const int Slug = 200;
+
+    /// <summary>Short business code such as a warehouse or SKU code.</summary>
+    public const int Code = 50;
+
+    /// <summary>Email address (RFC 5321 practical limit).</summary>
+    public const int Email = 254;
+
+    /// <summary>Phone number in E.164 format including the leading plus.</summary>
+    public const int Phone = 16;
+
+    /// <summary>Absolute URL to a file or image.</summary>
+    public const int Url = 2048;
+
+    /// <summary>Hashed password as produced by the password hasher.</summary>
+    public const int PasswordHash = 512;
+
+    /// <summary>Minimum length of a plain-text password.</summary>
+    public const int PasswordMin = 8;
+
+    /// <summary>Maximum length of a plain-text password.</summary>
+    public const int PasswordMax = 128;
+}

@@ -1,0 +1,20 @@
+@* Pager for any list page. Keeps the current search text. *@
+@model IListViewModel
+@if (Model.TotalPages > 1)
+{
+    <nav class="pager" aria-label="Pages">
+        <span class="pager__summary">Page @Model.Page of @Model.TotalPages · @Model.TotalCount records</span>
+        <div class="pager__buttons">
+            @if (Model.HasPrevious)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
+                   asp-route-page="@(Model.Page - 1)" asp-route-search="@Model.Search">Previous</a>
+            }
+            @if (Model.HasNext)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
+                   asp-route-page="@(Model.Page + 1)" asp-route-search="@Model.Search">Next</a>
+            }
+        </div>
+    </nav>
+}

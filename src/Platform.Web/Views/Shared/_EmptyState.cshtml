@@ -1,0 +1,14 @@
+@* Shown by CrudIndex when a list has no rows. *@
+@model IListViewModel
+<div class="empty-state">
+    @if (string.IsNullOrEmpty(Model.Search))
+    {
+        <p class="empty-state__text">No @Model.Title.ToLowerInvariant() yet.</p>
+        <a asp-action="Create" class="btn btn-primary">Add the first one</a>
+    }
+    else
+    {
+        <p class="empty-state__text">Nothing matches “@Model.Search”.</p>
+        <a asp-action="Index" class="btn btn-outline-secondary">Clear search</a>
+    }
+</div>

@@ -1,0 +1,30 @@
+@* Brand rows for the shared CrudIndex page. *@
+@using Platform.Shared.Dtos.Catalog
+@model IReadOnlyList<BrandDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Manufacturer</th>
+            <th class="data-table__num">Order</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var brand in Model)
+        {
+            <tr>
+                <td>@brand.Name</td>
+                <td><code>@brand.Slug</code></td>
+                <td>@brand.ManufacturerName</td>
+                <td class="data-table__num">@brand.DisplayOrder</td>
+                <td><partial name="_StatusBadge" model="brand.IsActive" /></td>
+                <td>@((brand.UpdatedAt ?? brand.CreatedAt).ToIstString())</td>
+                <partial name="_RowActions" model="brand.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,8 +1,10 @@
 ---
 paths:
   - "src/Platform.Api/Controllers/**/*.cs"
-  - "src/Platform.Domain/Identity/**/*.cs"
-  - "src/Platform.Infrastructure/Identity/**/*.cs"
+  - "src/Platform.Api/Security/**/*.cs"
+  - "src/Platform.Api/Services/Auth/**/*.cs"
+  - "src/Platform.Shared/Entities/Identity/**/*.cs"
+  - "src/Platform.Web/Controllers/**/*.cs"
 ---
 
 # Permissions — capability plus scope (P6)

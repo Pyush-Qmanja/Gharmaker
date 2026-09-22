@@ -1,8 +1,8 @@
 ---
 paths:
-  - "src/Platform.Storefront/**/*.{cs,cshtml}"
+  - "src/Platform.Web/Areas/Storefront/**/*.{cs,cshtml}"
   - "src/Platform.Api/Controllers/Storefront/**/*.cs"
-  - "src/Platform.Api/Contracts/Storefront/**/*.cs"
+  - "src/Platform.Shared/Dtos/Storefront/**/*.cs"
 ---
 
 # Storefront — warehouse opacity (P1)
@@ -24,7 +24,7 @@ message says the quantity is unavailable; it never says where it ran out.
 
 ## Contract rules
 
-- Storefront DTOs live in `Contracts/Storefront/` and are separate types. Never
+- Storefront DTOs live in `Platform.Shared/Dtos/Storefront/` and are separate types. Never
   return a domain entity or an internal DTO directly from a storefront endpoint.
 - Availability is a single `decimal` plus a UOM code (P7), never a collection.
 - Delivery is `{ earliestDate, latestDate }`, never a per-warehouse breakdown.

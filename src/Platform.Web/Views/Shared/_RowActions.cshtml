@@ -1,0 +1,9 @@
+@* Edit and deactivate buttons for one table row. Model is the record id. *@
+@model Guid
+<td class="data-table__actions">
+    <a asp-action="Edit" asp-route-id="@Model" class="btn btn-sm btn-outline-primary">Edit</a>
+    <form asp-action="Delete" asp-route-id="@Model" method="post" class="inline-form"
+          data-confirm="Deactivate this record? It can be restored from Edit.">
+        <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+    </form>
+</td>

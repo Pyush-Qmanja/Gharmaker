@@ -1,0 +1,9 @@
+@* Flash messages queued with FlashSuccess / FlashError in PlatformControllerBase. *@
+@if (TempData[TempDataKeys.Success] is string success)
+{
+    <div class="alert alert-success flash" role="status" data-auto-dismiss>@success</div>
+}
+@if (TempData[TempDataKeys.Error] is string error)
+{
+    <div class="alert alert-danger flash" role="alert">@error</div>
+}

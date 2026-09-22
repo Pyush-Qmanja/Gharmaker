@@ -11,7 +11,7 @@ Full blueprint: `docs/blueprint.md`. Read it before designing anything new.
 | Layer | Choice |
 | --- | --- |
 | Core API | .NET 8 Web API (C#) |
-| Customer web, admin, warehouse portals | ASP.NET Core MVC, Razor, HTML/CSS |
+| Customer web, admin, warehouse portals | One ASP.NET Core MVC app (`Platform.Web`), areas per portal |
 | Supervisor and driver apps | .NET MAUI + SQLite offline store |
 | Worker view | Page in the MVC app, plus SMS |
 | Database | PostgreSQL (see `docs/adr/0001-database.md`) |
@@ -19,6 +19,24 @@ Full blueprint: `docs/blueprint.md`. Read it before designing anything new.
 | Push notifications | Firebase Cloud Messaging |
 | Files and images | S3 |
 | Hosting | AWS ap-south-1 (Mumbai) |
+
+## Solution
+
+```
+Platform.sln
+src/Platform.Shared/   class library — entities, DTOs, validators, constants
+src/Platform.Api/      Web API — JWT, services, generic repository, EF Core
+src/Platform.Web/      MVC UI — calls the API only; css/js in wwwroot
+```
+
+Always-on rules, read them before writing code:
+- `.claude/rules/coding-standards.md` — project boundaries, doc comments,
+  reusable generic pieces, no inline CSS/JS, the add-a-module recipe.
+- `.claude/rules/field-names.md` — one name per concept across the whole
+  platform (`CreatedAt`, `UpdatedAt`, `IsActive`, ...). Never a synonym.
+
+`dotnet build` must finish with 0 warnings. A missing XML doc comment is a
+build error by design.
 
 ## The ten rules
 
@@ -61,7 +79,7 @@ Every quantity is a value plus a UOM code. Conversion happens only in
 `IUomConversionService`. No local arithmetic on quantities anywhere else.
 
 **P8 — Prices are dated, never overwritten.**
-A price change inserts a new row with `effective_from`. Same for tax rates and
+A price change inserts a new row with `valid_from`. Same for tax rates and
 freight rules. Historical orders reprice to what was true when placed.
 
 **P9 — Every document is immutable once issued.**
