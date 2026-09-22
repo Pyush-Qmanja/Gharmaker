@@ -225,6 +225,8 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Registers Swagger with a Bearer-token button for trying secured endpoints.
+    /// Served in Development, or anywhere when <c>Swagger:Enabled</c> is true
+    /// (see <c>Program.cs</c>).
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <returns>The service collection, for chaining.</returns>
@@ -233,13 +235,22 @@ public static class ServiceCollectionExtensions
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Platform API", Version = "v1" });
-
-            string xmlPath = Path.Combine(AppContext.BaseDirectory, "Platform.Api.xml");
-            if (File.Exists(xmlPath))
+            options.SwaggerDoc("v1", new OpenApiInfo
             {
-                options.IncludeXmlComments(xmlPath);
+                Title = "Platform API",
+                Version = "v1",
+                Description = "To try secured endpoints: call POST /api/auth/login, copy accessToken "
+                    + "from the response, click Authorize and paste it (without the word Bearer).",
+            });
+
+            // The XML doc comments required on every member become the Swagger text:
+            // Platform.Api.xml for endpoints, Platform.Shared.xml for DTO fields.
+            foreach (string xmlPath in Directory.GetFiles(AppContext.BaseDirectory, "Platform.*.xml"))
+            {
+                options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
             }
+
+            options.SupportNonNullableReferenceTypes();
 
             var bearer = new OpenApiSecurityScheme
             {

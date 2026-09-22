@@ -17,10 +17,15 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+// Swagger is always on in Development; elsewhere only when Swagger:Enabled is true.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options => options.DocumentTitle = "Platform API");
+}
+
+if (app.Environment.IsDevelopment())
+{
     await DevelopmentSeeder.SeedAsync(app.Services, app.Configuration);
 }
 

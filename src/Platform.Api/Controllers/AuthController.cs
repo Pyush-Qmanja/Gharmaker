@@ -32,6 +32,9 @@ public sealed class AuthController : ControllerBase
     /// <returns>200 with the token, 400 if malformed, or 401 if the credentials are wrong.</returns>
     [HttpPost("login")]
     [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken) =>
         Ok(await _authService.LoginAsync(request, cancellationToken));
 }
