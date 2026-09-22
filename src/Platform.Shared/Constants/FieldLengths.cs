@@ -1,8 +1,8 @@
 namespace Platform.Shared.Constants;
 
 /// <summary>
-/// Maximum lengths for string fields. Validators and EF Core configurations
-/// both read from here, so a length is changed in exactly one place.
+/// Maximum lengths for string fields. Firestore enforces no lengths, so the
+/// shared validators (API and UI) are the only guard; change a length here once.
 /// </summary>
 public static class FieldLengths
 {

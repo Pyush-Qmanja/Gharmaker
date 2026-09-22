@@ -18,4 +18,4 @@ raise it instead.
 
 | # | Question | Decision | Where |
 | --- | --- | --- | --- |
-| DB | Relational or document store | PostgreSQL | `adr/0001-database.md` |
+| DB | Relational or document store | Firestore only (supersedes PostgreSQL) | `adr/0002-firestore.md` |

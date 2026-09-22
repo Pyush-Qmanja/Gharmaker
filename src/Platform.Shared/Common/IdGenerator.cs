@@ -4,8 +4,8 @@ namespace Platform.Shared.Common;
 
 /// <summary>
 /// Creates primary keys for every entity in the platform.
-/// Keys are UUID version 7 (RFC 9562): time-ordered, so they index well in
-/// PostgreSQL, and random enough that they never reveal a count to a user.
+/// Keys are UUID version 7 (RFC 9562): time-ordered and globally unique; the
+/// key is also the Firestore document id. Random bits mean it never reveals a count.
 /// </summary>
 public static class IdGenerator
 {

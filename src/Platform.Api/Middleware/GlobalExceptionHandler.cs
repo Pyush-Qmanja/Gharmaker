@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Platform.Api.Common.Exceptions;
 
 namespace Platform.Api.Middleware;
@@ -57,23 +55,25 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     /// </summary>
     /// <param name="exception">Exception to translate.</param>
     /// <returns>The ProblemDetails to return.</returns>
-    private static ProblemDetails ToProblem(Exception exception) => exception switch
+    private static ProblemDetails ToProblem(Exception exception)
     {
-        AppException app => new ProblemDetails { Status = app.StatusCode, Title = app.Title, Detail = app.Message },
-
-        DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } } =>
-            new ProblemDetails
-            {
-                Status = StatusCodes.Status409Conflict,
-                Title = "Duplicate",
-                Detail = "A record with the same unique value already exists.",
-            },
-
-        _ => new ProblemDetails
+        if (exception is not AppException app)
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "Server error",
-            Detail = "An unexpected error occurred.",
-        },
-    };
+            return new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "Server error",
+                Detail = "An unexpected error occurred.",
+            };
+        }
+
+        ProblemDetails problem = app.FieldErrors is { } errors
+            ? new ValidationProblemDetails(errors)
+            : new ProblemDetails();
+
+        problem.Status = app.StatusCode;
+        problem.Title = app.Title;
+        problem.Detail = app.Message;
+        return problem;
+    }
 }

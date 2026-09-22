@@ -20,6 +20,41 @@ public abstract class AppException : Exception
 
     /// <summary>Short title for the ProblemDetails response.</summary>
     public abstract string Title { get; }
+
+    /// <summary>
+    /// Optional per-field errors, keyed by property name. When set, the response is
+    /// a ValidationProblemDetails and the UI shows each message next to its field.
+    /// </summary>
+    public virtual IDictionary<string, string[]>? FieldErrors => null;
+}
+
+/// <summary>
+/// A value that must be unique is already used by another record. Firestore
+/// has no unique indexes, so services raise this after an existence check.
+/// </summary>
+public sealed class ConflictException : AppException
+{
+    private readonly string _field;
+
+    /// <summary>
+    /// Creates the exception for one duplicated field.
+    /// </summary>
+    /// <param name="field">C# property name of the duplicated field.</param>
+    /// <param name="message">Safe-to-show message.</param>
+    public ConflictException(string field, string message) : base(message)
+    {
+        _field = field;
+    }
+
+    /// <inheritdoc />
+    public override int StatusCode => StatusCodes.Status409Conflict;
+
+    /// <inheritdoc />
+    public override string Title => "Duplicate";
+
+    /// <inheritdoc />
+    public override IDictionary<string, string[]> FieldErrors =>
+        new Dictionary<string, string[]> { [_field] = new[] { Message } };
 }
 
 /// <summary>

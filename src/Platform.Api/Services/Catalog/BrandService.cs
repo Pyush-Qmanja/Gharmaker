@@ -1,4 +1,5 @@
-using Microsoft.EntityFrameworkCore;
+using Google.Cloud.Firestore;
+using Platform.Api.Firestore;
 using Platform.Api.Mapping;
 using Platform.Api.Repositories;
 using Platform.Shared.Dtos.Catalog;
@@ -8,10 +9,13 @@ namespace Platform.Api.Services.Catalog;
 
 /// <summary>
 /// CRUD for brands. Inherits everything from <see cref="CrudService{TEntity,TDto,TCreate,TUpdate}"/>
-/// and only defines how brands are searched and sorted.
+/// and only defines how brands are searched, sorted and kept unique.
 /// </summary>
 public sealed class BrandService : CrudService<Brand, BrandDto, CreateBrandRequest, UpdateBrandRequest>
 {
+    /// <summary>Stored name of <see cref="Brand.Slug"/>.</summary>
+    private static readonly string SlugField = FirestoreNaming.Field(nameof(Brand.Slug));
+
     /// <summary>
     /// Creates the service.
     /// </summary>
@@ -27,25 +31,36 @@ public sealed class BrandService : CrudService<Brand, BrandDto, CreateBrandReque
     }
 
     /// <summary>
-    /// Matches name, slug or manufacturer, case-insensitively.
+    /// Prefix match on the slug. Slugs are always lower-case, so turning the
+    /// search text into slug form makes the match case-insensitive.
     /// </summary>
-    /// <param name="query">Query to filter.</param>
+    /// <param name="query">Org-scoped query.</param>
     /// <param name="search">Trimmed search text.</param>
-    /// <returns>The filtered query.</returns>
-    protected override IQueryable<Brand> ApplySearch(IQueryable<Brand> query, string search)
+    /// <returns>The filtered query, ordered by slug.</returns>
+    protected override Query ApplySearch(Query query, string search)
     {
-        string pattern = $"%{search}%";
-        return query.Where(b =>
-            EF.Functions.ILike(b.Name, pattern)
-            || EF.Functions.ILike(b.Slug, pattern)
-            || (b.ManufacturerName != null && EF.Functions.ILike(b.ManufacturerName, pattern)));
+        string prefix = search.ToLowerInvariant().Replace(' ', '-');
+        return query
+            .WhereGreaterThanOrEqualTo(SlugField, prefix)
+            .WhereLessThan(SlugField, prefix + '')
+            .OrderBy(SlugField);
     }
 
     /// <summary>
     /// Sorts by display order, then name.
     /// </summary>
-    /// <param name="query">Query to order.</param>
+    /// <param name="query">Org-scoped query.</param>
     /// <returns>The ordered query.</returns>
-    protected override IOrderedQueryable<Brand> ApplyOrder(IQueryable<Brand> query) =>
-        query.OrderBy(b => b.DisplayOrder).ThenBy(b => b.Name).ThenBy(b => b.Id);
+    protected override Query ApplyOrder(Query query) =>
+        query.OrderBy(FirestoreNaming.Field(nameof(Brand.DisplayOrder)))
+             .OrderBy(FirestoreNaming.Field(nameof(Brand.Name)));
+
+    /// <summary>
+    /// A slug is unique within an organisation.
+    /// </summary>
+    /// <param name="entity">Brand about to be written.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>A task that completes when the slug is free.</returns>
+    protected override Task EnsureUniqueAsync(Brand entity, CancellationToken cancellationToken) =>
+        RequireUniqueAsync(entity, nameof(Brand.Slug), entity.Slug, cancellationToken);
 }

@@ -17,3 +17,10 @@ artifacts/
 *.db
 *.db-shm
 *.db-wal
+
+# Firebase / Google service-account keys — never commit
+*firebase-adminsdk*.json
+*service-account*.json
+# Firebase emulator logs
+firebase-debug.log
+firestore-debug.log

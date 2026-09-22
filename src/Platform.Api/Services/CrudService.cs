@@ -1,5 +1,6 @@
-using Platform.Api.Common;
+using Google.Cloud.Firestore;
 using Platform.Api.Common.Exceptions;
+using Platform.Api.Firestore;
 using Platform.Api.Mapping;
 using Platform.Api.Repositories;
 using Platform.Shared.Dtos.Common;
@@ -39,6 +40,7 @@ public interface ICrudService<TDto, in TCreate, in TUpdate>
     /// <param name="request">Validated create request.</param>
     /// <param name="cancellationToken">Cancels the save.</param>
     /// <returns>The created record.</returns>
+    /// <exception cref="ConflictException">A unique value is already used.</exception>
     Task<TDto> CreateAsync(TCreate request, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -49,6 +51,7 @@ public interface ICrudService<TDto, in TCreate, in TUpdate>
     /// <param name="cancellationToken">Cancels the save.</param>
     /// <returns>The updated record.</returns>
     /// <exception cref="NotFoundException">Absent or out of scope.</exception>
+    /// <exception cref="ConflictException">A unique value is already used.</exception>
     Task<TDto> UpdateAsync(Guid id, TUpdate request, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -66,14 +69,15 @@ public interface ICrudService<TDto, in TCreate, in TUpdate>
 /// <summary>
 /// Generic implementation of <see cref="ICrudService{TDto,TCreate,TUpdate}"/>.
 /// An entity gets full CRUD by deriving from this class and, at most,
-/// overriding <see cref="ApplySearch"/> and <see cref="ApplyOrder"/>.
+/// overriding <see cref="ApplySearch"/>, <see cref="ApplyOrder"/> and
+/// <see cref="EnsureUniqueAsync"/>.
 /// </summary>
 /// <typeparam name="TEntity">Persisted entity.</typeparam>
 /// <typeparam name="TDto">Read model.</typeparam>
 /// <typeparam name="TCreate">Create request body.</typeparam>
 /// <typeparam name="TUpdate">Update request body.</typeparam>
 public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudService<TDto, TCreate, TUpdate>
-    where TEntity : BaseEntity
+    where TEntity : BaseEntity, new()
 {
     /// <summary>Data access for <typeparamref name="TEntity"/>.</summary>
     protected readonly IRepository<TEntity> Repository;
@@ -104,15 +108,20 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     protected virtual string EntityName => typeof(TEntity).Name;
 
     /// <inheritdoc />
-    public virtual Task<PagedResult<TDto>> GetPagedAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    public virtual async Task<PagedResult<TDto>> GetPagedAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        IQueryable<TEntity> query = Repository.Query();
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            query = ApplySearch(query, request.Search.Trim());
-        }
+        Query query = string.IsNullOrWhiteSpace(request.Search)
+            ? ApplyOrder(Repository.Query())
+            : ApplySearch(Repository.Query(), request.Search.Trim());
 
-        return ApplyOrder(query).ToPagedResultAsync(request, Mapper.ToDto, cancellationToken);
+        PagedResult<TEntity> page = await Repository.GetPagedAsync(query, request, cancellationToken);
+        return new PagedResult<TDto>
+        {
+            Items = page.Items.Select(Mapper.ToDto).ToList(),
+            Page = page.Page,
+            PageSize = page.PageSize,
+            TotalCount = page.TotalCount,
+        };
     }
 
     /// <inheritdoc />
@@ -123,7 +132,8 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     public virtual async Task<TDto> CreateAsync(TCreate request, CancellationToken cancellationToken = default)
     {
         TEntity entity = Mapper.ToEntity(request);
-        await Repository.AddAsync(entity, cancellationToken);
+        await EnsureUniqueAsync(entity, cancellationToken);
+        Repository.Add(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
         return Mapper.ToDto(entity);
     }
@@ -133,6 +143,8 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     {
         TEntity entity = await LoadAsync(id, cancellationToken);
         Mapper.Apply(request, entity);
+        await EnsureUniqueAsync(entity, cancellationToken);
+        Repository.Update(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
         return Mapper.ToDto(entity);
     }
@@ -147,31 +159,62 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
         }
 
         softDeletable.IsActive = false;
+        Repository.Update(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Filters a list query by free text. Default: no filtering.
+    /// Filters a list query by free text. Firestore has no "contains" search, so
+    /// implementations typically do a prefix match on one normalised field and
+    /// must order by that same field. Default: no filtering, default order.
     /// </summary>
-    /// <param name="query">Query to filter.</param>
+    /// <param name="query">Org-scoped query.</param>
     /// <param name="search">Trimmed, non-empty search text.</param>
-    /// <returns>The filtered query.</returns>
-    protected virtual IQueryable<TEntity> ApplySearch(IQueryable<TEntity> query, string search) => query;
+    /// <returns>The filtered, ordered query.</returns>
+    protected virtual Query ApplySearch(Query query, string search) => ApplyOrder(query);
 
     /// <summary>
-    /// Orders a list query. Default: newest first. Paging requires a stable order.
+    /// Orders a list query when not searching. Default: newest first.
+    /// Every ordering combined with the org filter needs a composite index in
+    /// <c>firestore.indexes.json</c>.
     /// </summary>
-    /// <param name="query">Query to order.</param>
+    /// <param name="query">Org-scoped query.</param>
     /// <returns>The ordered query.</returns>
-    protected virtual IOrderedQueryable<TEntity> ApplyOrder(IQueryable<TEntity> query) =>
-        query.OrderByDescending(e => e.CreatedAt).ThenBy(e => e.Id);
+    protected virtual Query ApplyOrder(Query query) =>
+        query.OrderByDescending(FirestoreNaming.Field(nameof(BaseEntity.CreatedAt)));
 
     /// <summary>
-    /// Loads a tracked entity or throws 404.
+    /// Enforces unique values before a write. Default: nothing is unique.
+    /// Override and call <see cref="RequireUniqueAsync"/> per unique field.
+    /// </summary>
+    /// <param name="entity">Entity about to be written.</param>
+    /// <param name="cancellationToken">Cancels the checks.</param>
+    /// <returns>A task that completes when all checks pass.</returns>
+    protected virtual Task EnsureUniqueAsync(TEntity entity, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
+    /// Throws 409 when another record in scope already has this value.
+    /// </summary>
+    /// <param name="entity">Entity about to be written.</param>
+    /// <param name="propertyName">C# property name, via <c>nameof</c>.</param>
+    /// <param name="value">Value that must be unique.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>A task that completes when the value is free.</returns>
+    /// <exception cref="ConflictException">The value is taken.</exception>
+    protected async Task RequireUniqueAsync(TEntity entity, string propertyName, object? value, CancellationToken cancellationToken)
+    {
+        if (await Repository.ExistsAsync(propertyName, value, entity.Id, cancellationToken))
+        {
+            throw new ConflictException(propertyName, $"Another {EntityName.ToLowerInvariant()} already uses this {propertyName.ToLowerInvariant()}.");
+        }
+    }
+
+    /// <summary>
+    /// Loads an entity or throws 404.
     /// </summary>
     /// <param name="id">Primary key.</param>
-    /// <param name="cancellationToken">Cancels the query.</param>
-    /// <returns>The tracked entity.</returns>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The entity.</returns>
     /// <exception cref="NotFoundException">Absent or out of scope.</exception>
     protected async Task<TEntity> LoadAsync(Guid id, CancellationToken cancellationToken) =>
         await Repository.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(EntityName);

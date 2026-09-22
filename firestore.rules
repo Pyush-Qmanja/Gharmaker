@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Only Platform.Api reads and writes Firestore, through the Admin SDK, which
+// bypasses these rules. Browsers and apps never talk to Firestore directly —
+// tenancy, validation and warehouse opacity (P1) are enforced in the API — so
+// every direct client request is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

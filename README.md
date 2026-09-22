@@ -6,33 +6,42 @@ logins, teams, tasks, attendance, wages, wallets).
 
 ## Run it locally
 
-Prerequisites: .NET 8 SDK, PostgreSQL 16 (or Docker).
+Prerequisites: .NET 8 SDK and a Firebase project with a Firestore database.
+Database choice: `docs/adr/0002-firestore.md`.
 
 ```powershell
-# 1. Database — either Docker…
-docker compose up -d
-#    …or a local PostgreSQL with database/user/password: platform / platform / platform_dev
-
-# 2. Local settings (git-ignored) — then set a signing key and admin password
+# 1. Local settings (git-ignored). Set Firestore:ProjectId, Firestore:CredentialsPath
+#    (service-account JSON kept OUTSIDE the repo), Jwt:SigningKey and the Seed admin.
 copy src\Platform.Api\appsettings.Development.example.json src\Platform.Api\appsettings.Development.json
 
-# 3. Tools
-dotnet tool restore
-
-# 4. API — migrates and seeds the first organisation + admin on start (Development only)
+# 2. API — seeds the first organisation + admin on first start (Development only)
 dotnet run --project src\Platform.Api --launch-profile https      # https://localhost:7261/swagger
 
-# 5. UI, in a second terminal
+# 3. UI, in a second terminal
 dotnet run --project src\Platform.Web --launch-profile https      # https://localhost:7031
 ```
 
-Sign in with the `Seed:AdminEmail` / `Seed:AdminPassword` from step 2.
+Sign in with the `Seed:AdminEmail` / `Seed:AdminPassword` from step 1.
 
-New migration after changing an entity:
+Deploy security rules and indexes after changing `firestore.rules` or
+`firestore.indexes.json`:
 
 ```powershell
-dotnet ef migrations add <Name> --project src\Platform.Api --output-dir Data\Migrations
+firebase deploy --only firestore:rules,firestore:indexes --project <project-id>
 ```
+
+### Optional: offline emulator (needs Java)
+
+The Firebase CLI's Firestore emulator lets you work without touching a real
+project. It is the only part of the setup that needs a Java runtime.
+
+```powershell
+firebase emulators:start --only firestore --project demo-platform
+# then run the API with:  Firestore__EmulatorHost=127.0.0.1:8080  Firestore__ProjectId=demo-platform
+```
+
+The emulator does not enforce composite indexes; a missing index only fails
+against the real project.
 
 ## Solution
 
@@ -48,9 +57,9 @@ src/
   Platform.Api/              Web API
     Controllers/             CrudControllerBase<> + thin per-resource controllers
     Services/                CrudService<> + per-module services, AuthService
-    Repositories/            IRepository<> (generic), IUnitOfWork
+    Repositories/            IRepository<> (generic, org-scoped), UnitOfWork (batch + audit fields)
     Mapping/                 IEntityMapper<> + per-entity mappers
-    Data/                    AppDbContext (audit + tenancy), configurations, migrations
+    Firestore/               FirestoreContext (one client), naming, DocumentConverter, seeder
     Security/                JWT issuing
   Platform.Web/              MVC UI
     Controllers/             CrudController<> + thin per-resource controllers
@@ -79,7 +88,9 @@ docs/
   blueprint.md               schema, contexts, calculations, state machines
   roadmap.md                 nine phases and their gates
   decisions-pending.md       open questions — close before Phase 0 ends
-  adr/0001-database.md       why PostgreSQL and not Firestore
+  adr/0001-database.md       PostgreSQL decision (superseded)
+  adr/0002-firestore.md       Firestore only — how conventions map, accepted costs
+firebase.json, firestore.rules, firestore.indexes.json
 ```
 
 Good prompts:

@@ -8,7 +8,7 @@ namespace Platform.Shared.Entities.Common;
 /// platform — see <c>.claude/rules/field-names.md</c>.
 /// </summary>
 /// <remarks>
-/// Audit fields are set by <c>AppDbContext.SaveChangesAsync</c>. Application
+/// Audit fields are set by <c>UnitOfWork.SaveChangesAsync</c> in the API. Application
 /// code never assigns them by hand.
 /// </remarks>
 public abstract class BaseEntity

@@ -1,4 +1,4 @@
-using Platform.Api.Data;
+using Platform.Api.Firestore;
 using Platform.Api.Extensions;
 using Platform.Api.Filters;
 
@@ -21,7 +21,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    await DbSeeder.SeedDevelopmentAsync(app.Services, app.Configuration);
+    await DevelopmentSeeder.SeedAsync(app.Services, app.Configuration);
 }
 
 app.UseHttpsRedirection();

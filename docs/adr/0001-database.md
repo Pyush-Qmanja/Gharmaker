@@ -1,6 +1,6 @@
 # ADR 0001 — Primary database
 
-**Status:** accepted · **Date:** 2026-09-23
+**Status:** superseded by ADR 0002 (Firestore) · **Date:** 2026-09-23
 
 ## Decision
 

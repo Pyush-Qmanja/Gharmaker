@@ -7,9 +7,9 @@ it compiles.
 
 | Project | Holds | Must not hold |
 | --- | --- | --- |
-| `Platform.Shared` (class library) | Entities, DTOs, FluentValidation validators, constants (`FieldLengths`, `ApiRoutes`, `ClaimNames`, `Paging`), `IdGenerator` | EF Core, ASP.NET, HTTP, anything with I/O |
-| `Platform.Api` (Web API) | Controllers, services, mappers, repositories, `AppDbContext`, migrations, JWT | Razor, UI concerns |
-| `Platform.Web` (MVC UI) | Controllers, views, view models, API client, `wwwroot` | EF Core, direct DB access. It talks **only** to `Platform.Api` |
+| `Platform.Shared` (class library) | Entities, DTOs, FluentValidation validators, constants (`FieldLengths`, `ApiRoutes`, `ClaimNames`, `Paging`), `IdGenerator` | Firestore SDK, ASP.NET, HTTP, anything with I/O |
+| `Platform.Api` (Web API) | Controllers, services, mappers, repositories, Firestore data layer (`Firestore/`), JWT | Razor, UI concerns |
+| `Platform.Web` (MVC UI) | Controllers, views, view models, API client, `wwwroot` | Firestore SDK, direct DB access. It talks **only** to `Platform.Api` |
 
 Dependencies point one way: `Api → Shared`, `Web → Shared`. `Web` never
 references `Api`.
@@ -30,11 +30,14 @@ Before writing anything, check whether one of these already does it:
 
 | Need | Use | Where |
 | --- | --- | --- |
-| Data access | `IRepository<T>` (open generic, auto-registered) | `Api/Repositories` |
-| Commit / transaction | `IUnitOfWork` | `Api/Repositories` |
+| Data access — the ONE way to read/write Firestore | `IRepository<T>` (open generic, auto-registered, org-scoped) | `Api/Repositories` |
+| Commit (atomic batch, stamps audit fields) | `IUnitOfWork` | `Api/Repositories` |
+| Collection / field name | `FirestoreNaming.Collection<T>()`, `FirestoreNaming.Field(nameof(X.Prop))` — never a literal string | `Api/Firestore` |
+| Value in a query filter | `DocumentConverter.ToFirestoreValue(value)` | `Api/Firestore` |
+| Unique value check | `RequireUniqueAsync(...)` inside `EnsureUniqueAsync` | `Api/Services/CrudService` |
 | List/get/create/update/deactivate | derive from `CrudService<...>` | `Api/Services` |
 | REST endpoints | derive from `CrudControllerBase<...>` | `Api/Controllers` |
-| Paging a query | `.ToPagedResultAsync(...)` | `Api/Common/QueryableExtensions` |
+| Paging a query | `Repository.GetPagedAsync(query, request)` | `Api/Repositories` |
 | Audit fields on DTO | `.WithAuditFrom(entity)` | `Api/Mapping/DtoMapping` |
 | Validation rules | `ValidName()`, `ValidSlug()`, `ValidEmail()`, `ValidOptionalUrl()`... | `Shared/Validation/Common/RuleBuilderExtensions` |
 | String lengths | `FieldLengths.*` — never a literal number | `Shared/Constants` |
@@ -82,9 +85,14 @@ generic helper next to them) instead.
 - Every API controller is `[Authorize]` by default (via `CrudControllerBase`).
   `[AllowAnonymous]` only on sign-in.
 - Never check a role name (P6, `permissions.md`). Capability + scope arrives in Phase 1.
-- Tenancy is automatic: `AppDbContext` filters every `IOrgScoped` query by the
-  caller's `OrgId` and stamps it on insert. `IgnoreQueryFilters()` is allowed
+- Tenancy is automatic: `Repository<T>` filters every `IOrgScoped` query and
+  lookup by the caller's `OrgId`; `UnitOfWork` stamps it on insert. Reading
+  Firestore without the repository (`IFirestoreContext` directly) is allowed
   **only** in sign-in and seeding.
+- Firestore is reached only by the API (Admin SDK). `firestore.rules` denies all
+  client access; never loosen it.
+- The service-account key file lives outside the repo; its path goes only in
+  git-ignored `appsettings.Development.json` (`Firestore:CredentialsPath`).
 - Secrets never go in `appsettings.json`. Local values go in the git-ignored
   `appsettings.Development.json` (copy `appsettings.Development.example.json`).
 
@@ -101,16 +109,17 @@ Use the same module folder name in every layer.
 3. **Shared/Validation/Catalog/** — one internal `CategoryFieldsValidator`
    built from `RuleBuilderExtensions`; create/update validators `Include` it.
 4. **Shared/Constants/ApiRoutes.cs** — add `Categories = "api/categories"`.
-5. **Api/Data/Configurations/CatalogConfigurations.cs** — lengths from
-   `FieldLengths`, unique indexes, FK to `Organisation`.
-   Add the `DbSet` to `AppDbContext`.
+5. **No schema or configuration step.** The collection (`categories`) and its
+   fields are derived from the class by `FirestoreNaming` / `DocumentConverter`.
 6. **Api/Mapping/Catalog/CategoryMapper.cs** — implement `IEntityMapper<...>`.
 7. **Api/Services/Catalog/CategoryService.cs** — derive from `CrudService<...>`;
    override `ApplySearch` / `ApplyOrder` only if needed.
 8. **Api/Controllers/Catalog/CategoriesController.cs** — derive from
    `CrudControllerBase<...>`, `[Route(ApiRoutes.Categories)]`. Usually empty.
 9. **Api/Extensions/ServiceCollectionExtensions.cs** — one `AddCrudModule<...>()` line.
-10. **Migration** — `dotnet ef migrations add AddCategories --project src/Platform.Api --output-dir Data/Migrations`.
+10. **Indexes** — add a composite index to `firestore.indexes.json` for every
+    ordering in `ApplyOrder` / `ApplySearch` (org_id first). Deploy with
+    `firebase deploy --only firestore:indexes`. Uniqueness goes in `EnsureUniqueAsync`.
 11. **Web/Controllers/CategoriesController.cs** — derive from `CrudController<...>`;
     set names, implement `ToUpdateRequest`.
 12. **Web/Views/Categories/** — `_Table.cshtml` and `_Form.cshtml` only.

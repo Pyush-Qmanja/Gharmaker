@@ -4,8 +4,6 @@ paths:
   - "src/Platform.Shared/Entities/Wallet/**/*.cs"
   - "src/Platform.Api/Services/Inventory/**/*.cs"
   - "src/Platform.Api/Services/Wallet/**/*.cs"
-  - "src/Platform.Api/Data/Configurations/InventoryConfigurations.cs"
-  - "src/Platform.Api/Data/Configurations/WalletConfigurations.cs"
 ---
 
 # Ledgers — stock and money (P2, P3, P4, P9)

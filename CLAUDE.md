@@ -14,7 +14,7 @@ Full blueprint: `docs/blueprint.md`. Read it before designing anything new.
 | Customer web, admin, warehouse portals | One ASP.NET Core MVC app (`Platform.Web`), areas per portal |
 | Supervisor and driver apps | .NET MAUI + SQLite offline store |
 | Worker view | Page in the MVC app, plus SMS |
-| Database | PostgreSQL (see `docs/adr/0001-database.md`) |
+| Database | Cloud Firestore only (see `docs/adr/0002-firestore.md`) |
 | Cache, holds, locks | Redis |
 | Push notifications | Firebase Cloud Messaging |
 | Files and images | S3 |
@@ -25,7 +25,7 @@ Full blueprint: `docs/blueprint.md`. Read it before designing anything new.
 ```
 Platform.sln
 src/Platform.Shared/   class library — entities, DTOs, validators, constants
-src/Platform.Api/      Web API — JWT, services, generic repository, EF Core
+src/Platform.Api/      Web API — JWT, services, generic repository over Firestore
 src/Platform.Web/      MVC UI — calls the API only; css/js in wwwroot
 ```
 
@@ -92,13 +92,13 @@ action, before, after, IP, device, timestamp.
 
 ## Conventions
 
-- Money: `decimal(18,4)` plus a currency code. Never `float` or `double`.
-- Quantity: `decimal(18,4)` plus a UOM code. Never a bare number (P7).
+- Money: `decimal` plus a currency code, stored as a string in Firestore. Never `float` or `double`.
+- Quantity: `decimal` plus a UOM code, stored as a string in Firestore. Never a bare number (P7).
 - Timestamps: stored UTC, rendered IST. Field records carry device and server time.
 - Primary keys: UUID v7. Never expose a sequential integer to a user.
 - Human references: `ORD-2627-004512` — prefix, financial year, sequence.
-- Tables: plural snake_case. Every business table carries `org_id`.
-- Audit columns on every table: `created_at`, `created_by`, `updated_at`, `updated_by`.
+- Collections: plural snake_case, fields snake_case (automatic). Every business document carries `org_id`.
+- Audit fields on every document: `created_at`, `created_by`, `updated_at`, `updated_by`.
 - Masters soft-delete with `is_active`. Transactions are never deleted.
 - All list endpoints paginate. All writes are idempotent by a client-supplied key.
 

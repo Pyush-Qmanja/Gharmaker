@@ -1,11 +1,14 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using Google.Api.Gax;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Platform.Api.Common;
-using Platform.Api.Data;
+using Platform.Api.Firestore;
 using Platform.Api.Mapping;
 using Platform.Api.Mapping.Catalog;
 using Platform.Api.Middleware;
@@ -29,26 +32,62 @@ namespace Platform.Api.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the database context, generic repositories and unit of work.
+    /// Registers the Firestore client (one per process), the generic
+    /// repositories and the unit of work.
     /// </summary>
     /// <param name="services">Service collection.</param>
-    /// <param name="configuration">Reads <c>ConnectionStrings:Platform</c>.</param>
+    /// <param name="configuration">Reads the <c>Firestore</c> section.</param>
     /// <returns>The service collection, for chaining.</returns>
     public static IServiceCollection AddPlatformData(this IServiceCollection services, IConfiguration configuration)
     {
-        string connectionString = configuration.GetConnectionString("Platform")
-            ?? throw new InvalidOperationException("ConnectionStrings:Platform is not configured.");
+        services.AddOptions<FirestoreOptions>()
+            .Bind(configuration.GetSection(FirestoreOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-        services.AddDbContext<AppDbContext>(options => options
-            .UseNpgsql(connectionString)
-            .UseSnakeCaseNamingConvention());
+        services.AddSingleton<IFirestoreContext>(sp =>
+            new FirestoreContext(BuildFirestoreDb(sp.GetRequiredService<IOptions<FirestoreOptions>>().Value)));
 
         services.AddSingleton(TimeProvider.System);
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // One instance per request serves as both the commit side and the staging side.
+        services.AddScoped<UnitOfWork>();
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<UnitOfWork>());
+        services.AddScoped<IChangeTracker>(sp => sp.GetRequiredService<UnitOfWork>());
         return services;
+    }
+
+    /// <summary>
+    /// Builds the Firestore client: the emulator when <see cref="FirestoreOptions.EmulatorHost"/>
+    /// is set, otherwise the real project using the service-account key file.
+    /// </summary>
+    /// <param name="options">Firestore settings.</param>
+    /// <returns>A ready client.</returns>
+    /// <exception cref="InvalidOperationException">Neither an emulator nor a key file is configured.</exception>
+    private static FirestoreDb BuildFirestoreDb(FirestoreOptions options)
+    {
+        var builder = new FirestoreDbBuilder { ProjectId = options.ProjectId };
+
+        if (!string.IsNullOrWhiteSpace(options.EmulatorHost))
+        {
+            Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", options.EmulatorHost);
+            builder.EmulatorDetection = EmulatorDetection.EmulatorOnly;
+            return builder.Build();
+        }
+
+        if (string.IsNullOrWhiteSpace(options.CredentialsPath) || !File.Exists(options.CredentialsPath))
+        {
+            throw new InvalidOperationException(
+                "Firestore:CredentialsPath must point to the service-account JSON file (or set Firestore:EmulatorHost).");
+        }
+
+        builder.GoogleCredential = CredentialFactory
+            .FromFile<ServiceAccountCredential>(options.CredentialsPath)
+            .ToGoogleCredential();
+        return builder.Build();
     }
 
     /// <summary>
@@ -120,7 +159,7 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Service collection.</param>
     /// <returns>The service collection, for chaining.</returns>
     public static IServiceCollection AddCrudModule<TEntity, TDto, TCreate, TUpdate, TMapper, TService>(this IServiceCollection services)
-        where TEntity : Platform.Shared.Entities.Common.BaseEntity
+        where TEntity : Platform.Shared.Entities.Common.BaseEntity, new()
         where TMapper : class, IEntityMapper<TEntity, TDto, TCreate, TUpdate>
         where TService : class, ICrudService<TDto, TCreate, TUpdate>
     {

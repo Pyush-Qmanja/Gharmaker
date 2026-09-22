@@ -4,15 +4,16 @@
 spelled the same in every entity, DTO, request, view model, view, JSON body,
 and database column. Never invent a synonym.
 
-C# uses PascalCase; the database column is the snake_case of the same name
-(automatic, via `UseSnakeCaseNamingConvention`). JSON is camelCase of the same
-name (automatic). So choosing the C# name decides all three.
+C# uses PascalCase; the Firestore field is the snake_case of the same name
+(automatic, via `FirestoreNaming.Field`) and the collection is its plural
+(`Brand` → `brands`). JSON is camelCase of the same name (automatic). So
+choosing the C# name decides all of them.
 
 ## Canonical names
 
-| Concept | C# property | Column | Type | Never use |
+| Concept | C# property | Firestore field | Type | Never use |
 | --- | --- | --- | --- | --- |
-| Primary key | `Id` | `id` | `Guid` (UUID v7 via `IdGenerator`) | `BrandId` as own key, `Key`, `Code` as PK, `int` ids |
+| Primary key | `Id` | document id (not a field) | `Guid` (UUID v7 via `IdGenerator`) | `BrandId` as own key, `Key`, `Code` as PK, `int` ids |
 | Reference to another row | `<Entity>Id` | `<entity>_id` | `Guid` | `BrandRef`, `FkBrand`, `Brand_Id` |
 | Organisation / tenant | `OrgId` | `org_id` | `Guid` | `OrganisationId`, `TenantId`, `CompanyId` |
 | When created | `CreatedAt` | `created_at` | `DateTime` (UTC) | `CreatedOn`, `CreatedDate`, `DateCreated`, `InsertedAt`, `AddedOn` |
@@ -51,7 +52,7 @@ append-only, so creation time is the movement time).
 ## How the audit fields get set
 
 `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` and `OrgId` are declared
-once on `BaseEntity` / `IOrgScoped` and stamped by `AppDbContext` on save.
+once on `BaseEntity` / `IOrgScoped` and stamped by `UnitOfWork.SaveChangesAsync` on commit.
 Never declare them again on an entity, and never assign them in a service,
 mapper or controller. Read DTOs inherit them from `EntityDto`.
 
