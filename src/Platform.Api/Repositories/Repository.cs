@@ -20,6 +20,9 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
     /// <summary>Stored name of <see cref="IOrgScoped.OrgId"/>.</summary>
     private static readonly string OrgIdField = FirestoreNaming.Field(nameof(IOrgScoped.OrgId));
 
+    /// <summary>Firestore limit on values in one "in" filter.</summary>
+    private const int MaxInFilterValues = 30;
+
     private readonly CollectionReference _collection;
     private readonly ICurrentUser _currentUser;
     private readonly IChangeTracker _changeTracker;
@@ -61,6 +64,20 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
 
         TEntity entity = DocumentConverter.FromDocument<TEntity>(snapshot);
         return IsInScope(entity) ? entity : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TEntity>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var results = new List<TEntity>();
+
+        // Firestore's "in" filter accepts at most 30 values per query.
+        foreach (string[] chunk in ids.Distinct().Select(id => id.ToString()).Chunk(MaxInFilterValues))
+        {
+            results.AddRange(await ListAsync(Query().WhereIn(FieldPath.DocumentId, chunk), cancellationToken));
+        }
+
+        return results;
     }
 
     /// <inheritdoc />

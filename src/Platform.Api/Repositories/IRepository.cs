@@ -36,6 +36,15 @@ public interface IRepository<TEntity> where TEntity : BaseEntity, new()
     Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Loads several entities by key. Ids that are absent or outside the
+    /// caller's organisation are simply not returned.
+    /// </summary>
+    /// <param name="ids">Primary keys; duplicates are ignored.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>The entities found, in no particular order.</returns>
+    Task<IReadOnlyList<TEntity>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Runs a query built from <see cref="Query"/> and returns every match.
     /// Always add a <c>Limit</c> for anything that can grow.
     /// </summary>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Platform.Api.Security.Authorization;
 using Platform.Api.Services;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
@@ -10,6 +11,7 @@ namespace Platform.Api.Controllers.Catalog;
 /// <see cref="CrudControllerBase{TDto,TCreate,TUpdate}"/>.
 /// </summary>
 [Route(ApiRoutes.Brands)]
+[CrudCapabilities(Capabilities.BrandsView, Capabilities.BrandsManage)]
 public sealed class BrandsController : CrudControllerBase<BrandDto, CreateBrandRequest, UpdateBrandRequest>
 {
     /// <summary>

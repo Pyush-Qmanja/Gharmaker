@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
 using FirebaseAdmin;
@@ -11,15 +12,20 @@ using Microsoft.OpenApi.Models;
 using Platform.Api.Common;
 using Platform.Api.Firestore;
 using Platform.Api.Mapping;
+using Platform.Api.Controllers;
 using Platform.Api.Mapping.Catalog;
+using Platform.Api.Mapping.Identity;
 using Platform.Api.Middleware;
 using Platform.Api.Repositories;
 using Platform.Api.Security;
+using Platform.Api.Security.Authorization;
 using Platform.Api.Services;
 using Platform.Api.Services.Auth;
 using Platform.Api.Services.Catalog;
+using Platform.Api.Services.Identity;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
+using Platform.Shared.Dtos.Identity;
 using Platform.Shared.Entities.Catalog;
 using Platform.Shared.Entities.Identity;
 using Platform.Shared.Validation.Common;
@@ -169,6 +175,8 @@ public static class ServiceCollectionExtensions
             });
 
         services.AddAuthorization();
+        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IAuthorizationHandler, CapabilityAuthorizationHandler>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddHttpClient<IIdentityProvider, FirebaseIdentityProvider>();
         services.AddScoped<IAuthService, AuthService>();
@@ -186,8 +194,50 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
         services.AddCrudModule<Brand, BrandDto, CreateBrandRequest, UpdateBrandRequest, BrandMapper, BrandService>();
+        services.AddCrudModule<Role, RoleDto, CreateRoleRequest, UpdateRoleRequest, RoleMapper, RoleService>();
+        services.AddCrudModule<User, UserDto, CreateUserRequest, UpdateUserRequest, UserMapper, UserService>();
+
+        EnsureCrudControllersDeclareCapabilities();
 
         return services;
+    }
+
+    /// <summary>
+    /// Fails startup if any CRUD controller lacks <see cref="CrudCapabilitiesAttribute"/>,
+    /// so no resource can ship guarded only by "signed in" (P6).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">An unguarded CRUD controller exists.</exception>
+    private static void EnsureCrudControllersDeclareCapabilities()
+    {
+        string[] unguarded = typeof(CrudControllerBase<,,>).Assembly.GetTypes()
+            .Where(t => !t.IsAbstract && IsCrudController(t))
+            .Where(t => t.GetCustomAttributes(typeof(CrudCapabilitiesAttribute), inherit: true).Length == 0)
+            .Select(t => t.Name)
+            .ToArray();
+
+        if (unguarded.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"CRUD controllers missing [CrudCapabilities]: {string.Join(", ", unguarded)}.");
+        }
+    }
+
+    /// <summary>
+    /// Checks whether a type derives from <see cref="CrudControllerBase{TDto,TCreate,TUpdate}"/>.
+    /// </summary>
+    /// <param name="type">Type to test.</param>
+    /// <returns>True for CRUD controllers.</returns>
+    private static bool IsCrudController(Type type)
+    {
+        for (Type? current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            if (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(CrudControllerBase<,,>))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

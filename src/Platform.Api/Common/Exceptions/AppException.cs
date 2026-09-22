@@ -29,6 +29,36 @@ public abstract class AppException : Exception
 }
 
 /// <summary>
+/// A field's value is well-formed but refers to something that does not exist
+/// or cannot be used (e.g. an unknown role id). Returned as a 400 with the
+/// message on that field, like a validation error.
+/// </summary>
+public sealed class FieldValidationException : AppException
+{
+    private readonly string _field;
+
+    /// <summary>
+    /// Creates the exception for one field.
+    /// </summary>
+    /// <param name="field">C# property name of the invalid field.</param>
+    /// <param name="message">Safe-to-show message.</param>
+    public FieldValidationException(string field, string message) : base(message)
+    {
+        _field = field;
+    }
+
+    /// <inheritdoc />
+    public override int StatusCode => StatusCodes.Status400BadRequest;
+
+    /// <inheritdoc />
+    public override string Title => "One or more validation errors occurred.";
+
+    /// <inheritdoc />
+    public override IDictionary<string, string[]> FieldErrors =>
+        new Dictionary<string, string[]> { [_field] = new[] { Message } };
+}
+
+/// <summary>
 /// A value that must be unique is already used by another record. Firestore
 /// has no unique indexes, so services raise this after an existence check.
 /// </summary>

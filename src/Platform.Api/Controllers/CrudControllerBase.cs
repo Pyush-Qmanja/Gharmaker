@@ -11,8 +11,9 @@ namespace Platform.Api.Controllers;
 /// delete with consistent status codes and no repeated code.
 /// </summary>
 /// <remarks>
-/// Authorisation: requires an authenticated caller. Capability + scope checks
-/// (P6) are added in Phase 1 via <c>[RequiresCapability]</c> — never by role name.
+/// Authorisation: requires an authenticated caller here, and every derived
+/// controller MUST add <c>[CrudCapabilities(view, manage)]</c> (P6) — never a role name.
+/// Scope checks belong in the service for scoped resources (return 404 when out of scope).
 /// </remarks>
 /// <typeparam name="TDto">Read model.</typeparam>
 /// <typeparam name="TCreate">Create request body.</typeparam>

@@ -1,6 +1,7 @@
 using Platform.Api.Firestore;
 using Platform.Api.Extensions;
 using Platform.Api.Filters;
+using Platform.Shared.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,9 @@ builder.Services
     .AddPlatformErrorHandling()
     .AddPlatformSwagger();
 
-builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
+builder.Services
+    .AddControllers(options => options.Filters.Add<ValidationFilter>())
+    .AddJsonOptions(options => JsonDefaults.Apply(options.JsonSerializerOptions));
 
 var app = builder.Build();
 

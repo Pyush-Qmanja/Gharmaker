@@ -37,4 +37,17 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken) =>
         Ok(await _authService.LoginAsync(request, cancellationToken));
+
+    /// <summary>
+    /// Returns the signed-in caller and the capabilities they hold right now.
+    /// The UI uses this to decide which menus to show.
+    /// </summary>
+    /// <param name="cancellationToken">Aborted when the client disconnects.</param>
+    /// <returns>200 with the caller, or 401 when the token is missing or expired, or the user is inactive.</returns>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<CurrentUserResponse>> Me(CancellationToken cancellationToken) =>
+        Ok(await _authService.GetCurrentUserAsync(cancellationToken));
 }

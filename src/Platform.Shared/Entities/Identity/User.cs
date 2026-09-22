@@ -27,6 +27,12 @@ public class User : BaseEntity, IOrgScoped, ISoftDeletable
     /// </summary>
     public string AuthUid { get; set; } = string.Empty;
 
+    /// <summary>Roles held; the user's capabilities are the union of their active roles.</summary>
+    public List<Guid> RoleIds { get; set; } = new();
+
+    /// <summary>Where the user's capabilities apply (P6). Empty means nowhere.</summary>
+    public List<ScopeGrant> Scopes { get; set; } = new();
+
     /// <inheritdoc />
     public bool IsActive { get; set; } = true;
 }

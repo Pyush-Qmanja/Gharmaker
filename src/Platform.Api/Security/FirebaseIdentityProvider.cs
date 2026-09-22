@@ -2,7 +2,9 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using FirebaseAdmin.Auth;
 using Microsoft.Extensions.Options;
+using Platform.Api.Common.Exceptions;
 using Platform.Api.Firestore;
+using Platform.Shared.Dtos.Identity;
 
 namespace Platform.Api.Security;
 
@@ -31,6 +33,34 @@ public interface IIdentityProvider
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The account's uid.</returns>
     Task<string> EnsureAccountAsync(string email, string password, string displayName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a new sign-in account.
+    /// </summary>
+    /// <param name="email">Normalised email.</param>
+    /// <param name="password">Initial password.</param>
+    /// <param name="displayName">Display name.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The new account's uid.</returns>
+    /// <exception cref="Common.Exceptions.ConflictException">The email already has an account.</exception>
+    Task<string> CreateAccountAsync(string email, string password, string displayName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enables or disables sign-in for an account.
+    /// </summary>
+    /// <param name="authUid">Account uid.</param>
+    /// <param name="disabled">True to block sign-in.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task that completes when applied.</returns>
+    Task SetDisabledAsync(string authUid, bool disabled, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes an account. Used only to undo a creation whose platform user could not be saved.
+    /// </summary>
+    /// <param name="authUid">Account uid.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task that completes when deleted.</returns>
+    Task DeleteAccountAsync(string authUid, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -104,6 +134,30 @@ public sealed class FirebaseIdentityProvider : IIdentityProvider
             return created.Uid;
         }
     }
+
+    /// <inheritdoc />
+    public async Task<string> CreateAccountAsync(string email, string password, string displayName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            UserRecord created = await _firebaseAuth.CreateUserAsync(
+                new UserRecordArgs { Email = email, Password = password, DisplayName = displayName, EmailVerified = false },
+                cancellationToken);
+            return created.Uid;
+        }
+        catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.EmailAlreadyExists)
+        {
+            throw new ConflictException(nameof(CreateUserRequest.Email), "This email already has an account.");
+        }
+    }
+
+    /// <inheritdoc />
+    public Task SetDisabledAsync(string authUid, bool disabled, CancellationToken cancellationToken = default) =>
+        _firebaseAuth.UpdateUserAsync(new UserRecordArgs { Uid = authUid, Disabled = disabled }, cancellationToken);
+
+    /// <inheritdoc />
+    public Task DeleteAccountAsync(string authUid, CancellationToken cancellationToken = default) =>
+        _firebaseAuth.DeleteUserAsync(authUid, cancellationToken);
 
     /// <summary>
     /// Builds the sign-in URL for production or the emulator.

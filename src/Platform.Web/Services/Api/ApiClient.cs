@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using Platform.Shared.Common;
 
 namespace Platform.Web.Services.Api;
 
@@ -76,14 +77,14 @@ public sealed class ApiClient : IApiClient
     /// <inheritdoc />
     public async Task<ApiResult<TResponse>> PostAsync<TRequest, TResponse>(string path, TRequest body, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync(path, body, cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync(path, body, JsonDefaults.Options, cancellationToken);
         return await ReadAsync<TResponse>(response, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<ApiResult<TResponse>> PutAsync<TRequest, TResponse>(string path, TRequest body, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync(path, body, cancellationToken);
+        using var response = await _httpClient.PutAsJsonAsync(path, body, JsonDefaults.Options, cancellationToken);
         return await ReadAsync<TResponse>(response, cancellationToken);
     }
 
@@ -111,7 +112,7 @@ public sealed class ApiClient : IApiClient
             return await ReadErrorAsync<T>(response, cancellationToken);
         }
 
-        T? value = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+        T? value = await response.Content.ReadFromJsonAsync<T>(JsonDefaults.Options, cancellationToken);
         return new ApiResult<T> { StatusCode = response.StatusCode, Value = value };
     }
 
@@ -130,7 +131,7 @@ public sealed class ApiClient : IApiClient
         {
             try
             {
-                problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(cancellationToken);
+                problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(JsonDefaults.Options, cancellationToken);
             }
             catch (System.Text.Json.JsonException)
             {

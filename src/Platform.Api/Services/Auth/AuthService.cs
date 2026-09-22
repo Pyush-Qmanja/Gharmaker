@@ -1,7 +1,10 @@
 using Google.Cloud.Firestore;
+using Platform.Api.Common;
 using Platform.Api.Common.Exceptions;
 using Platform.Api.Firestore;
+using Platform.Api.Repositories;
 using Platform.Api.Security;
+using Platform.Api.Security.Authorization;
 using Platform.Shared.Dtos.Auth;
 using Platform.Shared.Entities.Identity;
 
@@ -20,6 +23,14 @@ public interface IAuthService
     /// <returns>The token and the signed-in user's details.</returns>
     /// <exception cref="AuthenticationFailedException">Wrong credentials, disabled account, no platform user, or inactive user or organisation.</exception>
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Describes the signed-in caller and their current capabilities.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>The caller.</returns>
+    /// <exception cref="AuthenticationFailedException">The user no longer exists or is inactive.</exception>
+    Task<CurrentUserResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -37,6 +48,9 @@ public sealed class AuthService : IAuthService
     private readonly IFirestoreContext _context;
     private readonly IIdentityProvider _identityProvider;
     private readonly ITokenService _tokenService;
+    private readonly IRepository<User> _users;
+    private readonly IPermissionService _permissions;
+    private readonly ICurrentUser _currentUser;
 
     /// <summary>
     /// Creates the service.
@@ -44,11 +58,43 @@ public sealed class AuthService : IAuthService
     /// <param name="context">Database entry point.</param>
     /// <param name="identityProvider">Verifies the password (Firebase Authentication).</param>
     /// <param name="tokenService">Issues the JWT.</param>
-    public AuthService(IFirestoreContext context, IIdentityProvider identityProvider, ITokenService tokenService)
+    /// <param name="users">Org-scoped user access, for the current caller.</param>
+    /// <param name="permissions">Current caller's capabilities.</param>
+    /// <param name="currentUser">Caller identity from the token.</param>
+    public AuthService(
+        IFirestoreContext context,
+        IIdentityProvider identityProvider,
+        ITokenService tokenService,
+        IRepository<User> users,
+        IPermissionService permissions,
+        ICurrentUser currentUser)
     {
         _context = context;
         _identityProvider = identityProvider;
         _tokenService = tokenService;
+        _users = users;
+        _permissions = permissions;
+        _currentUser = currentUser;
+    }
+
+    /// <inheritdoc />
+    public async Task<CurrentUserResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default)
+    {
+        User? user = _currentUser.UserId is { } id ? await _users.GetByIdAsync(id, cancellationToken) : null;
+        if (user is null || !user.IsActive)
+        {
+            throw new AuthenticationFailedException();
+        }
+
+        IReadOnlySet<string> capabilities = await _permissions.GetCapabilitiesAsync(cancellationToken);
+        return new CurrentUserResponse
+        {
+            UserId = user.Id,
+            OrgId = user.OrgId,
+            Name = user.Name,
+            Email = user.Email,
+            Capabilities = capabilities.Order(StringComparer.Ordinal).ToList(),
+        };
     }
 
     /// <inheritdoc />
