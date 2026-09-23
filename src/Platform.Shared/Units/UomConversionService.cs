@@ -83,13 +83,35 @@ public sealed class UomConversionService : IUomConversionService
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Order: the base unit, then the SKU's own conversions as listed, then the
+    /// remaining standard units from smallest to largest (ties by code), so the
+    /// list is the same every time whatever order the units were loaded in.
+    /// </remarks>
     public IReadOnlyList<(string Uom, decimal BaseUnitsPerOne)> ReachableUnits(SkuUnits sku)
     {
-        var reachable = new List<(string, decimal)>();
-        foreach (string code in new[] { sku.BaseUom }
-                     .Concat(sku.Conversions.Select(c => c.Uom))
-                     .Concat(_units.Keys)
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        List<string> own = new[] { sku.BaseUom }
+            .Concat(sku.Conversions.Select(c => c.Uom))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        List<(string Uom, decimal BaseUnitsPerOne)> reachable = Reach(own, sku);
+        reachable.AddRange(Reach(_units.Keys.Except(own, StringComparer.OrdinalIgnoreCase), sku)
+            .OrderBy(u => u.BaseUnitsPerOne)
+            .ThenBy(u => u.Uom, StringComparer.Ordinal));
+        return reachable;
+    }
+
+    /// <summary>
+    /// Keeps the units that can reach the SKU's base unit, with their factors.
+    /// </summary>
+    /// <param name="codes">Candidate unit codes.</param>
+    /// <param name="sku">The SKU's units.</param>
+    /// <returns>Reachable units in the order given.</returns>
+    private List<(string Uom, decimal BaseUnitsPerOne)> Reach(IEnumerable<string> codes, SkuUnits sku)
+    {
+        var reachable = new List<(string Uom, decimal BaseUnitsPerOne)>();
+        foreach (string code in codes)
         {
             if (BaseUnitsPerOne(code, sku) is { } perOne)
             {

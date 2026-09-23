@@ -6,6 +6,7 @@ using Platform.Api.Mapping;
 using Platform.Api.Repositories;
 using Platform.Api.Security;
 using Platform.Api.Security.Authorization;
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Common;
 using Platform.Shared.Dtos.Identity;
 using Platform.Shared.Entities.Identity;
@@ -35,7 +36,7 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     /// <param name="roles">Role data access, to validate assigned roles.</param>
     /// <param name="identityProvider">Firebase Authentication account management.</param>
     /// <param name="currentUser">Caller, to stop self-deactivation.</param>
-    /// <param name="permissions">Caller's scopes, to stop granting access they do not hold.</param>
+    /// <param name="permissions">Caller's access, to stop granting access they do not hold.</param>
     /// <param name="warehouses">Warehouse data access, to validate warehouse scopes.</param>
     public UserService(
         IRepository<User> repository,
@@ -65,7 +66,7 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     public override async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
         await EnsureRolesUsableAsync(request.RoleIds, cancellationToken);
-        await EnsureScopeChangesAllowedAsync(request.Scopes, Array.Empty<ScopeGrant>(), cancellationToken);
+        await EnsureAccessChangesAllowedAsync(request, new User(), cancellationToken);
 
         User entity = Mapper.ToEntity(request);
         entity.AuthUid = await _identityProvider.CreateAccountAsync(entity.Email, request.Password, entity.Name, cancellationToken);
@@ -103,7 +104,7 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
         }
 
         await EnsureRolesUsableAsync(request.RoleIds.Except(entity.RoleIds), cancellationToken);
-        await EnsureScopeChangesAllowedAsync(request.Scopes, entity.Scopes, cancellationToken);
+        await EnsureAccessChangesAllowedAsync(request, entity, cancellationToken);
 
         Mapper.Apply(request, entity);
         Repository.Update(entity);
@@ -176,47 +177,183 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     }
 
     /// <summary>
-    /// Checks every scope grant being added or removed: the caller must hold that
-    /// scope themselves (a global grant needs a global caller), and the object it
-    /// names must exist in the organisation. Unchanged grants are not re-checked.
+    /// Checks every change to a user's access before it is saved, so nobody can
+    /// hand out (or take away) more than they hold themselves:
+    /// <list type="bullet">
+    /// <item>a role scope being added or removed must be one where the caller manages users;</item>
+    /// <item>anything a newly given role or role scope would grant (each capability in each
+    /// place) must be held by the caller there — so nobody can hand out the Administrator role
+    /// without being an administrator;</item>
+    /// <item>a feature access grant (capability in a place) being added or removed must be
+    /// one the caller holds in that same place;</item>
+    /// <item>every warehouse named must exist in the organisation.</item>
+    /// </list>
+    /// Unchanged grants are not re-checked, so an editor with less access can
+    /// still edit a user's profile without losing that user's other access.
     /// </summary>
-    /// <param name="requested">Scopes in the request.</param>
-    /// <param name="current">Scopes the user holds now (empty when creating).</param>
+    /// <param name="request">Requested roles scopes and feature access.</param>
+    /// <param name="current">The user as stored (a blank user when creating).</param>
     /// <param name="cancellationToken">Cancels the checks.</param>
     /// <returns>A task that completes when every change is allowed.</returns>
-    /// <exception cref="ForbiddenException">The caller does not hold a scope being changed.</exception>
-    /// <exception cref="FieldValidationException">A scope names an unknown object or an unsupported type.</exception>
-    private async Task EnsureScopeChangesAllowedAsync(
-        IEnumerable<ScopeGrantDto> requested, IEnumerable<ScopeGrant> current, CancellationToken cancellationToken)
+    /// <exception cref="ForbiddenException">The caller does not hold something being changed.</exception>
+    /// <exception cref="FieldValidationException">A scope names an unknown warehouse or an unsupported type.</exception>
+    private async Task EnsureAccessChangesAllowedAsync(IUserFields request, User current, CancellationToken cancellationToken)
     {
-        var wanted = requested.Select(s => (s.ScopeType, s.ScopeId)).ToHashSet();
-        var held = current.Select(s => (s.ScopeType, s.ScopeId)).ToHashSet();
-        var changed = wanted.Except(held).Concat(held.Except(wanted)).ToList();
-
-        foreach (var (scopeType, scopeId) in changed)
+        var wantedScopes = request.Scopes.Select(s => (s.ScopeType, s.ScopeId)).ToHashSet();
+        var heldScopes = current.Scopes.Select(s => (s.ScopeType, s.ScopeId)).ToHashSet();
+        foreach (var (scopeType, scopeId) in wantedScopes.Except(heldScopes).Concat(heldScopes.Except(wantedScopes)))
         {
-            bool callerHolds = scopeType == ScopeType.Global
-                ? await _permissions.GetScopeIdsAsync(ScopeType.Global, cancellationToken) is null
-                : await _permissions.CoversAsync(scopeType, scopeId!.Value, cancellationToken);
-            if (!callerHolds)
+            if (!await CallerHoldsAsync(Capabilities.UsersManage, scopeType, scopeId, cancellationToken))
             {
-                throw new ForbiddenException("You can only grant or remove scopes you hold yourself.");
+                throw new ForbiddenException("You can only give or remove role scopes where you manage users yourself.");
             }
         }
 
-        List<Guid> newWarehouseIds = wanted.Except(held)
-            .Where(s => s.ScopeType == ScopeType.Warehouse)
-            .Select(s => s.ScopeId!.Value)
+        HashSet<AccessGrant> wantedRoleGrants = ExpandRoles(await ActiveRolesAsync(request.RoleIds, cancellationToken), wantedScopes);
+        HashSet<AccessGrant> heldRoleGrants = ExpandRoles(await ActiveRolesAsync(current.RoleIds, cancellationToken), heldScopes);
+        foreach (AccessGrant grant in wantedRoleGrants.Except(heldRoleGrants))
+        {
+            if (!await CallerHoldsAsync(grant, cancellationToken))
+            {
+                throw new ForbiddenException("You can only give roles whose access you hold yourself, in the places they would apply.");
+            }
+        }
+
+        List<FeatureAccessDto> wantedAccess = UserFieldsNormaliser.Normalise(request.Access);
+        HashSet<AccessGrant> wantedGrants = ExpandAccess(wantedAccess.Select(a => (a.Feature, a.Level, a.Scopes.Select(s => (s.ScopeType, s.ScopeId)))));
+        HashSet<AccessGrant> heldGrants = ExpandAccess(current.Access.Select(a => (a.Feature, a.Level, a.Scopes.Select(s => (s.ScopeType, s.ScopeId)))));
+        foreach (AccessGrant grant in wantedGrants.Except(heldGrants).Concat(heldGrants.Except(wantedGrants)))
+        {
+            if (!await CallerHoldsAsync(grant, cancellationToken))
+            {
+                throw new ForbiddenException("You can only give or remove access you hold yourself, in the same places.");
+            }
+        }
+
+        var newScopes = wantedScopes.Except(heldScopes)
+            .Concat(wantedGrants.Except(heldGrants).Where(g => g.ScopeType.HasValue).Select(g => (g.ScopeType!.Value, g.ScopeId)))
+            .ToList();
+
+        if (newScopes.Any(s => s.Item1 is not (ScopeType.Global or ScopeType.Warehouse)))
+        {
+            throw new FieldValidationException(nameof(IUserFields.Scopes), "Only global and warehouse scopes are available so far.");
+        }
+
+        List<Guid> newWarehouseIds = newScopes
+            .Where(s => s.Item1 == ScopeType.Warehouse)
+            .Select(s => s.Item2!.Value)
+            .Distinct()
             .ToList();
         if (newWarehouseIds.Count > 0
             && (await _warehouses.GetByIdsAsync(newWarehouseIds, cancellationToken)).Count != newWarehouseIds.Count)
         {
             throw new FieldValidationException(nameof(IUserFields.Scopes), "One or more warehouses do not exist.");
         }
+    }
 
-        if (wanted.Except(held).Any(s => s.ScopeType is not (ScopeType.Global or ScopeType.Warehouse)))
+    /// <summary>
+    /// Checks whether the caller holds a capability in one place: everywhere
+    /// for a global scope, or covering that object otherwise.
+    /// </summary>
+    /// <param name="capability">Capability code.</param>
+    /// <param name="scopeType">Kind of place.</param>
+    /// <param name="scopeId">The object, or null for global.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>True when the caller holds it there.</returns>
+    private async Task<bool> CallerHoldsAsync(string capability, ScopeType scopeType, Guid? scopeId, CancellationToken cancellationToken) =>
+        scopeType == ScopeType.Global
+            ? await _permissions.HasGlobalAsync(capability, cancellationToken)
+            : await _permissions.CoversAsync(capability, scopeType, scopeId!.Value, cancellationToken);
+
+    /// <summary>
+    /// Checks whether the caller holds one grant: the capability anywhere for an
+    /// organisation-wide feature, or in the grant's place otherwise.
+    /// </summary>
+    /// <param name="grant">Grant being given or removed.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>True when the caller holds it.</returns>
+    private async Task<bool> CallerHoldsAsync(AccessGrant grant, CancellationToken cancellationToken) =>
+        grant.ScopeType is { } type
+            ? await CallerHoldsAsync(grant.Capability, type, grant.ScopeId, cancellationToken)
+            : await _permissions.HasCapabilityAsync(grant.Capability, cancellationToken);
+
+    /// <summary>
+    /// Loads the active roles among some ids.
+    /// </summary>
+    /// <param name="roleIds">Role ids.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>The active roles found.</returns>
+    private async Task<IReadOnlyList<Role>> ActiveRolesAsync(IEnumerable<Guid> roleIds, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = roleIds.Distinct().ToList();
+        return ids.Count == 0
+            ? Array.Empty<Role>()
+            : (await _roles.GetByIdsAsync(ids, cancellationToken)).Where(r => r.IsActive).ToList();
+    }
+
+    /// <summary>
+    /// Flattens roles into individual grants: each capability of each role, in
+    /// each of the user's role scopes (once, for organisation-wide features).
+    /// </summary>
+    /// <param name="roles">Active roles.</param>
+    /// <param name="scopes">Where the roles apply.</param>
+    /// <returns>The grants.</returns>
+    private static HashSet<AccessGrant> ExpandRoles(IEnumerable<Role> roles, IReadOnlyCollection<(ScopeType, Guid?)> scopes)
+    {
+        var grants = new HashSet<AccessGrant>();
+        foreach (string capability in roles.SelectMany(r => r.Capabilities))
         {
-            throw new FieldValidationException(nameof(IUserFields.Scopes), "Only global and warehouse scopes are available so far.");
+            AddGrants(grants, capability, Features.OfCapability(capability), scopes);
+        }
+
+        return grants;
+    }
+
+    /// <summary>
+    /// Flattens feature access rows into individual grants — one per capability
+    /// per place — so two versions can be compared grant by grant.
+    /// </summary>
+    /// <param name="rows">Feature, level and scopes of each row.</param>
+    /// <returns>The grants; organisation-wide features give grants with no scope.</returns>
+    private static HashSet<AccessGrant> ExpandAccess(IEnumerable<(string Feature, AccessLevel Level, IEnumerable<(ScopeType, Guid?)> Scopes)> rows)
+    {
+        var grants = new HashSet<AccessGrant>();
+        foreach (var (code, level, scopes) in rows)
+        {
+            if (Features.Find(code) is not { } feature)
+            {
+                continue;
+            }
+
+            List<(ScopeType, Guid?)> places = scopes.ToList();
+            foreach (string capability in feature.CapabilitiesFor(level))
+            {
+                AddGrants(grants, capability, feature, places);
+            }
+        }
+
+        return grants;
+    }
+
+    /// <summary>
+    /// Adds one capability's grants: a single place-less grant for an
+    /// organisation-wide feature, otherwise one per place.
+    /// </summary>
+    /// <param name="grants">Set being built.</param>
+    /// <param name="capability">Capability code.</param>
+    /// <param name="feature">Its feature, or null when unknown (treated as organisation-wide).</param>
+    /// <param name="places">Where it applies.</param>
+    private static void AddGrants(HashSet<AccessGrant> grants, string capability, FeatureInfo? feature, IEnumerable<(ScopeType, Guid?)> places)
+    {
+        if (feature is not { IsScoped: true })
+        {
+            grants.Add(new AccessGrant(capability, null, null));
+            return;
+        }
+
+        foreach (var (scopeType, scopeId) in places)
+        {
+            grants.Add(new AccessGrant(capability, scopeType, scopeId));
         }
     }
 
@@ -232,4 +369,12 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
             throw new BusinessRuleException("You cannot deactivate your own account.");
         }
     }
+
+    /// <summary>
+    /// One capability in one place, as granted by a feature access row.
+    /// </summary>
+    /// <param name="Capability">Capability code.</param>
+    /// <param name="ScopeType">Kind of place; null for an organisation-wide feature.</param>
+    /// <param name="ScopeId">The object; null for global or organisation-wide.</param>
+    private sealed record AccessGrant(string Capability, ScopeType? ScopeType, Guid? ScopeId);
 }

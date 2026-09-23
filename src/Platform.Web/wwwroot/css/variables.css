@@ -1,52 +1,154 @@
 /*
- * Design tokens. Every colour, spacing, radius and font size used by the UI
- * is defined here once. site.css only ever refers to these variables, so a
- * theme change is an edit to this file alone.
+ * Design tokens. Every colour, spacing, radius, shadow and font size used by
+ * the UI is defined here once. The other stylesheets only ever refer to these
+ * variables, so a theme change is an edit to this file alone.
  */
 :root {
+    /* Type */
+    /* System fonts only (no CDN): Inter is used when installed, otherwise Segoe UI / SF / Roboto. */
+    --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --font-size-2xs: 0.6875rem;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.8125rem;
+    --font-size-base: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.375rem;
+    --font-size-2xl: 1.75rem;
+    --font-size-3xl: 2.25rem;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --line-height-tight: 1.25;
+    --line-height-base: 1.5;
+    --letter-spacing-caps: 0.06em;
+
     /* Brand */
-    --color-primary: #1f4e79;
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-primary-active: #1e40af;
+    --color-primary-soft: #eff4ff;
+    --color-primary-soft-border: #c7d7fe;
     --color-primary-contrast: #ffffff;
-    --color-accent: #e8a33d;
+    --color-accent: #f59e0b;
+    --color-accent-soft: #fff7e6;
+    --color-focus-ring: rgba(37, 99, 235, 0.28);
 
     /* Surfaces and text */
-    --color-page: #f4f6f8;
+    --color-page: #f5f6f8;
     --color-surface: #ffffff;
-    --color-border: #dde2e7;
-    --color-text: #1d2730;
-    --color-text-muted: #5f6b76;
+    --color-surface-muted: #f9fafb;
+    --color-surface-hover: #f3f4f6;
+    --color-border: #e5e7eb;
+    --color-border-strong: #d0d5dd;
+    --color-text: #101828;
+    --color-text-secondary: #344054;
+    --color-text-muted: #667085;
+    --color-text-subtle: #98a2b3;
+
+    /* Sidebar */
+    --color-sidebar: #0f172a;
+    --color-sidebar-border: #1e293b;
+    --color-sidebar-text: #cbd5e1;
+    --color-sidebar-muted: #64748b;
+    --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+    --color-sidebar-active: rgba(255, 255, 255, 0.1);
+    --color-sidebar-active-text: #ffffff;
+
+    /* Top bar and mobile overlay */
+    --color-topbar: rgba(255, 255, 255, 0.92);
+    --color-overlay: rgba(15, 23, 42, 0.45);
+
+    /* Auth panel */
+    --color-auth-ring: rgba(255, 255, 255, 0.04);
+    --color-auth-check-bg: rgba(245, 158, 11, 0.16);
+    --color-auth-panel-start: #0f172a;
+    --color-auth-panel-end: #1e3a8a;
 
     /* Status */
-    --color-success: #1e7b4d;
-    --color-success-bg: #e3f4ea;
+    --color-success: #067647;
+    --color-success-bg: #ecfdf3;
+    --color-success-border: #abefc6;
+    --color-success-dot: #17b26a;
     --color-danger: #b42318;
-    --color-danger-bg: #fdecea;
-    --color-chip-bg: #eef2f6;
-    --color-info: #1d5fa8;
-    --color-info-bg: #e5effa;
-    --color-warning: #8a5a00;
-    --color-warning-bg: #fdf1dc;
-    --color-row-error-bg: #fff6f5;
+    --color-danger-hover: #912018;
+    --color-danger-bg: #fef3f2;
+    --color-danger-border: #fecdca;
+    --color-danger-dot: #f04438;
+    --color-warning: #b54708;
+    --color-warning-bg: #fffaeb;
+    --color-warning-border: #fedf89;
+    --color-info: #175cd3;
+    --color-info-bg: #eff8ff;
+    --color-info-border: #b2ddff;
+    --color-neutral-bg: #f2f4f7;
+    --color-neutral-dot: #98a2b3;
+
+    /* Module colours (icon tiles on the dashboard) */
+    --color-tile-blue-bg: #eff4ff;
+    --color-tile-blue: #2563eb;
+    --color-tile-amber-bg: #fff7e6;
+    --color-tile-amber: #d97706;
+    --color-tile-green-bg: #ecfdf3;
+    --color-tile-green: #079455;
+    --color-tile-violet-bg: #f4f3ff;
+    --color-tile-violet: #6938ef;
+    --color-tile-rose-bg: #fff1f3;
+    --color-tile-rose: #e31b54;
+    --color-tile-teal-bg: #f0fdf9;
+    --color-tile-teal: #0e9384;
 
     /* Spacing scale */
+    --space-0: 0.125rem;
     --space-1: 0.25rem;
     --space-2: 0.5rem;
     --space-3: 0.75rem;
     --space-4: 1rem;
-    --space-5: 1.5rem;
-    --space-6: 2rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-7: 2rem;
+    --space-8: 2.5rem;
+    --space-9: 3rem;
+    --space-10: 4rem;
 
-    /* Shape and type */
-    --radius-sm: 4px;
+    /* Shape */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
     --radius-md: 8px;
-    --font-size-sm: 0.875rem;
-    --font-size-md: 1rem;
-    --font-size-lg: 1.5rem;
-    --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 999px;
+
+    /* Elevation */
+    --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.1), 0 1px 2px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+    --shadow-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+    --shadow-focus: 0 0 0 4px var(--color-focus-ring);
+
+    /* Motion */
+    --transition-fast: 120ms ease;
+    --transition-base: 200ms ease;
+
+    /* Icons */
+    --icon-size-sm: 16px;
+    --icon-size-md: 20px;
+    --icon-size-lg: 24px;
 
     /* Layout */
-    --header-height: 56px;
-    --form-max-width: 720px;
-    --auth-max-width: 400px;
-    --sidebar-width: 260px;
+    --sidebar-width: 264px;
+    --topbar-height: 60px;
+    --content-max-width: 1320px;
+    --form-label-width: 300px;
+    --catalog-tree-width: 264px;
+    --control-height: 38px;
+    --control-height-sm: 32px;
+    --auth-panel-max-width: 400px;
+    --z-sidebar: 40;
+    --z-overlay: 35;
+    --z-topbar: 30;
+    --z-menu: 50;
+    --z-toast: 60;
 }

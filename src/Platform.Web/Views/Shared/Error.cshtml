@@ -1,9 +1,15 @@
+@* Generic error page with a reference for support. *@
 @{
     ViewData["Title"] = "Error";
 }
 
-<div class="empty-state">
-    <h1 class="page-header__title">Something went wrong</h1>
-    <p class="empty-state__text">Please try again. If it keeps happening, quote this reference:</p>
-    <code>@ViewData["RequestId"]</code>
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-state__icon"><icon name="@Icons.AlertCircle" /></span>
+        <h1 class="empty-state__title">Something went wrong</h1>
+        <p class="empty-state__text">Please try again. If it keeps happening, quote this reference: <code>@ViewData["RequestId"]</code></p>
+        <div class="empty-state__actions">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to dashboard</a>
+        </div>
+    </div>
 </div>

@@ -5,8 +5,8 @@ using Platform.Web.Services.Auth;
 namespace Platform.Web.ViewComponents;
 
 /// <summary>
-/// Renders the screens from <see cref="Navigation.Items"/> that the current user
-/// may open — as menu links (default view) or dashboard tiles (<c>Tiles</c> view).
+/// Renders the sidebar: the dashboard link plus the screens from
+/// <see cref="Navigation.Items"/> that the current user may open, grouped by section.
 /// </summary>
 public sealed class NavigationMenuViewComponent : ViewComponent
 {
@@ -22,11 +22,10 @@ public sealed class NavigationMenuViewComponent : ViewComponent
     }
 
     /// <summary>
-    /// Filters the screens by capability and renders the chosen view.
+    /// Filters the screens by capability and renders the sidebar.
     /// </summary>
-    /// <param name="view"><c>Default</c> for menu links, <c>Tiles</c> for the dashboard.</param>
-    /// <returns>The rendered list.</returns>
-    public async Task<IViewComponentResult> InvokeAsync(string view = "Default")
+    /// <returns>The rendered menu.</returns>
+    public async Task<IViewComponentResult> InvokeAsync()
     {
         var visible = new List<NavigationItem>();
         foreach (NavigationItem item in Navigation.Items)
@@ -37,6 +36,6 @@ public sealed class NavigationMenuViewComponent : ViewComponent
             }
         }
 
-        return View(view, visible);
+        return View(visible);
     }
 }

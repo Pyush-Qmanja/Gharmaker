@@ -1,9 +1,75 @@
+@* Dashboard: greeting, one card per module the user can open (with its record count), and shortcuts to what they may do. *@
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    string firstName = (User.Identity?.Name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
 }
 
 <div class="page-header">
-    <h1 class="page-header__title">Welcome, @User.Identity?.Name</h1>
+    <div class="page-header__text">
+        <h1 class="page-header__title">@Model.Greeting, @firstName</h1>
+        <p class="page-header__subtitle">@Model.Today · here is what's in your workspace.</p>
+    </div>
 </div>
 
-<vc:navigation-menu view="Tiles" />
+@if (Model.Modules.Count == 0)
+{
+    <div class="card">
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Lock" /></span>
+            <h2 class="empty-state__title">No access yet</h2>
+            <p class="empty-state__text">Your account doesn't have any roles or feature access. Ask an administrator to give you access.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="dashboard-grid">
+        <section aria-labelledby="modules-title">
+            <h2 id="modules-title" class="dashboard-section-title">Your modules</h2>
+            <div class="module-grid">
+                @foreach (var module in Model.Modules)
+                {
+                    <a class="card module-card" asp-controller="@module.Item.Controller" asp-action="Index">
+                        <div class="module-card__top">
+                            <span class="icon-tile icon-tile--@module.Item.Icon"><icon name="@module.Item.Icon" /></span>
+                            @if (module.Count is { } count)
+                            {
+                                <span class="module-card__count">@count</span>
+                            }
+                        </div>
+                        <div>
+                            <h3 class="module-card__title">@module.Item.Title</h3>
+                            <p class="module-card__text">@module.Item.Description</p>
+                        </div>
+                        <span class="module-card__link">Open @module.Item.Title.ToLowerInvariant() <icon name="@Icons.ArrowRight" /></span>
+                    </a>
+                }
+            </div>
+        </section>
+
+        @if (Model.Actions.Count > 0)
+        {
+            <section aria-labelledby="actions-title">
+                <h2 id="actions-title" class="dashboard-section-title">Quick actions</h2>
+                <div class="card">
+                    <ul class="action-list">
+                        @foreach (var action in Model.Actions)
+                        {
+                            <li>
+                                <a class="action-list__item" asp-controller="@action.Controller" asp-action="@action.Action">
+                                    <span class="icon-tile icon-tile--sm icon-tile--@action.Icon"><icon name="@action.Icon" /></span>
+                                    <span class="action-list__text">
+                                        <span class="action-list__title">@action.Title</span>
+                                        <span class="action-list__desc">@action.Description</span>
+                                    </span>
+                                    <icon name="@Icons.ChevronRight" />
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </section>
+        }
+    </div>
+}

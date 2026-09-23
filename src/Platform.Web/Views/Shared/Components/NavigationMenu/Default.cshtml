@@ -1,8 +1,25 @@
-@* Top-menu links for the screens the user may open. Rendered by NavigationMenuViewComponent. *@
+@* Sidebar menu: dashboard, then the screens the user may open, grouped by section. Rendered by NavigationMenuViewComponent. *@
 @model IReadOnlyList<NavigationItem>
-<ul class="app-nav__links">
-    @foreach (var item in Model)
+@{
+    string? current = ViewContext.RouteData.Values["controller"] as string;
+    string LinkClass(string controller) =>
+        string.Equals(controller, current, StringComparison.OrdinalIgnoreCase) ? "sidebar__link sidebar__link--active" : "sidebar__link";
+}
+<nav class="sidebar__nav">
+    <a class="@LinkClass(Navigation.HomeController)" asp-controller="@Navigation.HomeController" asp-action="Index">
+        <icon name="@Icons.Dashboard" /> Dashboard
+    </a>
+
+    @foreach (var menuGroup in Model.GroupBy(i => i.Group))
     {
-        <li><a class="app-nav__link" asp-controller="@item.Controller" asp-action="Index">@item.Title</a></li>
+        <div class="sidebar__section">
+            <span class="sidebar__section-title">@menuGroup.Key</span>
+            @foreach (var item in menuGroup)
+            {
+                <a class="@LinkClass(item.Controller)" asp-controller="@item.Controller" asp-action="Index">
+                    <icon name="@item.Icon" /> @item.Title
+                </a>
+            }
+        </div>
     }
-</ul>
+</nav>

@@ -2,8 +2,8 @@ namespace Platform.Shared.Constants;
 
 /// <summary>
 /// Every capability the platform checks (P6). The API guards endpoints with
-/// these codes and the UI builds the role editor from <see cref="All"/>, so a
-/// new capability is added here once and appears in both.
+/// these codes; the UI builds its access grid from <see cref="Features"/>. A new
+/// pair of capabilities is declared here and joined into a feature there.
 /// </summary>
 /// <remarks>
 /// Code format: <c>&lt;resource&gt;.&lt;action&gt;</c>, lower-case. Roles store
@@ -42,20 +42,17 @@ public static class Capabilities
     /// <summary>Create, edit and deactivate roles.</summary>
     public const string RolesManage = "roles.manage";
 
-    /// <summary>The full catalogue, in display order, grouped for the role editor.</summary>
-    public static readonly IReadOnlyList<CapabilityInfo> All = new[]
-    {
-        new CapabilityInfo(CatalogView, "Catalog", "Browse the catalogue"),
-        new CapabilityInfo(CatalogManage, "Catalog", "Import and edit the catalogue and units"),
-        new CapabilityInfo(BrandsView, "Catalog", "View brands"),
-        new CapabilityInfo(BrandsManage, "Catalog", "Manage brands"),
-        new CapabilityInfo(WarehousesView, "Inventory", "View warehouses"),
-        new CapabilityInfo(WarehousesManage, "Inventory", "Manage warehouses"),
-        new CapabilityInfo(UsersView, "Administration", "View users"),
-        new CapabilityInfo(UsersManage, "Administration", "Manage users, their roles and scopes"),
-        new CapabilityInfo(RolesView, "Administration", "View roles"),
-        new CapabilityInfo(RolesManage, "Administration", "Manage roles"),
-    };
+    /// <summary>
+    /// Every capability, in display order: each feature in <see cref="Features.All"/>
+    /// contributes its view and manage pair.
+    /// </summary>
+    public static readonly IReadOnlyList<CapabilityInfo> All = Features.All
+        .SelectMany(f => new[]
+        {
+            new CapabilityInfo(f.ViewCapability, f.Group, $"View {f.Name.ToLowerInvariant()}"),
+            new CapabilityInfo(f.ManageCapability, f.Group, $"Manage {f.Name.ToLowerInvariant()}"),
+        })
+        .ToList();
 
     /// <summary>Fast lookup of valid codes.</summary>
     private static readonly HashSet<string> Known = All.Select(c => c.Code).ToHashSet(StringComparer.Ordinal);

@@ -1,4 +1,4 @@
-@* Pager for any list page. Keeps the current search text and any extra filters (Model.RouteValues). *@
+@* Footer of any list card: "Showing 1–25 of 120" and previous/next. Keeps the current search text and any extra filters (Model.RouteValues). *@
 @model IListViewModel
 @{
     Dictionary<string, string> RouteFor(int page)
@@ -14,20 +14,34 @@
 
         return values;
     }
+
+    int first = Model.TotalCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+    int last = Math.Min(Model.Page * Model.PageSize, Model.TotalCount);
 }
-@if (Model.TotalPages > 1)
-{
+<div class="data-card__footer">
     <nav class="pager" aria-label="Pages">
-        <span class="pager__summary">Page @Model.Page of @Model.TotalPages · @Model.TotalCount records</span>
-        <div class="pager__buttons">
-            @if (Model.HasPrevious)
-            {
-                <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page - 1)">Previous</a>
-            }
-            @if (Model.HasNext)
-            {
-                <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page + 1)">Next</a>
-            }
-        </div>
+        <span class="pager__summary">Showing <strong>@first–@last</strong> of <strong>@Model.TotalCount</strong></span>
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pager__buttons">
+                <span class="pager__page">Page @Model.Page of @Model.TotalPages</span>
+                @if (Model.HasPrevious)
+                {
+                    <a class="btn btn-sm btn-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page - 1)"><icon name="@Icons.ChevronLeft" /> Previous</a>
+                }
+                else
+                {
+                    <span class="btn btn-sm btn-secondary" aria-disabled="true"><icon name="@Icons.ChevronLeft" /> Previous</span>
+                }
+                @if (Model.HasNext)
+                {
+                    <a class="btn btn-sm btn-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page + 1)">Next <icon name="@Icons.ChevronRight" /></a>
+                }
+                else
+                {
+                    <span class="btn btn-sm btn-secondary" aria-disabled="true">Next <icon name="@Icons.ChevronRight" /></span>
+                }
+            </div>
+        }
     </nav>
-}
+</div>

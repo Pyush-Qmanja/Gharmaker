@@ -67,10 +67,11 @@ src/
   Platform.Web/              MVC UI
     Controllers/             CrudController<> + thin per-resource controllers
     Services/Api/            IApiClient, ICrudApiClient<>, BearerTokenHandler
-    TagHelpers/              <form-field> — label + input + error in one tag
+    TagHelpers/              <form-field>, <checkbox-list>, <form-panel>, <icon>
     Views/Shared/            CrudIndex, CrudForm and shared partials
     Views/<Resource>/        only _Table.cshtml and _Form.cshtml
-    wwwroot/css/             variables.css (design tokens), site.css (components)
+    wwwroot/css/             variables.css (tokens), base, layout, components, pages
+    wwwroot/img/icons.svg    icon sprite used by <icon>
     wwwroot/js/              site.js (behaviour via data- attributes)
 ```
 

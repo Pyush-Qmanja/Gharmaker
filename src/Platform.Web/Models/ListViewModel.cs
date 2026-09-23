@@ -12,11 +12,17 @@ public interface IListViewModel
     /// <summary>Page heading, e.g. "Brands".</summary>
     string Title { get; }
 
+    /// <summary>One row's name in lower case, e.g. "brand", for "New brand" and "12 brands".</summary>
+    string ItemName { get; }
+
     /// <summary>Current search text.</summary>
     string? Search { get; }
 
     /// <summary>Current 1-based page.</summary>
     int Page { get; }
+
+    /// <summary>Rows per page.</summary>
+    int PageSize { get; }
 
     /// <summary>Total number of pages.</summary>
     int TotalPages { get; }
@@ -55,9 +61,16 @@ public sealed class ListViewModel<T> : IListViewModel
     /// <param name="result">Page of rows from the API.</param>
     /// <param name="search">Search text that produced the page.</param>
     /// <param name="routeValues">Extra filters to keep when paging or searching.</param>
-    public ListViewModel(string title, PagedResult<T> result, string? search, IReadOnlyDictionary<string, string?>? routeValues = null)
+    /// <param name="itemName">One row's name, e.g. "brand"; defaults to the title in lower case without a trailing "s".</param>
+    public ListViewModel(
+        string title,
+        PagedResult<T> result,
+        string? search,
+        IReadOnlyDictionary<string, string?>? routeValues = null,
+        string? itemName = null)
     {
         Title = title;
+        ItemName = (itemName ?? title.TrimEnd('s')).ToLowerInvariant();
         _result = result;
         Search = search;
         RouteValues = routeValues ?? new Dictionary<string, string?>();
@@ -71,6 +84,12 @@ public sealed class ListViewModel<T> : IListViewModel
 
     /// <inheritdoc />
     public int Page => _result.Page;
+
+    /// <inheritdoc />
+    public string ItemName { get; }
+
+    /// <inheritdoc />
+    public int PageSize => _result.PageSize;
 
     /// <inheritdoc />
     public int TotalPages => _result.TotalPages;

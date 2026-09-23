@@ -1,27 +1,34 @@
-@* Shared create/edit page for every CRUD screen. Fields come from the controller's own _Form partial. *@
+@* Shared create/edit page for every CRUD screen. Sections come from the controller's own _Form partial (built from <form-panel>); status and the save bar are added here. *@
 @model FormViewModel
 @{
     ViewData["Title"] = Model.Title;
 }
 
 <div class="page-header">
-    <h1 class="page-header__title">@Model.Title</h1>
+    <div class="page-header__text">
+        <h1 class="page-header__title">@Model.Title</h1>
+        <p class="page-header__subtitle">
+            @(Model.IsEdit ? "Changes apply as soon as you save." : "Fill in the details below. Fields can be changed later.")
+        </p>
+    </div>
 </div>
 
-<div class="card form-card">
-    <form asp-action="@(Model.IsEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" novalidate>
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+<form asp-action="@(Model.IsEdit ? "Edit" : "Create")" asp-route-id="@Model.Id" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-        <partial name="_Form" model="Model.Form" />
+    <partial name="_Form" model="Model.Form" />
 
-        @if (Model.Form is IActivatableRequest activatable)
-        {
+    @if (Model.Form is IActivatableRequest activatable)
+    {
+        <form-panel title="Status" description="Inactive records stay in history but cannot be picked or used, and inactive users cannot sign in.">
             <partial name="_IsActiveField" model="activatable" />
-        }
+        </form-panel>
+    }
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-        </div>
-    </form>
-</div>
+    <div class="form-footer">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            <icon name="@Icons.Check" /> @(Model.IsEdit ? "Save changes" : "Create")
+        </button>
+    </div>
+</form>

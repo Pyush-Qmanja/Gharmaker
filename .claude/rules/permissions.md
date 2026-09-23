@@ -16,18 +16,28 @@ Every authorisation decision is two questions, always both:
 
 ## How it is built here
 
-- Capability codes: `Platform.Shared/Constants/Capabilities.cs` (the catalogue).
-  Roles are per-organisation data holding those codes; users hold `RoleIds` and `Scopes`.
+- Features: `Platform.Shared/Constants/Features.cs` — each feature is a view/manage
+  pair of capability codes (`Capabilities.cs`) and says whether it is limited by
+  scope (e.g. warehouses). The UI access grid is built from it.
+- A user gets capabilities two ways, each with its own places:
+  - **Roles** (`RoleIds`) apply in the user's `Scopes`.
+  - **Feature access** (`Access`: `Feature` + `Level` + `Scopes`) is given straight
+    to the user; a scoped feature applies only in that row's `Scopes`, an
+    organisation-wide feature applies everywhere. Manage includes View.
 - API guard: `[CrudCapabilities(view, manage)]` on every CRUD controller (startup
   fails without it) or `[RequiresCapability(code)]` on other endpoints.
 - `IPermissionService` loads the user and their roles **per request** — nothing
   about permissions is in the JWT — so revoking a role, scope or user applies at
-  once. Use `CoversAsync(scopeType, id)` in services for scoped objects and
-  return 404 when it is false.
-- Scoped data derives from `ScopedCrudService`: lists show only what is in scope,
-  anything else is 404, and writes that would land outside scope are 403.
-- A user may only grant or remove scopes they hold themselves (`UserService`),
-  so a warehouse admin can never hand out global access.
+  once. Scope is always asked **per capability**: `CoversAsync(capability, scopeType, id)`,
+  `GetScopeIdsAsync(capability, scopeType)`, `HasGlobalAsync(capability)`. Return
+  404 when a read is not covered.
+- Scoped data derives from `ScopedCrudService` and names its `Feature`: lists and
+  reads use where the caller can **view**; anything else is 404. Create, update and
+  deactivate need **manage** for that object, else 403.
+- Nobody can hand out more than they hold (`UserService`): every capability-in-a-place
+  a change would add — through a role, a role scope or a feature access row — must
+  be held by the editor in that place. Giving the Administrator role needs every
+  capability, everywhere.
 - The UI hides what the user cannot use (`IUserAccess`, `Navigation.Items`), but
   that is cosmetic; the API is the enforcement point.
 

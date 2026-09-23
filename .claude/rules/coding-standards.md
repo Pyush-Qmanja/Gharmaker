@@ -46,13 +46,18 @@ Before writing anything, check whether one of these already does it:
 | API routes | `ApiRoutes.*` — never a literal path | `Shared/Constants` |
 | Calling the API from UI | `ICrudApiClient<...>` / `IApiClient` | `Web/Services/Api` |
 | CRUD screens | derive from `CrudController<...>` | `Web/Controllers` |
-| Form field markup — text, number, checkbox, drop-down (enums automatic, or `items=`) | `<form-field asp-for="X" />` | `Web/TagHelpers` |
+| Form field markup — text, number, checkbox (switch), drop-down (enums automatic, or `items=`) | `<form-field asp-for="X" />` | `Web/TagHelpers` |
+| A titled form section (heading + help left, fields right; `stacked="true"` for wide content) | `<form-panel title="..." description="...">` | `Web/TagHelpers` |
+| An icon | `<icon name="@Icons.X" />` (sprite `wwwroot/img/icons.svg`, names in `Web/Common/Icons.cs`) | `Web/TagHelpers` |
+| Feature access editor (roles and users) | `_AccessGrid` with `AccessGridModel.ForRole / ForUser` | `Web/Views/Shared`, `Web/Models` |
+| Describe access in words | `AccessSummary.Describe / Effective` | `Web/Models/AccessViewModels` |
+| Tidy a posted form before validation | implement `INormalisable` on the request (called by `CrudController`) | `Shared/Dtos/Common` |
 | Load a lookup list for a screen | `api.ListForLookupAsync()` | `Web/Services/Api/CrudApiClientExtensions` |
 | Address fields | `Address` / `AddressDto` + `AddressDtoValidator` + `DtoMapping.ToAddress` | Shared + `Api/Mapping` |
 | Enum / PascalCase display text | `.ToWords()` | `Web/Extensions/TextExtensions` |
 | List/form page layout | shared `CrudIndex` / `CrudForm` views | `Web/Views/Shared` |
 | Status, row actions, pager, search, empty state | `_StatusBadge`, `_RowActions`, `_Pagination`, `_SearchBar`, `_EmptyState` | `Web/Views/Shared` |
-| Show a date | `.ToIstString()` | `Web/Extensions/DateTimeExtensions` |
+| Show a date | `.ToIstString()`; in table columns `.ToIstDateString()` with the full time as `title` | `Web/Extensions/DateTimeExtensions` |
 | Convert between units (P7) | `IUomConversionService` (Shared) via `IUomConversionProvider` (API) — never your own arithmetic | `Shared/Units`, `Api/Services/Catalog` |
 | A quantity | `Quantity(Value, Uom)`; display with `Quantity.Normalise` | `Shared/Common` |
 | Make a slug / search words | `Slug.From(...)` / `SearchTerms.Build(...)` | `Shared/Common`, `Api/Services/Catalog` |
@@ -62,8 +67,8 @@ Before writing anything, check whether one of these already does it:
 | Pager and search that keep extra filters | `ListViewModel(..., routeValues)` | `Web/Models` |
 | Count with plural | `n.Counted("SKU")` | `Web/Extensions/TextExtensions` |
 | Guard an API controller / action | `[CrudCapabilities(view, manage)]` / `[RequiresCapability(code)]` | `Api/Security/Authorization` |
-| Check capability or scope in a service | `IPermissionService.HasCapabilityAsync` / `CoversAsync` (out of scope → 404) | `Api/Security/Authorization` |
-| Show UI only when allowed | `IUserAccess.CanAsync(code)`; menus via `Navigation.Items` | `Web/Services/Auth`, `Web/Common` |
+| Check capability or scope in a service | `IPermissionService.HasCapabilityAsync` / `CoversAsync(capability, type, id)` (out of scope → 404) | `Api/Security/Authorization` |
+| Show UI only when allowed | `IUserAccess.CanAsync(code)`; sidebar, breadcrumb and dashboard via `Navigation.Items` | `Web/Services/Auth`, `Web/Common` |
 | Multi-select field | `<checkbox-list asp-for="X" items="..." />` | `Web/TagHelpers` |
 | Lookup data for a screen | override `PrepareViewAsync` + `ViewDataKeys` | `Web/Controllers/CrudController` |
 | JSON settings | `JsonDefaults` (enums as names) | `Shared/Common` |
@@ -78,8 +83,12 @@ generic helper next to them) instead.
   `onclick=` or other inline handlers in any `.cshtml`.
 - No scoped `*.cshtml.css` files.
 - Colours, spacing, radii, font sizes: **only** as variables in
-  `wwwroot/css/variables.css`. `site.css` uses `var(--...)`, never a raw hex.
-- Component classes live in `wwwroot/css/site.css`, BEM-named (`block__element--modifier`).
+  `wwwroot/css/variables.css`. The other stylesheets use `var(--...)`, never a raw hex.
+- Stylesheets, in load order: `base.css` (type, Bootstrap controls restyled),
+  `layout.css` (sidebar, top bar, content), `components.css` (cards, tables,
+  badges, forms, access grid…), `pages.css` (sign-in, dashboard, catalogue, import).
+  Classes are BEM-named (`block__element--modifier`). Reuse a component before adding one.
+- Icons come from the sprite via `<icon>`; never paste inline SVG paths into a view.
 - Behaviour lives in `wwwroot/js/site.js` and is opted into with `data-`
   attributes (e.g. `data-confirm="..."`, `data-auto-dismiss`).
 - No CDN links; libraries go under `wwwroot/lib`.
@@ -105,7 +114,7 @@ generic helper next to them) instead.
 - The UI keeps the JWT in its encrypted HttpOnly cookie and forwards it via `BearerTokenHandler`.
 - Every API controller is `[Authorize]` by default (via `CrudControllerBase`).
   `[AllowAnonymous]` only on sign-in.
-- Never check a role name (P6, `permissions.md`). Capability + scope arrives in Phase 1.
+- Never check a role name (P6, `permissions.md`); check a capability, and its scope for scoped data.
 - Tenancy is automatic: `Repository<T>` filters every `IOrgScoped` query and
   lookup by the caller's `OrgId`; `UnitOfWork` stamps it on insert. Reading
   Firestore without the repository (`IFirestoreContext` directly) is allowed
@@ -135,13 +144,14 @@ Use the same module folder name in every layer.
 6. **Api/Mapping/Catalog/CategoryMapper.cs** — implement `IEntityMapper<...>`.
 7. **Api/Services/Catalog/CategoryService.cs** — derive from `CrudService<...>`;
    override `ApplySearch` / `ApplyOrder` only if needed. If the data belongs to a
-   warehouse or site (P6), derive from `ScopedCrudService<...>` instead and say which
-   `ScopeType` governs it and how to find its scope id.
+   warehouse or site (P6), derive from `ScopedCrudService<...>` instead: name its
+   `Feature` (whose `ScopeType` governs it) and how to find its scope id.
 8. **Api/Controllers/Catalog/CategoriesController.cs** — derive from
    `CrudControllerBase<...>`, `[Route(ApiRoutes.Categories)]` and
    `[CrudCapabilities(Capabilities.CategoriesView, Capabilities.CategoriesManage)]`.
    Usually empty. The API refuses to start if the capabilities attribute is missing.
-   First add both codes to `Shared/Constants/Capabilities.cs` (constant + `All` entry).
+   First add both codes to `Shared/Constants/Capabilities.cs` (constants), then one
+   `FeatureInfo` line to `Shared/Constants/Features.cs` — that adds it to the access grid.
 9. **Api/Extensions/ServiceCollectionExtensions.cs** — one `AddCrudModule<...>()` line.
 10. **Indexes** — add a composite index to `firestore.indexes.json` for every
     ordering in `ApplyOrder` / `ApplySearch` (org_id first). Deploy with
@@ -150,6 +160,6 @@ Use the same module folder name in every layer.
     set names, implement `ToUpdateRequest`.
 12. **Web/Views/Categories/** — `_Table.cshtml` and `_Form.cshtml` only.
 13. **Web/Extensions/ServiceCollectionExtensions.cs** — one `AddCrudApiClient<...>(ApiRoutes.Categories)` line.
-14. Add one line to `Web/Common/Navigation.cs` (title, controller, view capability) —
+14. Add one line to `Web/Common/Navigation.cs` (title, controller, group, icon, view capability, description, count route) —
     the menu and dashboard tile appear for users holding that capability.
 15. `dotnet build` must pass with **0 warnings**.

@@ -1,35 +1,43 @@
-@* Master layout. All styles live in wwwroot/css and all scripts in wwwroot/js — never inline. *@
+@* App shell: sidebar, top bar and content. All styles live in wwwroot/css and all scripts in wwwroot/js — never inline. *@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] · Platform</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <partial name="_Head" />
 </head>
-<body class="app">
-    <header class="app-header">
-        <nav class="app-nav container-fluid">
-            <a class="app-nav__brand" asp-controller="Home" asp-action="Index">Platform</a>
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <vc:navigation-menu />
-                <div class="app-nav__user">
-                    <span class="app-nav__user-name">@User.Identity.Name</span>
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        <button type="submit" class="btn btn-sm btn-outline-light">Sign out</button>
-                    </form>
-                </div>
-            }
-        </nav>
-    </header>
+<body>
+    <div class="shell" data-shell>
+        <aside class="sidebar" id="sidebar" aria-label="Main menu">
+            <a class="sidebar__brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark"><icon name="@Icons.Logo" /></span>
+                <span class="sidebar__brand-text">
+                    <span class="sidebar__brand-name">@Branding.ProductName</span>
+                    <span class="sidebar__brand-tag">@Branding.Tagline</span>
+                </span>
+            </a>
+            <vc:navigation-menu />
+        </aside>
+        <div class="shell__overlay" data-sidebar-close></div>
 
-    <main class="app-main container">
-        <partial name="_Alerts" />
-        @RenderBody()
-    </main>
+        <div class="shell__main">
+            <header class="topbar">
+                <button type="button" class="icon-btn topbar__menu" data-sidebar-toggle aria-controls="sidebar" aria-label="Open menu">
+                    <icon name="@Icons.Menu" />
+                </button>
+                <partial name="_Breadcrumb" />
+                <div class="topbar__actions">
+                    <partial name="_UserMenu" />
+                </div>
+            </header>
+
+            <main class="content">
+                <div class="content__inner">
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <partial name="_Alerts" />
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

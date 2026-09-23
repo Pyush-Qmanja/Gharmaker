@@ -1,0 +1,37 @@
+@* Layout for signed-out pages: brand panel on the left, the form on the right. *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <partial name="_Head" />
+</head>
+<body>
+    <div class="auth">
+        <section class="auth__brand" aria-label="About">
+            <div class="auth__logo">
+                <span class="brand-mark"><icon name="@Icons.Logo" /></span>
+                <span>@Branding.ProductName</span>
+            </div>
+
+            <div>
+                <h2 class="auth__headline">Materials supply and site operations, in one place.</h2>
+                <ul class="auth__points">
+                    <li class="auth__point"><icon name="@Icons.Check" /><span>Brand-wise catalogue with real unit conversions — bags, tonnes, brass, sqft.</span></li>
+                    <li class="auth__point"><icon name="@Icons.Check" /><span>Warehouse-wise stock and access that follows each person's responsibilities.</span></li>
+                    <li class="auth__point"><icon name="@Icons.Check" /><span>Every change checked on the server, by feature and by place.</span></li>
+                </ul>
+            </div>
+
+            <p class="auth__footnote">© @DateTime.UtcNow.Year @Branding.ProductName</p>
+        </section>
+
+        <main class="auth__main">
+            <div class="auth__panel">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <partial name="_Alerts" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,17 +1,18 @@
-@* Warehouse fields for the shared CrudForm page. Responsible-user options come from WarehousesController.PrepareViewAsync. *@
+@* Warehouse form sections for the shared CrudForm page. Responsible-user options come from WarehousesController.PrepareViewAsync. *@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @using Platform.Shared.Dtos.Inventory
 @model IWarehouseFields
-<div class="form-grid">
-    <form-field asp-for="Code" hint="Letters, digits and hyphens, e.g. WH-PUNE-01. Stored in capitals." />
-    <form-field asp-for="Name" />
-    <form-field asp-for="Type" />
-    <form-field asp-for="OwnerUserId" label="Responsible person"
-                items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.UserOptions]!" empty-option="None" />
-</div>
+<form-panel title="Warehouse" description="The code is used on stock records and documents; the responsible person is who the team contacts.">
+    <div class="form-grid">
+        <form-field asp-for="Code" hint="Letters, digits and hyphens, e.g. WH-PUNE-01. Stored in capitals." />
+        <form-field asp-for="Name" />
+        <form-field asp-for="Type" />
+        <form-field asp-for="OwnerUserId" label="Responsible person"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.UserOptions]!" empty-option="None" />
+    </div>
+</form-panel>
 
-<fieldset class="form-section">
-    <legend class="form-section__title">Address</legend>
+<form-panel title="Address" description="Where stock is kept. Never shown to customers.">
     <div class="form-grid">
         <form-field asp-for="Address.Line1" label="Address line 1" />
         <form-field asp-for="Address.Line2" label="Address line 2" />
@@ -19,12 +20,11 @@
         <form-field asp-for="Address.State" />
         <form-field asp-for="Address.Pincode" label="PIN code" />
     </div>
-</fieldset>
+</form-panel>
 
-<fieldset class="form-section">
-    <legend class="form-section__title">Location <span class="form-field__hint">(optional — used for delivery planning)</span></legend>
+<form-panel title="Location" description="Optional. Used later for delivery planning and distance to sites.">
     <div class="form-grid">
         <form-field asp-for="Lat" label="Latitude" />
         <form-field asp-for="Lng" label="Longitude" />
     </div>
-</fieldset>
+</form-panel>

@@ -1,4 +1,4 @@
-@* User rows for the shared CrudIndex page. Role names come from UsersController.PrepareViewAsync. *@
+@* User rows for the shared CrudIndex page. Role and place names come from UsersController.PrepareViewAsync. *@
 @using Platform.Shared.Dtos.Identity
 @model IReadOnlyList<UserDto>
 @{
@@ -8,12 +8,12 @@
 <table class="table data-table">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Email</th>
+            <th>User</th>
             <th>Roles</th>
-            <th>Scope</th>
+            <th>Roles apply in</th>
+            <th>Feature access</th>
             <th>Status</th>
-            <th>Updated</th>
+            <th>Last updated</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
     </thead>
@@ -21,14 +21,22 @@
         @foreach (var user in Model)
         {
             List<string> userRoles = user.RoleIds.Select(id => roleNames.TryGetValue(id, out var name) ? name : "Unknown role").ToList();
-            List<string> userScopes = user.Scopes.Select(s => scopeNames.TryGetValue(s.ToString(), out var label) ? label : "Outside your scope").ToList();
+            List<string> userScopes = user.Scopes.Select(s => scopeNames.TryGetValue(s.ToString(), out var label) ? label : AccessSummary.HiddenPlace).ToList();
             <tr>
-                <td>@user.Name</td>
-                <td>@user.Email</td>
+                <td>
+                    <div class="identity">
+                        <span class="avatar">@user.Name.Initials()</span>
+                        <span class="identity__text">
+                            <a asp-action="Edit" asp-route-id="@user.Id" class="identity__primary">@user.Name</a>
+                            <span class="identity__secondary">@user.Email</span>
+                        </span>
+                    </div>
+                </td>
                 <td><partial name="_Chips" model="userRoles" /></td>
                 <td><partial name="_Chips" model="userScopes" /></td>
+                <td><partial name="_Chips" model="AccessSummary.Describe(user.Access)" /></td>
                 <td><partial name="_StatusBadge" model="user.IsActive" /></td>
-                <td>@((user.UpdatedAt ?? user.CreatedAt).ToIstString())</td>
+                <td class="data-table__muted" title="@((user.UpdatedAt ?? user.CreatedAt).ToIstString())">@((user.UpdatedAt ?? user.CreatedAt).ToIstDateString())</td>
                 <partial name="_RowActions" model="user.Id" />
             </tr>
         }

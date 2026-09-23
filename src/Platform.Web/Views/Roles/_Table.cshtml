@@ -4,10 +4,10 @@
 <table class="table data-table">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Capabilities</th>
+            <th>Role</th>
+            <th>Feature access</th>
             <th>Status</th>
-            <th>Updated</th>
+            <th>Last updated</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
     </thead>
@@ -15,10 +15,15 @@
         @foreach (var role in Model)
         {
             <tr>
-                <td>@role.Name</td>
-                <td><partial name="_Chips" model="role.Capabilities" /></td>
+                <td>
+                    <div class="identity">
+                        <span class="icon-tile icon-tile--sm icon-tile--shield"><icon name="@Icons.Shield" /></span>
+                        <a asp-action="Edit" asp-route-id="@role.Id" class="identity__primary">@role.Name</a>
+                    </div>
+                </td>
+                <td><partial name="_Chips" model="AccessSummary.Describe(role.Capabilities)" /></td>
                 <td><partial name="_StatusBadge" model="role.IsActive" /></td>
-                <td>@((role.UpdatedAt ?? role.CreatedAt).ToIstString())</td>
+                <td class="data-table__muted" title="@((role.UpdatedAt ?? role.CreatedAt).ToIstString())">@((role.UpdatedAt ?? role.CreatedAt).ToIstDateString())</td>
                 <partial name="_RowActions" model="role.Id" />
             </tr>
         }

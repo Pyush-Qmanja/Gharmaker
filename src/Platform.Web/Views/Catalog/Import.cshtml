@@ -1,53 +1,79 @@
 @* Import step 1: how the file works, template download, and upload. Column help comes from CatalogImportColumns so it always matches the importer. *@
 @{
-    ViewData["Title"] = "Import catalogue";
+    ViewData["Title"] = "Import from Excel";
 }
 
-<nav class="breadcrumb-trail" aria-label="Back">
-    <a asp-action="Index">Catalogue</a>
-    <span class="breadcrumb-trail__sep">›</span>
-    <span>Import</span>
-</nav>
-
 <div class="page-header">
-    <h1 class="page-header__title">Import catalogue from Excel</h1>
+    <div class="page-header__text">
+        <h1 class="page-header__title">Import from Excel</h1>
+        <p class="page-header__subtitle">Add or update products category by category. You will see exactly what each row does before anything is saved.</p>
+    </div>
 </div>
 
 <ol class="steps">
-    <li class="card steps__item">
-        <h2 class="steps__title">1. Download the template</h2>
-        <p>It has example rows, the list of valid units, and these instructions.</p>
-        <a asp-action="Template" class="btn btn-outline-primary">Download Excel template</a>
+    <li class="card step-card">
+        <span class="step-card__number">1</span>
+        <div>
+            <h2 class="step-card__title">Download the template</h2>
+            <p class="step-card__text">It has example rows, the list of valid units, and these instructions.</p>
+            <a asp-action="Template" class="btn btn-secondary"><icon name="@Icons.Download" /> Download Excel template</a>
+        </div>
     </li>
 
-    <li class="card steps__item">
-        <h2 class="steps__title">2. Fill it in — one row per SKU (variant)</h2>
-        <p>Group rows by category any way you like. Missing categories and brands are created for you;
-           rows with the same brand and product become one product with several variants.</p>
-        <table class="table data-table import-columns">
-            <thead>
-                <tr><th>Column</th><th>Required</th><th>What to enter</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var (name, required, help) in CatalogImportColumns.All)
-                {
-                    <tr>
-                        <td><strong>@name</strong></td>
-                        <td>@(required ? "Yes" : "No")</td>
-                        <td>@help</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <li class="card step-card">
+        <span class="step-card__number">2</span>
+        <div>
+            <h2 class="step-card__title">Fill it in — one row per SKU (variant)</h2>
+            <p class="step-card__text">Group rows by category any way you like. Missing categories and brands are created for you;
+                rows with the same brand and product become one product with several variants.</p>
+            <div class="step-card__table">
+                <table class="table data-table">
+                    <thead>
+                        <tr><th>Column</th><th>Required</th><th>What to enter</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (name, required, help) in CatalogImportColumns.All)
+                        {
+                            <tr>
+                                <td class="data-table__primary">@name</td>
+                                <td>
+                                    @if (required)
+                                    {
+                                        <span class="chip chip--primary">Required</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip chip--empty">Optional</span>
+                                    }
+                                </td>
+                                <td>@help</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </li>
 
-    <li class="card steps__item">
-        <h2 class="steps__title">3. Upload and check</h2>
-        <p>Nothing is saved yet — you will see what each row will do and confirm first. Up to @CatalogImportColumns.MaxRows rows per file.</p>
-        <form asp-action="Import" method="post" enctype="multipart/form-data" class="upload-form">
-            <input type="file" name="file" accept=".xlsx,.csv" class="form-control" required />
-            <button type="submit" class="btn btn-primary">Upload and check</button>
-        </form>
-        @Html.ValidationMessage("file", new { @class = "form-field__error" })
+    <li class="card step-card">
+        <span class="step-card__number">3</span>
+        <div>
+            <h2 class="step-card__title">Upload and check</h2>
+            <p class="step-card__text">Nothing is saved yet — you will see what each row will do and confirm first. Up to @CatalogImportColumns.MaxRows rows per file.</p>
+            <form asp-action="Import" method="post" enctype="multipart/form-data">
+                <label class="dropzone">
+                    <span class="dropzone__icon"><icon name="@Icons.Spreadsheet" /></span>
+                    <span class="dropzone__title"><strong>Choose a file</strong> to upload</span>
+                    <span class="form-field__hint">Excel (.xlsx) or CSV (.csv), up to 10 MB</span>
+                    <span class="dropzone__file" data-file-name></span>
+                    <input type="file" name="file" accept=".xlsx,.csv" class="dropzone__input" required data-file-input />
+                </label>
+                @Html.ValidationMessage("file", new { @class = "form-field__error" })
+                <div class="import-actions">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><icon name="@Icons.Upload" /> Upload and check</button>
+                </div>
+            </form>
+        </div>
     </li>
 </ol>

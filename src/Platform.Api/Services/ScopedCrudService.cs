@@ -2,6 +2,7 @@ using Platform.Api.Common.Exceptions;
 using Platform.Api.Mapping;
 using Platform.Api.Repositories;
 using Platform.Api.Security.Authorization;
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Common;
 using Platform.Shared.Entities.Common;
 using Platform.Shared.Entities.Identity;
@@ -15,11 +16,14 @@ namespace Platform.Api.Services;
 /// and anything outside it behaves as if it does not exist (404).
 /// </summary>
 /// <remarks>
-/// A derived service states which <see cref="ScopeType"/> governs the entity
-/// and how to find the governing id (<see cref="ScopeIdOf"/>: the entity's own
+/// A derived service names its <see cref="Feature"/> (which gives the
+/// capabilities and the <see cref="ScopeType"/> that governs the entity) and
+/// how to find the governing id (<see cref="ScopeIdOf"/>: the entity's own
 /// id for a warehouse, its <c>WarehouseId</c> for a bin). Callers with global
 /// scope see everything and use the normal Firestore paging; everyone else is
 /// served from their (small) set of scoped objects, searched and sorted in memory.
+/// Reads use the scope where the caller holds the feature's view capability;
+/// creates, updates and deactivations need its manage capability for that object.
 /// </remarks>
 /// <typeparam name="TEntity">Persisted entity.</typeparam>
 /// <typeparam name="TDto">Read model.</typeparam>
@@ -48,8 +52,12 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
         Permissions = permissions;
     }
 
+    /// <summary>Feature that governs access to this entity; must be limited by scope.</summary>
+    protected abstract FeatureInfo Feature { get; }
+
     /// <summary>Scope type that governs access to this entity.</summary>
-    protected abstract ScopeType ScopeType { get; }
+    protected ScopeType ScopeType => Feature.ScopeType
+        ?? throw new InvalidOperationException($"Feature '{Feature.Code}' is not limited by scope.");
 
     /// <summary>
     /// Returns the id of the object that governs access to an entity.
@@ -92,7 +100,7 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
     /// <returns>The requested page.</returns>
     public override async Task<PagedResult<TDto>> GetPagedAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        IReadOnlySet<Guid>? scopeIds = await Permissions.GetScopeIdsAsync(ScopeType, cancellationToken);
+        IReadOnlySet<Guid>? scopeIds = await Permissions.GetScopeIdsAsync(Feature.ViewCapability, ScopeType, cancellationToken);
         if (scopeIds is null)
         {
             return await base.GetPagedAsync(request, cancellationToken);
@@ -129,14 +137,15 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
     protected override async Task<TEntity> LoadAsync(Guid id, CancellationToken cancellationToken)
     {
         TEntity entity = await base.LoadAsync(id, cancellationToken);
-        return await Permissions.CoversAsync(ScopeType, ScopeIdOf(entity), cancellationToken)
+        return await Permissions.CoversAsync(Feature.ViewCapability, ScopeType, ScopeIdOf(entity), cancellationToken)
             ? entity
             : throw new NotFoundException(EntityName);
     }
 
     /// <summary>
-    /// Refuses a create or update that would place the entity outside the
-    /// caller's scope — for a new warehouse that means only global callers may create one.
+    /// Refuses a create or update unless the caller may manage the entity
+    /// where it ends up — for a new warehouse that means only callers who manage
+    /// warehouses everywhere may create one.
     /// </summary>
     /// <param name="entity">Entity about to be written.</param>
     /// <param name="isNew">True for a create.</param>
@@ -146,9 +155,26 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
     protected override async Task BeforeWriteAsync(TEntity entity, bool isNew, CancellationToken cancellationToken)
     {
         await base.BeforeWriteAsync(entity, isNew, cancellationToken);
-        if (!await Permissions.CoversAsync(ScopeType, ScopeIdOf(entity), cancellationToken))
+        if (!await Permissions.CoversAsync(Feature.ManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
         {
-            throw new ForbiddenException($"This {EntityName.ToLowerInvariant()} would be outside your scope.");
+            throw new ForbiddenException($"You cannot change this {EntityName.ToLowerInvariant()} — it is outside the scope where you manage {Feature.Name.ToLowerInvariant()}.");
+        }
+    }
+
+    /// <summary>
+    /// Refuses a deactivation unless the caller manages the entity where it is.
+    /// (The load already hid it with 404 if they cannot even see it.)
+    /// </summary>
+    /// <param name="entity">Entity about to be deactivated.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>A task that completes when the deactivation may go ahead.</returns>
+    /// <exception cref="ForbiddenException">The caller only views it.</exception>
+    protected override async Task BeforeDeleteAsync(TEntity entity, CancellationToken cancellationToken)
+    {
+        await base.BeforeDeleteAsync(entity, cancellationToken);
+        if (!await Permissions.CoversAsync(Feature.ManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
+        {
+            throw new ForbiddenException($"You cannot deactivate this {EntityName.ToLowerInvariant()} — it is outside the scope where you manage {Feature.Name.ToLowerInvariant()}.");
         }
     }
 }

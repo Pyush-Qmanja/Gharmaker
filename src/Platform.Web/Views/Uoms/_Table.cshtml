@@ -8,7 +8,7 @@
             <th>Code</th>
             <th>Name</th>
             <th>Measures</th>
-            <th>Standard size</th>
+            <th class="data-table__num">Standard size</th>
             <th>Status</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
@@ -17,10 +17,19 @@
         @foreach (var unit in Model)
         {
             <tr>
-                <td><code>@unit.Code</code></td>
-                <td>@unit.Name</td>
+                <td><span class="code-tag">@unit.Code</span></td>
+                <td><a asp-action="Edit" asp-route-id="@unit.Id" class="data-table__primary">@unit.Name</a></td>
                 <td>@unit.Dimension.ToWords()</td>
-                <td>@(unit.BaseFactor is { } factor ? Platform.Shared.Common.Quantity.Normalise(factor).ToString(CultureInfo.InvariantCulture) : "Depends on product")</td>
+                <td class="data-table__num">
+                    @if (unit.BaseFactor is { } factor)
+                    {
+                        @Platform.Shared.Common.Quantity.Normalise(factor).ToString(CultureInfo.InvariantCulture)
+                    }
+                    else
+                    {
+                        <span class="data-table__muted">Depends on product</span>
+                    }
+                </td>
                 <td><partial name="_StatusBadge" model="unit.IsActive" /></td>
                 <partial name="_RowActions" model="unit.Id" />
             </tr>

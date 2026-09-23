@@ -5,21 +5,31 @@
     <thead>
         <tr>
             <th>Product</th>
-            <th>Brand</th>
             <th>Category</th>
             <th>Variants</th>
             <th>HSN</th>
+            <th><span class="visually-hidden">Open</span></th>
         </tr>
     </thead>
     <tbody>
         @foreach (var product in Model)
         {
             <tr>
-                <td><a asp-action="Product" asp-route-id="@product.Id" class="data-table__primary-link">@product.Name</a></td>
-                <td>@product.BrandName</td>
+                <td>
+                    <div class="identity">
+                        <span class="icon-tile icon-tile--sm icon-tile--package"><icon name="@Icons.Package" /></span>
+                        <span class="identity__text">
+                            <a asp-action="Product" asp-route-id="@product.Id" class="identity__primary">@product.Name</a>
+                            <span class="identity__secondary">@product.BrandName</span>
+                        </span>
+                    </div>
+                </td>
                 <td>@product.CategoryName</td>
                 <td><partial name="_Chips" model="product.Variants" /></td>
-                <td><code>@product.HsnCode</code></td>
+                <td><span class="code-tag">@product.HsnCode</span></td>
+                <td class="data-table__actions">
+                    <a asp-action="Product" asp-route-id="@product.Id" class="icon-btn" title="Open" aria-label="Open @product.Name"><icon name="@Icons.ChevronRight" /></a>
+                </td>
             </tr>
         }
     </tbody>

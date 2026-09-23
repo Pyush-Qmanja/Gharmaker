@@ -5,89 +5,107 @@
     ViewData["Title"] = "Check import";
 }
 
-<nav class="breadcrumb-trail" aria-label="Back">
-    <a asp-action="Index">Catalogue</a>
-    <span class="breadcrumb-trail__sep">›</span>
-    <a asp-action="Import">Import</a>
-    <span class="breadcrumb-trail__sep">›</span>
-    <span>@Model.FileName</span>
-</nav>
-
 <div class="page-header">
-    <h1 class="page-header__title">Check before saving</h1>
+    <div class="page-header__text">
+        <h1 class="page-header__title">Check before saving</h1>
+        <p class="page-header__subtitle"><icon name="@Icons.Spreadsheet" class="icon--sm" /> @Model.FileName · @Model.Rows.Count.Counted("row")</p>
+    </div>
 </div>
 
 <div class="stat-grid">
-    <div class="card stat"><span class="stat__value">@Model.NewSkus</span><span class="stat__label">new SKUs</span></div>
-    <div class="card stat"><span class="stat__value">@Model.UpdatedSkus</span><span class="stat__label">SKUs updated</span></div>
-    <div class="card stat"><span class="stat__value">@Model.NewProducts</span><span class="stat__label">new products</span></div>
-    <div class="card stat@(Model.ErrorRows > 0 ? " stat--error" : string.Empty)"><span class="stat__value">@Model.ErrorRows</span><span class="stat__label">rows with errors</span></div>
+    <div class="card stat"><span class="stat__label"><icon name="@Icons.Plus" /> New SKUs</span><span class="stat__value">@Model.NewSkus</span></div>
+    <div class="card stat"><span class="stat__label"><icon name="@Icons.Pencil" /> SKUs updated</span><span class="stat__value">@Model.UpdatedSkus</span></div>
+    <div class="card stat"><span class="stat__label"><icon name="@Icons.Package" /> New products</span><span class="stat__value">@Model.NewProducts</span></div>
+    <div class="card stat@(Model.ErrorRows > 0 ? " stat--danger" : " stat--success")">
+        <span class="stat__label"><icon name="@(Model.ErrorRows > 0 ? Icons.AlertCircle : Icons.CheckCircle)" /> Rows with errors</span>
+        <span class="stat__value">@Model.ErrorRows</span>
+    </div>
 </div>
 
 @if (Model.NewCategories.Count > 0 || Model.NewBrands.Count > 0)
 {
-    <div class="card import-new">
-        @if (Model.NewCategories.Count > 0)
-        {
-            <p><strong>New categories:</strong></p>
-            <partial name="_Chips" model="Model.NewCategories" />
-        }
-        @if (Model.NewBrands.Count > 0)
-        {
-            <p><strong>New brands:</strong></p>
-            <partial name="_Chips" model="Model.NewBrands" />
-        }
-    </div>
+    <section class="card">
+        <div class="card__body import-summary">
+            @if (Model.NewCategories.Count > 0)
+            {
+                <div class="import-summary__group">
+                    <p class="import-summary__label">New categories</p>
+                    <partial name="_Chips" model="Model.NewCategories" />
+                </div>
+            }
+            @if (Model.NewBrands.Count > 0)
+            {
+                <div class="import-summary__group">
+                    <p class="import-summary__label">New brands</p>
+                    <partial name="_Chips" model="Model.NewBrands" />
+                </div>
+            }
+        </div>
+    </section>
 }
 
 <div class="import-actions">
     @if (Model.CanCommit)
     {
+        <div class="notice">
+            <icon name="@Icons.Info" />
+            <p>Everything checks out. Saving adds or updates @((Model.NewSkus + Model.UpdatedSkus).Counted("SKU")) in one go.</p>
+        </div>
         <form asp-action="Commit" method="post" class="inline-form" data-confirm="Save @(Model.NewSkus + Model.UpdatedSkus) rows to the catalogue?">
             <input type="hidden" name="importId" value="@Model.ImportId" />
-            <button type="submit" class="btn btn-primary">Confirm and save</button>
+            <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Confirm and save</button>
         </form>
     }
     else
     {
-        <p class="alert alert-danger import-actions__blocked">Nothing can be saved while rows have errors. Fix the rows marked <strong>Error</strong> in your file and upload it again.</p>
+        <div class="notice notice--danger" role="alert">
+            <icon name="@Icons.AlertCircle" />
+            <p>Nothing can be saved while rows have errors. Fix the rows marked <strong>Error</strong> in your file and upload it again.</p>
+        </div>
     }
-    <a asp-action="Import" class="btn btn-outline-secondary">Upload a different file</a>
+    <a asp-action="Import" class="btn btn-secondary"><icon name="@Icons.Upload" /> Upload a different file</a>
 </div>
 
-<div class="card data-card">
-    <table class="table data-table">
-        <thead>
-            <tr>
-                <th class="data-table__num">Row</th>
-                <th>Result</th>
-                <th>Category</th>
-                <th>Brand / Product</th>
-                <th>SKU code</th>
-                <th>Variant</th>
-                <th>Unit</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var row in Model.Rows)
-            {
-                <tr class="@(row.Status == ImportRowStatus.Error ? "data-table__row--error" : string.Empty)">
-                    <td class="data-table__num">@row.RowNumber</td>
-                    <td><span class="status-badge status-badge--@row.Status.ToString().ToLowerInvariant()">@row.Status</span></td>
-                    <td>@row.CategoryPath</td>
-                    <td>@row.Brand<br /><span class="form-field__hint">@row.Product</span></td>
-                    <td><code>@row.SkuCode</code></td>
-                    <td>@row.Variant</td>
-                    <td>@row.BaseUnit</td>
-                    <td>
-                        @foreach (var message in row.Messages)
-                        {
-                            <div class="import-message">@message</div>
-                        }
-                    </td>
+<section class="card data-card">
+    <div class="data-card__scroll">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th class="data-table__num">Row</th>
+                    <th>Result</th>
+                    <th>Category</th>
+                    <th>Brand / Product</th>
+                    <th>SKU code</th>
+                    <th>Variant</th>
+                    <th>Unit</th>
+                    <th>Notes</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr class="@(row.Status == ImportRowStatus.Error ? "data-table__row--error" : string.Empty)">
+                        <td class="data-table__num data-table__muted">@row.RowNumber</td>
+                        <td><span class="status-badge status-badge--@row.Status.ToString().ToLowerInvariant()">@row.Status</span></td>
+                        <td>@row.CategoryPath</td>
+                        <td>
+                            <span class="identity__text">
+                                <span class="identity__primary">@row.Brand</span>
+                                <span class="identity__secondary">@row.Product</span>
+                            </span>
+                        </td>
+                        <td><span class="code-tag">@row.SkuCode</span></td>
+                        <td>@row.Variant</td>
+                        <td>@row.BaseUnit</td>
+                        <td>
+                            @foreach (var message in row.Messages)
+                            {
+                                <div class="import-message">@message</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

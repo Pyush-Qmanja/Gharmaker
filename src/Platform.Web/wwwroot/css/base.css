@@ -1,0 +1,253 @@
+/*
+ * Base: typography and the Bootstrap controls (buttons, inputs, tables,
+ * alerts) restyled to the platform's tokens. Loaded after Bootstrap and
+ * variables.css, before layout.css and components.css.
+ * Views never carry a style attribute or a <style> block — add a class instead.
+ */
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text);
+    background: var(--color-page);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv11", "ss01";
+}
+
+h1, h2, h3, h4 {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--color-primary-hover);
+}
+
+code, .mono {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    color: var(--color-text-secondary);
+}
+
+::selection {
+    background: var(--color-primary-soft-border);
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--control-height);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: var(--shadow-xs);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn:focus,
+.btn:focus-visible {
+    box-shadow: var(--shadow-focus);
+}
+
+.btn-sm {
+    min-height: var(--control-height-sm);
+    padding: 0 var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary-contrast);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+    color: var(--color-primary-contrast);
+}
+
+.btn-primary:active {
+    background: var(--color-primary-active);
+    border-color: var(--color-primary-active);
+}
+
+.btn-secondary,
+.btn-outline-secondary,
+.btn-outline-primary {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+}
+
+.btn-secondary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-primary:hover,
+.btn-secondary:focus,
+.btn-outline-secondary:focus,
+.btn-outline-primary:focus {
+    background: var(--color-surface-muted);
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+}
+
+.btn-danger,
+.btn-outline-danger {
+    background: var(--color-surface);
+    border: 1px solid var(--color-danger-border);
+    color: var(--color-danger);
+}
+
+.btn-danger:hover,
+.btn-outline-danger:hover {
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-hover);
+}
+
+.btn-link {
+    box-shadow: none;
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+}
+
+.btn-link:hover {
+    color: var(--color-text);
+}
+
+.btn .icon {
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+}
+
+.btn--block {
+    width: 100%;
+}
+
+/* ---------- Inputs ---------- */
+.form-control,
+.form-select {
+    min-height: var(--control-height);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    box-shadow: var(--shadow-xs);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-select {
+    padding-right: var(--space-8);
+}
+
+.form-control::placeholder {
+    color: var(--color-text-subtle);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
+}
+
+.form-control.input-validation-error,
+.form-select.input-validation-error {
+    border-color: var(--color-danger-dot);
+}
+
+.form-control.input-validation-error:focus {
+    box-shadow: 0 0 0 4px var(--color-danger-bg);
+}
+
+.form-check-input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.form-check-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Tables ---------- */
+.table {
+    --bs-table-bg: transparent;
+    margin: 0;
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+}
+
+/* Bootstrap draws the header's bottom edge in the text colour; keep it the border colour. */
+.table > :not(:last-child) > :last-child > * {
+    border-bottom-color: var(--color-border);
+}
+
+/* ---------- Alerts ---------- */
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+}
+
+.alert-danger {
+    background: var(--color-danger-bg);
+    border: 1px solid var(--color-danger-border);
+    color: var(--color-danger);
+}
+
+.alert-success {
+    background: var(--color-success-bg);
+    border: 1px solid var(--color-success-border);
+    color: var(--color-success);
+}
+
+.alert-info {
+    background: var(--color-info-bg);
+    border: 1px solid var(--color-info-border);
+    color: var(--color-info);
+}
+
+.alert .icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+}

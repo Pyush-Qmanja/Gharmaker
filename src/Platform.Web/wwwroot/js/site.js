@@ -1,12 +1,16 @@
 /*
  * Behaviour shared by every page. Views never contain <script> blocks or
  * onclick attributes; they opt in with data- attributes handled here.
+ * Every page still works without this file — it only adds convenience.
  */
 (function () {
     "use strict";
 
     /** Milliseconds a success message stays visible. */
-    const AUTO_DISMISS_MS = 4000;
+    const AUTO_DISMISS_MS = 5000;
+
+    /** Class on the shell while the mobile sidebar is open. */
+    const NAV_OPEN_CLASS = "shell--nav-open";
 
     /**
      * Asks for confirmation before submitting any form marked with
@@ -22,7 +26,7 @@
     }
 
     /**
-     * Fades out and removes every element marked data-auto-dismiss.
+     * Removes every element marked data-auto-dismiss after a short delay.
      * @param {ParentNode} root - Where to look for messages.
      */
     function autoDismissMessages(root) {
@@ -45,8 +49,82 @@
         }
     }
 
+    /**
+     * Shows the chosen file's name next to a file input marked data-file-input,
+     * in the nearest element marked data-file-name.
+     * @param {Event} event - The change event bubbling to the document.
+     */
+    function showChosenFileName(event) {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement) || !input.hasAttribute("data-file-input")) {
+            return;
+        }
+
+        const label = input.closest("label");
+        const target = label ? label.querySelector("[data-file-name]") : null;
+        if (target) {
+            target.textContent = input.files && input.files.length > 0 ? input.files[0].name : "";
+        }
+    }
+
+    /**
+     * Handles clicks for the shell and messages:
+     * data-sidebar-toggle opens or closes the mobile sidebar, data-sidebar-close
+     * closes it, data-dismiss removes the surrounding data-dismissable element,
+     * and a click outside an open details[data-close-outside] closes it.
+     * @param {MouseEvent} event - The click event bubbling to the document.
+     */
+    function handleClick(event) {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) {
+            return;
+        }
+
+        const shell = document.querySelector("[data-shell]");
+        if (shell && target.closest("[data-sidebar-toggle]")) {
+            shell.classList.toggle(NAV_OPEN_CLASS);
+        } else if (shell && target.closest("[data-sidebar-close]")) {
+            shell.classList.remove(NAV_OPEN_CLASS);
+        }
+
+        const dismiss = target.closest("[data-dismiss]");
+        if (dismiss) {
+            const message = dismiss.closest("[data-dismissable]");
+            if (message) {
+                message.remove();
+            }
+        }
+
+        document.querySelectorAll("details[data-close-outside][open]").forEach(function (menu) {
+            if (!menu.contains(target)) {
+                menu.removeAttribute("open");
+            }
+        });
+    }
+
+    /**
+     * Closes open menus and the mobile sidebar on Escape.
+     * @param {KeyboardEvent} event - The keydown event bubbling to the document.
+     */
+    function handleEscape(event) {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        document.querySelectorAll("details[data-close-outside][open]").forEach(function (menu) {
+            menu.removeAttribute("open");
+        });
+        const shell = document.querySelector("[data-shell]");
+        if (shell) {
+            shell.classList.remove(NAV_OPEN_CLASS);
+        }
+    }
+
     document.addEventListener("submit", confirmBeforeSubmit);
     document.addEventListener("change", autoSubmitOnChange);
+    document.addEventListener("change", showChosenFileName);
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleEscape);
     document.addEventListener("DOMContentLoaded", function () {
         autoDismissMessages(document);
     });

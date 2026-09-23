@@ -1,3 +1,4 @@
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Identity;
 using Platform.Shared.Entities.Identity;
 
@@ -20,14 +21,14 @@ public sealed class RoleMapper : IEntityMapper<Role, RoleDto, CreateRoleRequest,
     public Role ToEntity(CreateRoleRequest request) => new()
     {
         Name = DtoMapping.Clean(request.Name),
-        Capabilities = request.Capabilities.Distinct().ToList(),
+        Capabilities = Features.Complete(request.Capabilities),
     };
 
     /// <inheritdoc />
     public void Apply(UpdateRoleRequest request, Role entity)
     {
         entity.Name = DtoMapping.Clean(request.Name);
-        entity.Capabilities = request.Capabilities.Distinct().ToList();
+        entity.Capabilities = Features.Complete(request.Capabilities);
         entity.IsActive = request.IsActive;
     }
 }
@@ -45,7 +46,13 @@ public sealed class UserMapper : IEntityMapper<User, UserDto, CreateUserRequest,
         Email = entity.Email,
         Phone = entity.Phone,
         RoleIds = entity.RoleIds.ToList(),
-        Scopes = entity.Scopes.Select(s => new ScopeGrantDto { ScopeType = s.ScopeType, ScopeId = s.ScopeId }).ToList(),
+        Scopes = ToScopeDtos(entity.Scopes),
+        Access = entity.Access.Select(a => new FeatureAccessDto
+        {
+            Feature = a.Feature,
+            Level = a.Level,
+            Scopes = ToScopeDtos(a.Scopes),
+        }).ToList(),
         IsActive = entity.IsActive,
     }.WithAuditFrom(entity);
 
@@ -57,6 +64,7 @@ public sealed class UserMapper : IEntityMapper<User, UserDto, CreateUserRequest,
         Phone = DtoMapping.CleanOptional(request.Phone),
         RoleIds = request.RoleIds.Distinct().ToList(),
         Scopes = ToScopes(request.Scopes),
+        Access = ToAccess(request.Access),
     };
 
     /// <inheritdoc />
@@ -66,6 +74,7 @@ public sealed class UserMapper : IEntityMapper<User, UserDto, CreateUserRequest,
         entity.Phone = DtoMapping.CleanOptional(request.Phone);
         entity.RoleIds = request.RoleIds.Distinct().ToList();
         entity.Scopes = ToScopes(request.Scopes);
+        entity.Access = ToAccess(request.Access);
         entity.IsActive = request.IsActive;
     }
 
@@ -78,5 +87,24 @@ public sealed class UserMapper : IEntityMapper<User, UserDto, CreateUserRequest,
         scopes
             .DistinctBy(s => (s.ScopeType, s.ScopeId))
             .Select(s => new ScopeGrant { ScopeType = s.ScopeType, ScopeId = s.ScopeId })
+            .ToList();
+
+    /// <summary>
+    /// Converts stored grants to their DTOs.
+    /// </summary>
+    /// <param name="scopes">Stored grants.</param>
+    /// <returns>The DTOs.</returns>
+    private static List<ScopeGrantDto> ToScopeDtos(IEnumerable<ScopeGrant> scopes) =>
+        scopes.Select(s => new ScopeGrantDto { ScopeType = s.ScopeType, ScopeId = s.ScopeId }).ToList();
+
+    /// <summary>
+    /// Converts requested feature access to stored rows, in canonical form
+    /// (no "no access" rows, one row per feature, scopes only where they apply).
+    /// </summary>
+    /// <param name="access">Requested rows.</param>
+    /// <returns>Rows to store.</returns>
+    private static List<FeatureAccess> ToAccess(IEnumerable<FeatureAccessDto> access) =>
+        UserFieldsNormaliser.Normalise(access)
+            .Select(a => new FeatureAccess { Feature = a.Feature, Level = a.Level, Scopes = ToScopes(a.Scopes) })
             .ToList();
 }

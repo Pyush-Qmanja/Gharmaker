@@ -1,0 +1,29 @@
+@* Top-bar breadcrumb: section › screen › page, worked out from the current controller and page title. *@
+@{
+    string? controller = ViewContext.RouteData.Values["controller"] as string;
+    string? action = ViewContext.RouteData.Values["action"] as string;
+    NavigationItem? screen = Navigation.Find(controller);
+    string title = ViewData["Title"] as string ?? string.Empty;
+    bool onScreenIndex = string.Equals(action, "Index", StringComparison.OrdinalIgnoreCase);
+}
+<nav class="topbar__crumbs" aria-label="Breadcrumb">
+    @if (screen is null)
+    {
+        <span class="topbar__crumb-current">@title</span>
+    }
+    else
+    {
+        <span>@screen.Group</span>
+        <icon name="@Icons.ChevronRight" />
+        @if (onScreenIndex)
+        {
+            <span class="topbar__crumb-current">@screen.Title</span>
+        }
+        else
+        {
+            <a asp-controller="@screen.Controller" asp-action="Index">@screen.Title</a>
+            <icon name="@Icons.ChevronRight" />
+            <span class="topbar__crumb-current">@title</span>
+        }
+    }
+</nav>

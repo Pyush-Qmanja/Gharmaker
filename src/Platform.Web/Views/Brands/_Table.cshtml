@@ -4,12 +4,12 @@
 <table class="table data-table">
     <thead>
         <tr>
-            <th>Name</th>
+            <th>Brand</th>
             <th>Slug</th>
             <th>Manufacturer</th>
             <th class="data-table__num">Order</th>
             <th>Status</th>
-            <th>Updated</th>
+            <th>Last updated</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
     </thead>
@@ -17,12 +17,17 @@
         @foreach (var brand in Model)
         {
             <tr>
-                <td>@brand.Name</td>
-                <td><code>@brand.Slug</code></td>
+                <td>
+                    <div class="identity">
+                        <span class="avatar">@brand.Name.Initials()</span>
+                        <a asp-action="Edit" asp-route-id="@brand.Id" class="identity__primary">@brand.Name</a>
+                    </div>
+                </td>
+                <td><span class="code-tag">@brand.Slug</span></td>
                 <td>@brand.ManufacturerName</td>
                 <td class="data-table__num">@brand.DisplayOrder</td>
                 <td><partial name="_StatusBadge" model="brand.IsActive" /></td>
-                <td>@((brand.UpdatedAt ?? brand.CreatedAt).ToIstString())</td>
+                <td class="data-table__muted" title="@((brand.UpdatedAt ?? brand.CreatedAt).ToIstString())">@((brand.UpdatedAt ?? brand.CreatedAt).ToIstDateString())</td>
                 <partial name="_RowActions" model="brand.Id" />
             </tr>
         }

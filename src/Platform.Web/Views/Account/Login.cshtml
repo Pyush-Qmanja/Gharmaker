@@ -1,17 +1,19 @@
+@* Sign-in form, inside the split-screen auth layout. *@
 @using Platform.Shared.Dtos.Auth
 @model LoginRequest
 @{
     ViewData["Title"] = "Sign in";
+    Layout = "_AuthLayout";
 }
 
-<div class="auth-card card">
-    <h1 class="auth-card__title">Sign in</h1>
-    <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate>
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-        <form-field asp-for="Email" type="email" />
-        <form-field asp-for="Password" type="password" />
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary auth-card__submit">Sign in</button>
-        </div>
-    </form>
-</div>
+<h1 class="auth__title">Welcome back</h1>
+<p class="auth__subtitle">Sign in with your work email to continue.</p>
+
+<form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate class="auth__form">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <form-field asp-for="Email" type="email" label="Work email" />
+    <form-field asp-for="Password" type="password" />
+    <button type="submit" class="btn btn-primary auth__submit">Sign in <icon name="@Icons.ArrowRight" /></button>
+</form>
+
+<p class="auth__help">Forgot your password or need an account? Ask your administrator.</p>

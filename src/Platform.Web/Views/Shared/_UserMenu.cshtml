@@ -1,0 +1,26 @@
+@* Signed-in user's menu in the top bar. A details/summary pair, so it opens without script; site.js closes it on an outside click. *@
+@using Platform.Shared.Constants
+@if (User.Identity?.IsAuthenticated == true)
+{
+    string name = User.Identity.Name ?? string.Empty;
+    string email = User.FindFirst(ClaimNames.Email)?.Value ?? string.Empty;
+    <details class="user-menu" data-close-outside>
+        <summary class="user-menu__trigger" aria-label="Account menu">
+            <span class="avatar">@name.Initials()</span>
+            <span class="user-menu__name">@name</span>
+            <icon name="@Icons.ChevronDown" />
+        </summary>
+        <div class="user-menu__panel">
+            <div class="user-menu__header">
+                <span class="avatar avatar--lg">@name.Initials()</span>
+                <span class="user-menu__identity">
+                    <strong>@name</strong>
+                    <span>@email</span>
+                </span>
+            </div>
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="user-menu__item"><icon name="@Icons.LogOut" /> Sign out</button>
+            </form>
+        </div>
+    </details>
+}

@@ -81,7 +81,8 @@ public sealed class CatalogController : PlatformControllerBase
                 {
                     ["categoryId"] = request.CategoryId?.ToString(),
                     ["brandId"] = request.BrandId?.ToString(),
-                }),
+                },
+                itemName: "product"),
             CanImport = await _access.CanAsync(Capabilities.CatalogManage),
         });
     }

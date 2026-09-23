@@ -1,24 +1,38 @@
-@* Shared list page for every CRUD screen. Rows come from the controller's own _Table partial. *@
+@* Shared list page for every CRUD screen: header with the create action, then a card with search, the controller's own _Table partial and the pager. *@
 @model IListViewModel
 @{
     ViewData["Title"] = Model.Title;
+    NavigationItem? screen = Navigation.Find(ViewContext.RouteData.Values["controller"] as string);
 }
 
 <div class="page-header">
-    <h1 class="page-header__title">@Model.Title</h1>
-    <a asp-action="Create" class="btn btn-primary">Add new</a>
+    <div class="page-header__text">
+        <h1 class="page-header__title">@Model.Title</h1>
+        @if (screen is not null)
+        {
+            <p class="page-header__subtitle">@screen.Description</p>
+        }
+    </div>
+    <div class="page-header__actions">
+        <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New @Model.ItemName</a>
+    </div>
 </div>
 
-<partial name="_SearchBar" model="Model" />
-
-@if (Model.TotalCount == 0)
-{
-    <partial name="_EmptyState" model="Model" />
-}
-else
-{
-    <div class="card data-card">
-        <partial name="_Table" model="Model.Items" />
+<div class="card data-card">
+    <div class="data-card__toolbar">
+        <partial name="_SearchBar" model="Model" />
+        <span class="data-card__count">@Model.TotalCount.Counted(Model.ItemName)</span>
     </div>
-    <partial name="_Pagination" model="Model" />
-}
+
+    @if (Model.TotalCount == 0)
+    {
+        <partial name="_EmptyState" model="Model" />
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <partial name="_Table" model="Model.Items" />
+        </div>
+        <partial name="_Pagination" model="Model" />
+    }
+</div>

@@ -1,14 +1,21 @@
-@* Shown by CrudIndex when a list has no rows. *@
+@* Shown by CrudIndex when a list has no rows: either nothing yet, or nothing matches the search. *@
 @model IListViewModel
 <div class="empty-state">
+    <span class="empty-state__icon"><icon name="@(string.IsNullOrEmpty(Model.Search) ? Icons.Inbox : Icons.Search)" /></span>
     @if (string.IsNullOrEmpty(Model.Search))
     {
-        <p class="empty-state__text">No @Model.Title.ToLowerInvariant() yet.</p>
-        <a asp-action="Create" class="btn btn-primary">Add the first one</a>
+        <h2 class="empty-state__title">No @Model.Title.ToLowerInvariant() yet</h2>
+        <p class="empty-state__text">When you add one, it will show up here.</p>
+        <div class="empty-state__actions">
+            <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New @Model.ItemName</a>
+        </div>
     }
     else
     {
-        <p class="empty-state__text">Nothing matches “@Model.Search”.</p>
-        <a asp-action="Index" class="btn btn-outline-secondary">Clear search</a>
+        <h2 class="empty-state__title">No results</h2>
+        <p class="empty-state__text">Nothing matches “@Model.Search”. Check the spelling or try fewer letters.</p>
+        <div class="empty-state__actions">
+            <a asp-action="Index" class="btn btn-secondary">Clear search</a>
+        </div>
     }
 </div>

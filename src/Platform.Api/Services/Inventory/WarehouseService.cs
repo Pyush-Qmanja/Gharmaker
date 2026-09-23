@@ -4,6 +4,7 @@ using Platform.Api.Firestore;
 using Platform.Api.Mapping;
 using Platform.Api.Repositories;
 using Platform.Api.Security.Authorization;
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Inventory;
 using Platform.Shared.Entities.Identity;
 using Platform.Shared.Entities.Inventory;
@@ -41,7 +42,7 @@ public sealed class WarehouseService : ScopedCrudService<Warehouse, WarehouseDto
     }
 
     /// <inheritdoc />
-    protected override ScopeType ScopeType => ScopeType.Warehouse;
+    protected override FeatureInfo Feature { get; } = Features.Find(Features.Warehouses)!;
 
     /// <inheritdoc />
     protected override Guid ScopeIdOf(Warehouse entity) => entity.Id;

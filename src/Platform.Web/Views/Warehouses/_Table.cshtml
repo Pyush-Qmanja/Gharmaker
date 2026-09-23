@@ -7,28 +7,42 @@
 <table class="table data-table">
     <thead>
         <tr>
+            <th>Warehouse</th>
             <th>Code</th>
-            <th>Name</th>
             <th>Type</th>
             <th>City</th>
             <th>Responsible</th>
             <th>Status</th>
-            <th>Updated</th>
+            <th>Last updated</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
     </thead>
     <tbody>
         @foreach (var warehouse in Model)
         {
-            string responsible = warehouse.OwnerUserId is { } ownerId && userNames.TryGetValue(ownerId, out var ownerName) ? ownerName : "—";
+            string? responsible = warehouse.OwnerUserId is { } ownerId && userNames.TryGetValue(ownerId, out var ownerName) ? ownerName : null;
             <tr>
-                <td><code>@warehouse.Code</code></td>
-                <td>@warehouse.Name</td>
+                <td>
+                    <div class="identity">
+                        <span class="icon-tile icon-tile--sm icon-tile--warehouse"><icon name="@Icons.Warehouse" /></span>
+                        <a asp-action="Edit" asp-route-id="@warehouse.Id" class="identity__primary">@warehouse.Name</a>
+                    </div>
+                </td>
+                <td><span class="code-tag">@warehouse.Code</span></td>
                 <td>@warehouse.Type.ToWords()</td>
-                <td>@warehouse.Address.City</td>
-                <td>@responsible</td>
+                <td><span class="cell-with-icon"><icon name="@Icons.MapPin" /> @warehouse.Address.City</span></td>
+                <td>
+                    @if (responsible is null)
+                    {
+                        <span class="data-table__muted">—</span>
+                    }
+                    else
+                    {
+                        <span class="identity"><span class="avatar">@responsible.Initials()</span> @responsible</span>
+                    }
+                </td>
                 <td><partial name="_StatusBadge" model="warehouse.IsActive" /></td>
-                <td>@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstString())</td>
+                <td class="data-table__muted" title="@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstString())">@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstDateString())</td>
                 <partial name="_RowActions" model="warehouse.Id" />
             </tr>
         }

@@ -160,6 +160,7 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
             throw new BusinessRuleException($"{EntityName} records cannot be deleted.");
         }
 
+        await BeforeDeleteAsync(entity, cancellationToken);
         softDeletable.IsActive = false;
         Repository.Update(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
@@ -194,6 +195,14 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     /// <param name="cancellationToken">Cancels the check.</param>
     /// <returns>A task that completes when the write may go ahead.</returns>
     protected virtual Task BeforeWriteAsync(TEntity entity, bool isNew, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
+    /// Last check before a record is deactivated (e.g. scope checks). Default: nothing.
+    /// </summary>
+    /// <param name="entity">Entity about to be deactivated.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>A task that completes when the deactivation may go ahead.</returns>
+    protected virtual Task BeforeDeleteAsync(TEntity entity, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <summary>
     /// Enforces unique values before a write. Default: nothing is unique.

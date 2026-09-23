@@ -1,0 +1,58 @@
+@* One line per feature per source (each role, and direct access): how much, where, and why. Built by AccessSummary.Effective. *@
+@using Platform.Shared.Dtos.Identity
+@using Platform.Shared.Entities.Identity
+@model IUserFields
+@{
+    var roles = ViewData[ViewDataKeys.Roles] as IReadOnlyList<RoleDto> ?? Array.Empty<RoleDto>();
+    var scopeNames = ViewData[ViewDataKeys.ScopeNames] as IReadOnlyDictionary<string, string> ?? new Dictionary<string, string>();
+    var lines = AccessSummary.Effective(Model, roles, scopeNames);
+}
+@if (lines.Count == 0)
+{
+    <div class="notice notice--warning">
+        <icon name="@Icons.Info" />
+        <p>This user can sign in but cannot open anything yet. Give them a role or some feature access.</p>
+    </div>
+}
+else
+{
+    <table class="effective-access">
+        <thead>
+            <tr>
+                <th scope="col">Feature</th>
+                <th scope="col">Access</th>
+                <th scope="col">Where</th>
+                <th scope="col">Given by</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in lines)
+            {
+                <tr>
+                    <td class="data-table__primary">@line.Feature.Name</td>
+                    <td><span class="level-badge level-badge--@line.Level.ToString().ToLowerInvariant()">@line.Level</span></td>
+                    <td>
+                        @if (line.Places.Count == 0)
+                        {
+                            <span class="chip chip--empty">Nowhere — no place chosen</span>
+                        }
+                        else
+                        {
+                            <partial name="_Chips" model="line.Places" />
+                        }
+                    </td>
+                    <td>
+                        @if (line.IsDirect)
+                        {
+                            <span class="chip chip--primary">Direct</span>
+                        }
+                        else
+                        {
+                            <span class="chip">Role: @line.Source</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

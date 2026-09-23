@@ -78,6 +78,39 @@ internal sealed class UserFieldsValidator : AbstractValidator<IUserFields>
         RuleFor(x => x.RoleIds)
             .Must(ids => ids.Distinct().Count() == ids.Count).WithMessage("A role is listed twice.");
         RuleForEach(x => x.Scopes).SetValidator(new ScopeGrantDtoValidator());
+        RuleFor(x => x.Access)
+            .Must(rows => rows.Where(a => a.Level != AccessLevel.None).Select(a => a.Feature).Distinct().Count()
+                          == rows.Count(a => a.Level != AccessLevel.None))
+            .WithMessage("A feature is listed twice.");
+        RuleForEach(x => x.Access).SetValidator(new FeatureAccessDtoValidator());
+    }
+}
+
+/// <summary>
+/// Validates one feature access row: a known feature, and — for features
+/// limited by scope — at least one place where it applies, of the right kind.
+/// </summary>
+public class FeatureAccessDtoValidator : AbstractValidator<FeatureAccessDto>
+{
+    /// <summary>
+    /// Defines the access row rules.
+    /// </summary>
+    public FeatureAccessDtoValidator()
+    {
+        RuleFor(x => x.Feature)
+            .Must(code => Features.Find(code) is not null).WithMessage("Unknown feature.");
+        RuleFor(x => x.Level).IsInEnum();
+
+        When(x => Features.Find(x.Feature) is { IsScoped: true } && x.Level != AccessLevel.None, () =>
+        {
+            RuleFor(x => x.Scopes)
+                .NotEmpty().WithMessage(x => $"Choose where {Features.Find(x.Feature)!.Name.ToLowerInvariant()} access applies.");
+            RuleForEach(x => x.Scopes)
+                .SetValidator(new ScopeGrantDtoValidator());
+            RuleForEach(x => x.Scopes)
+                .Must((row, scope) => scope.ScopeType == ScopeType.Global || scope.ScopeType == Features.Find(row.Feature)!.ScopeType)
+                .WithMessage("That kind of scope does not apply to this feature.");
+        });
     }
 }
 

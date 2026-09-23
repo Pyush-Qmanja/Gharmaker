@@ -4,8 +4,9 @@ namespace Platform.Shared.Entities.Identity;
 
 /// <summary>
 /// A person who signs in to the platform. The password lives in Firebase
-/// Authentication, never here. Capabilities and scopes (P6) are attached in
-/// Phase 1; this entity carries profile and organisation only.
+/// Authentication, never here. Access (P6) comes from two places: roles, which
+/// apply in <see cref="Scopes"/>, and per-feature <see cref="Access"/>, which
+/// carries its own scopes.
 /// </summary>
 public class User : BaseEntity, IOrgScoped, ISoftDeletable
 {
@@ -30,8 +31,14 @@ public class User : BaseEntity, IOrgScoped, ISoftDeletable
     /// <summary>Roles held; the user's capabilities are the union of their active roles.</summary>
     public List<Guid> RoleIds { get; set; } = new();
 
-    /// <summary>Where the user's capabilities apply (P6). Empty means nowhere.</summary>
+    /// <summary>Where the user's roles apply (P6). Empty means nowhere.</summary>
     public List<ScopeGrant> Scopes { get; set; } = new();
+
+    /// <summary>
+    /// Feature access given straight to the user, on top of their roles, each
+    /// with its own scopes. At most one entry per feature; never level None.
+    /// </summary>
+    public List<FeatureAccess> Access { get; set; } = new();
 
     /// <inheritdoc />
     public bool IsActive { get; set; } = true;

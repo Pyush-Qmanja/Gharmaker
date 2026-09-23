@@ -33,6 +33,22 @@ public static partial class TextExtensions
     public static string Counted(this int count, string singular, string? plural = null) =>
         $"{count} {(count == 1 ? singular : plural ?? singular + "s")}";
 
+    /// <summary>
+    /// Up to two initials for an avatar: "Pyush Kumar" → "PK", "admin" → "A".
+    /// </summary>
+    /// <param name="name">Person's name.</param>
+    /// <returns>The initials in capitals, or "?" for a blank name.</returns>
+    public static string Initials(this string? name)
+    {
+        string[] words = (name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return words.Length switch
+        {
+            0 => "?",
+            1 => words[0][..1].ToUpperInvariant(),
+            _ => string.Concat(words[0][..1], words[^1][..1]).ToUpperInvariant(),
+        };
+    }
+
     /// <summary>Matches an upper-case letter that starts a new word.</summary>
     /// <returns>The compiled regex.</returns>
     [GeneratedRegex("(?<=[a-z0-9])([A-Z])")]

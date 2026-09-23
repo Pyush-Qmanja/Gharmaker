@@ -7,14 +7,14 @@ namespace Platform.Web.Common;
 /// </summary>
 public static class ViewDataKeys
 {
-    /// <summary>Roles as checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    /// <summary>Roles with what each grants (<c>IReadOnlyList&lt;RoleDto&gt;</c>).</summary>
+    public const string Roles = "Roles";
+
+    /// <summary>Active roles as checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
     public const string RoleOptions = "RoleOptions";
 
     /// <summary>Role id to name (<c>IReadOnlyDictionary&lt;Guid, string&gt;</c>).</summary>
     public const string RoleNames = "RoleNames";
-
-    /// <summary>Capability catalogue as grouped checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
-    public const string CapabilityOptions = "CapabilityOptions";
 
     /// <summary>Scopes the signed-in user can grant, as grouped checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
     public const string ScopeOptions = "ScopeOptions";
@@ -27,4 +27,7 @@ public static class ViewDataKeys
 
     /// <summary>User id to name (<c>IReadOnlyDictionary&lt;Guid, string&gt;</c>).</summary>
     public const string UserNames = "UserNames";
+
+    /// <summary>One-line description under a page title (<c>string</c>).</summary>
+    public const string Subtitle = "Subtitle";
 }

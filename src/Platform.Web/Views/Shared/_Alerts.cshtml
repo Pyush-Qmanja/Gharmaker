@@ -1,9 +1,26 @@
-@* Flash messages queued with FlashSuccess / FlashError in PlatformControllerBase. *@
-@if (TempData[TempDataKeys.Success] is string success)
-{
-    <div class="alert alert-success flash" role="status" data-auto-dismiss>@success</div>
+@* Flash messages queued with FlashSuccess / FlashError in PlatformControllerBase, shown as toasts. Success messages fade by themselves. *@
+@{
+    var success = TempData[TempDataKeys.Success] as string;
+    var error = TempData[TempDataKeys.Error] as string;
 }
-@if (TempData[TempDataKeys.Error] is string error)
+@if (success is not null || error is not null)
 {
-    <div class="alert alert-danger flash" role="alert">@error</div>
+    <div class="toasts">
+        @if (success is not null)
+        {
+            <div class="toast-message toast-message--success" role="status" data-auto-dismiss data-dismissable>
+                <icon name="@Icons.CheckCircle" class="toast-message__icon" />
+                <span class="toast-message__text">@success</span>
+                <button type="button" class="icon-btn toast-message__close" data-dismiss aria-label="Dismiss"><icon name="@Icons.Close" /></button>
+            </div>
+        }
+        @if (error is not null)
+        {
+            <div class="toast-message toast-message--error" role="alert" data-dismissable>
+                <icon name="@Icons.AlertCircle" class="toast-message__icon" />
+                <span class="toast-message__text">@error</span>
+                <button type="button" class="icon-btn toast-message__close" data-dismiss aria-label="Dismiss"><icon name="@Icons.Close" /></button>
+            </div>
+        }
+    </div>
 }

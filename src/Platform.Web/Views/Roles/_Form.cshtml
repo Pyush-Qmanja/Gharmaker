@@ -1,8 +1,11 @@
-@* Role fields for the shared CrudForm page. Capability options come from RolesController.PrepareViewAsync. *@
-@using Microsoft.AspNetCore.Mvc.Rendering
+@* Role form sections for the shared CrudForm page: name, then the feature access grid built from the shared feature catalogue. *@
 @using Platform.Shared.Dtos.Identity
 @model IRoleFields
-<form-field asp-for="Name" />
-<checkbox-list asp-for="Capabilities"
-               items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.CapabilityOptions]!"
-               label="What this role can do" />
+
+<form-panel title="Role" description="A short name people will recognise, e.g. Store keeper or Site supervisor.">
+    <form-field asp-for="Name" label="Role name" />
+</form-panel>
+
+<form-panel title="Feature access" stacked="true" description="What anyone holding this role can do. Manage includes View. Where it applies is chosen per user, when the role is given.">
+    <partial name="_AccessGrid" model="AccessGridModel.ForRole(Model)" />
+</form-panel>

@@ -1,15 +1,16 @@
-@* Search box for any list page. Submits as GET so the URL is shareable; keeps any extra filters (Model.RouteValues). *@
+@* Search box for any list page. Submits as GET on Enter so the URL is shareable; keeps any extra filters (Model.RouteValues). *@
 @model IListViewModel
-<form asp-action="Index" method="get" class="search-bar" role="search">
+<form asp-action="Index" method="get" class="search-field" role="search">
     @foreach (var (name, value) in Model.RouteValues.Where(v => !string.IsNullOrEmpty(v.Value)))
     {
         <input type="hidden" name="@name" value="@value" />
     }
+    <icon name="@Icons.Search" class="search-field__icon" />
     <input type="search" name="@nameof(PagedRequest.Search)" value="@Model.Search"
-           class="form-control search-bar__input" placeholder="Search @Model.Title.ToLowerInvariant()" aria-label="Search" />
-    <button type="submit" class="btn btn-outline-primary">Search</button>
+           class="form-control search-field__input" placeholder="Search @Model.Title.ToLowerInvariant()…" aria-label="Search @Model.Title.ToLowerInvariant()" />
     @if (!string.IsNullOrEmpty(Model.Search))
     {
-        <a asp-action="Index" asp-all-route-data="@(Model.RouteValues.Where(v => v.Value is not null).ToDictionary(v => v.Key, v => v.Value!))" class="btn btn-link">Clear</a>
+        <a asp-action="Index" asp-all-route-data="@(Model.RouteValues.Where(v => v.Value is not null).ToDictionary(v => v.Key, v => v.Value!))"
+           class="icon-btn search-field__clear" aria-label="Clear search" title="Clear search"><icon name="@Icons.Close" /></a>
     }
 </form>

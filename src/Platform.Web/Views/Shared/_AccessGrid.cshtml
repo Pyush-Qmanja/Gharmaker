@@ -1,0 +1,115 @@
+@* Feature access grid, shared by the role and user forms: one row per feature with No access / View / Manage, and — on the user form — where each scoped feature applies. *@
+@using Platform.Shared.Entities.Identity
+@model AccessGridModel
+@{
+    string LevelLabel(AccessLevel level) => level == AccessLevel.None ? "No access" : level.ToString();
+    string FeatureIcon(Platform.Shared.Constants.FeatureInfo feature) =>
+        Navigation.Items.FirstOrDefault(i => i.Capability == feature.ViewCapability)?.Icon ?? Icons.Shield;
+    string global = new Platform.Shared.Dtos.Identity.ScopeGrantDto { ScopeType = ScopeType.Global }.ToString();
+    int columns = Model.ShowScopes ? 3 : 2;
+    var errors = ViewData.ModelState
+        .Where(e => e.Key.StartsWith("Access", StringComparison.Ordinal) || e.Key.StartsWith("Capabilities", StringComparison.Ordinal))
+        .SelectMany(e => e.Value!.Errors.Select(x => x.ErrorMessage))
+        .Distinct()
+        .ToList();
+}
+<div class="access-grid">
+    <table class="access-grid__table">
+        <thead>
+            <tr>
+                <th scope="col">Feature</th>
+                <th scope="col">Access</th>
+                @if (Model.ShowScopes)
+                {
+                    <th scope="col">Where it applies</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Model.Rows.GroupBy(r => r.Feature.Group))
+            {
+                <tr class="access-grid__group"><th colspan="@columns" scope="colgroup">@group.Key</th></tr>
+                @foreach (var row in group)
+                {
+                    string field = Model.LevelField(row);
+                    <tr class="access-grid__row">
+                        <td>
+                            <div class="access-grid__feature">
+                                <span class="access-grid__feature-icon"><icon name="@FeatureIcon(row.Feature)" /></span>
+                                <span>
+                                    <span class="access-grid__name">@row.Feature.Name</span>
+                                    <span class="access-grid__desc">@row.Feature.Description</span>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="access-grid__level">
+                            @if (Model.Mode == AccessGridMode.User)
+                            {
+                                <input type="hidden" name="Access[@row.Index].Feature" value="@row.Feature.Code" />
+                            }
+                            <div class="segmented" role="radiogroup" aria-label="@row.Feature.Name access">
+                                @foreach (var level in AccessGridModel.Levels)
+                                {
+                                    string id = $"access-{row.Index}-{level}";
+                                    <input type="radio" class="segmented__input" id="@id" name="@field" value="@Model.LevelValue(row, level)"
+                                           data-level="@level" checked="@(row.Level == level)" />
+                                    <label class="segmented__option segmented__option--@level.ToString().ToLowerInvariant()" for="@id">@LevelLabel(level)</label>
+                                }
+                            </div>
+                        </td>
+                        @if (Model.ShowScopes)
+                        {
+                            <td class="access-grid__where">
+                                @if (row.Feature.IsScoped)
+                                {
+                                    var options = Model.OptionsFor(row.Feature);
+                                    var offered = options.Select(o => o.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                                    <div class="scope-picker">
+                                        @foreach (var option in options)
+                                        {
+                                            <label class="scope-chip">
+                                                <input type="checkbox" class="scope-chip__input" name="Access[@row.Index].Scopes" value="@option.Value"
+                                                       checked="@row.SelectedScopes.Contains(option.Value)" />
+                                                <span class="scope-chip__label">
+                                                    <icon name="@Icons.Check" class="scope-chip__check" />
+                                                    <icon name="@(option.Value == global ? Icons.Globe : Icons.MapPin)" class="scope-chip__kind" />
+                                                    @option.Text
+                                                </span>
+                                            </label>
+                                        }
+                                        @foreach (var kept in row.SelectedScopes.Where(s => !offered.Contains(s)))
+                                        {
+                                            @* A place the editor cannot see stays as it is. *@
+                                            <input type="hidden" name="Access[@row.Index].Scopes" value="@kept" />
+                                            <span class="chip chip--empty">@AccessSummary.HiddenPlace</span>
+                                        }
+                                        @if (options.Count <= 1)
+                                        {
+                                            <span class="scope-picker__empty">No @row.Feature.Name.ToLowerInvariant() yet — add one to give access to it alone.</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="access-grid__org"><icon name="@Icons.Globe" /> Whole organisation</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+@if (errors.Count > 0)
+{
+    <div class="notice notice--danger access-grid__errors" role="alert">
+        <icon name="@Icons.AlertCircle" />
+        <div>
+            @foreach (var error in errors)
+            {
+                <p>@error</p>
+            }
+        </div>
+    </div>
+}

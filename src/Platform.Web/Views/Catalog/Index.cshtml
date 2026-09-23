@@ -1,57 +1,77 @@
-@* Catalogue browse page: category tree on the left, brand filter + search and products on the right. *@
+@* Catalogue browse page: category tree on the left; brand filter, search and products on the right. *@
 @model CatalogIndexViewModel
 @{
-    ViewData["Title"] = Model.CategoryName ?? "Catalogue";
+    ViewData["Title"] = Model.CategoryName ?? "All products";
+    bool filtered = !string.IsNullOrEmpty(Model.Products.Search) || Model.BrandId is not null;
 }
 
 <div class="page-header">
-    <h1 class="page-header__title">@(Model.CategoryName ?? "Catalogue")</h1>
+    <div class="page-header__text">
+        <h1 class="page-header__title">@(Model.CategoryName ?? "All products")</h1>
+        <p class="page-header__subtitle">Browse by category and brand, or search any word — name, brand, size or SKU code.</p>
+    </div>
     @if (Model.CanImport)
     {
-        <a asp-action="Import" class="btn btn-primary">Import from Excel</a>
+        <div class="page-header__actions">
+            <a asp-action="Import" class="btn btn-primary"><icon name="@Icons.Upload" /> Import from Excel</a>
+        </div>
     }
 </div>
 
 <div class="catalog-layout">
     <aside class="card catalog-layout__tree" aria-label="Categories">
-        <partial name="_CategoryTree" model="new CategoryTreeModel(Model.Categories, Model.CategoryId, Model.BrandId, IsRoot: true)" />
+        <div class="card__header">
+            <h2 class="card__title"><icon name="@Icons.Folder" class="icon--sm" /> Categories</h2>
+        </div>
+        <div class="card__body">
+            <partial name="_CategoryTree" model="new CategoryTreeModel(Model.Categories, Model.CategoryId, Model.BrandId, IsRoot: true)" />
+        </div>
     </aside>
 
-    <section class="catalog-layout__main">
-        <form asp-action="Index" method="get" class="filter-bar" role="search">
+    <section class="card data-card">
+        <form asp-action="Index" method="get" class="data-card__toolbar" role="search">
             @if (Model.CategoryId is { } categoryId)
             {
                 <input type="hidden" name="categoryId" value="@categoryId" />
             }
-            <select name="brandId" class="form-select filter-bar__brand" aria-label="Brand" data-auto-submit>
+            <div class="search-field">
+                <icon name="@Icons.Search" class="search-field__icon" />
+                <input type="search" name="search" value="@Model.Products.Search" class="form-control search-field__input"
+                       placeholder="Search, e.g. tiscon 12" aria-label="Search products" />
+            </div>
+            <select name="brandId" class="form-select filter-select" aria-label="Brand" data-auto-submit>
                 <option value="">All brands</option>
                 @foreach (var brand in Model.BrandOptions)
                 {
                     <option value="@brand.Value" selected="@brand.Selected">@brand.Text</option>
                 }
             </select>
-            <input type="search" name="search" value="@Model.Products.Search" class="form-control filter-bar__search"
-                   placeholder="Search name, brand, size or SKU code — e.g. tiscon 12" aria-label="Search" />
-            <button type="submit" class="btn btn-outline-primary">Search</button>
-            @if (!string.IsNullOrEmpty(Model.Products.Search) || Model.BrandId is not null)
+            @if (filtered)
             {
                 <a asp-action="Index" asp-route-categoryId="@Model.CategoryId" class="btn btn-link">Clear filters</a>
             }
+            <span class="data-card__count">@Model.Products.TotalCount.Counted(Model.Products.ItemName)</span>
         </form>
 
         @if (Model.Products.TotalCount == 0)
         {
-            <div class="empty-state card">
-                <p class="empty-state__text">No products match.</p>
-                @if (Model.CanImport)
+            <div class="empty-state">
+                <span class="empty-state__icon"><icon name="@(filtered ? Icons.Search : Icons.Package)" /></span>
+                <h2 class="empty-state__title">@(filtered ? "No products match" : "No products here yet")</h2>
+                <p class="empty-state__text">
+                    @(filtered ? "Try another word, or clear the brand filter." : "Import a sheet of products to fill this category.")
+                </p>
+                @if (Model.CanImport && !filtered)
                 {
-                    <a asp-action="Import" class="btn btn-primary">Import products from Excel</a>
+                    <div class="empty-state__actions">
+                        <a asp-action="Import" class="btn btn-primary"><icon name="@Icons.Upload" /> Import from Excel</a>
+                    </div>
                 }
             </div>
         }
         else
         {
-            <div class="card data-card">
+            <div class="data-card__scroll">
                 <partial name="_ProductTable" model="Model.Products.Items" />
             </div>
             <partial name="_Pagination" model="Model.Products" />

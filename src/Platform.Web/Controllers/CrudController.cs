@@ -96,7 +96,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
 
         var page = result.Value ?? new PagedResult<TDto> { Page = request.Page, PageSize = request.PageSize };
         await PrepareViewAsync(cancellationToken);
-        return View(IndexView, new ListViewModel<TDto>(PluralName, page, request.Search));
+        return View(IndexView, new ListViewModel<TDto>(PluralName, page, request.Search, itemName: SingularName));
     }
 
     /// <summary>
@@ -117,6 +117,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     [HttpPost]
     public async Task<IActionResult> Create(TCreate form, CancellationToken cancellationToken)
     {
+        (form as INormalisable)?.Normalise();
         var model = new FormViewModel($"New {SingularName.ToLowerInvariant()}", form);
         if (!await ValidateAsync(_createValidator, form, cancellationToken))
         {
@@ -124,7 +125,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         }
 
         var result = await Api.CreateAsync(form, cancellationToken);
-        if (HandleAccess(result) is { } denied)
+        if (HandleWriteAccess(result) is { } denied)
         {
             return denied;
         }
@@ -172,6 +173,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
     [HttpPost]
     public async Task<IActionResult> Edit(Guid id, TUpdate form, CancellationToken cancellationToken)
     {
+        (form as INormalisable)?.Normalise();
         var model = new FormViewModel($"Edit {SingularName.ToLowerInvariant()}", form, id);
         if (!await ValidateAsync(_updateValidator, form, cancellationToken))
         {
@@ -179,7 +181,7 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
         }
 
         var result = await Api.UpdateAsync(id, form, cancellationToken);
-        if (HandleAccess(result) is { } denied)
+        if (HandleWriteAccess(result) is { } denied)
         {
             return denied;
         }
@@ -225,6 +227,17 @@ public abstract class CrudController<TDto, TCreate, TUpdate> : PlatformControlle
 
         return RedirectToAction(nameof(Index));
     }
+
+    /// <summary>
+    /// Like <see cref="PlatformControllerBase.HandleAccess"/>, but for a save the
+    /// user was allowed to start: a 403 whose reason the API explained (e.g.
+    /// "you can only give access you hold") goes back onto the form instead of
+    /// replacing it with the "not allowed" page.
+    /// </summary>
+    /// <param name="result">Result of a create or update.</param>
+    /// <returns>A redirect to sign-in, the "not allowed" page, or null to carry on (the caller shows the API's errors on the form).</returns>
+    private IActionResult? HandleWriteAccess(ApiResult result) =>
+        result.IsForbidden && !string.IsNullOrEmpty(result.ErrorMessage) ? null : HandleAccess(result);
 
     /// <summary>
     /// Loads lookups and renders the shared form page.

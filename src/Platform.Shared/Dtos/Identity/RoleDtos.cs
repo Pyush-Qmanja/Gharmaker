@@ -1,3 +1,4 @@
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Common;
 
 namespace Platform.Shared.Dtos.Identity;
@@ -32,19 +33,25 @@ public interface IRoleFields
 /// <summary>
 /// Body of <c>POST /api/roles</c>.
 /// </summary>
-public class CreateRoleRequest : IRoleFields
+public class CreateRoleRequest : IRoleFields, INormalisable
 {
     /// <inheritdoc />
     public string Name { get; set; } = string.Empty;
 
     /// <inheritdoc />
     public List<string> Capabilities { get; set; } = new();
+
+    /// <summary>
+    /// Drops blank entries (the grid's "no access" choice) and adds the view
+    /// capability that each manage capability implies.
+    /// </summary>
+    public void Normalise() => Capabilities = Features.Complete(Capabilities);
 }
 
 /// <summary>
 /// Body of <c>PUT /api/roles/{id}</c>.
 /// </summary>
-public class UpdateRoleRequest : IRoleFields, IActivatableRequest
+public class UpdateRoleRequest : IRoleFields, IActivatableRequest, INormalisable
 {
     /// <inheritdoc />
     public string Name { get; set; } = string.Empty;
@@ -54,4 +61,10 @@ public class UpdateRoleRequest : IRoleFields, IActivatableRequest
 
     /// <summary>False to deactivate, true to restore.</summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Drops blank entries (the grid's "no access" choice) and adds the view
+    /// capability that each manage capability implies.
+    /// </summary>
+    public void Normalise() => Capabilities = Features.Complete(Capabilities);
 }

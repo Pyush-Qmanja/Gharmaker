@@ -1,10 +1,12 @@
-@* Brand fields for the shared CrudForm page. Used for both create and edit. *@
+@* Brand form section for the shared CrudForm page. Used for both create and edit. *@
 @using Platform.Shared.Dtos.Catalog
 @model IBrandFields
-<div class="form-grid">
-    <form-field asp-for="Name" />
-    <form-field asp-for="Slug" hint="Lower-case letters, digits and hyphens, e.g. ultra-tech" />
-    <form-field asp-for="ManufacturerName" />
-    <form-field asp-for="LogoUrl" type="url" label="Logo URL" />
-    <form-field asp-for="DisplayOrder" />
-</div>
+<form-panel title="Brand details" description="How the brand appears in the catalogue and on the storefront.">
+    <div class="form-grid">
+        <form-field asp-for="Name" />
+        <form-field asp-for="Slug" hint="Lower-case letters, digits and hyphens, e.g. ultra-tech" />
+        <form-field asp-for="ManufacturerName" label="Manufacturer" />
+        <form-field asp-for="LogoUrl" type="url" label="Logo URL" />
+        <form-field asp-for="DisplayOrder" hint="Lower numbers are listed first." />
+    </div>
+</form-panel>

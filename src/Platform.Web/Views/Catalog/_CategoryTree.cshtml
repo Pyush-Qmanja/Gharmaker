@@ -5,14 +5,14 @@
     {
         <li>
             <a asp-action="Index" asp-route-brandId="@Model.BrandId"
-               class="category-tree__link@(Model.SelectedId is null ? " category-tree__link--active" : string.Empty)">All products</a>
+               class="category-tree__link@(Model.SelectedId is null ? " category-tree__link--active" : string.Empty)"><icon name="@Icons.Package" /> All products</a>
         </li>
     }
     @foreach (var node in Model.Nodes.Where(n => n.IsActive))
     {
         <li>
             <a asp-action="Index" asp-route-categoryId="@node.Id" asp-route-brandId="@Model.BrandId"
-               class="category-tree__link@(node.Id == Model.SelectedId ? " category-tree__link--active" : string.Empty)">@node.Name</a>
+               class="category-tree__link@(node.Id == Model.SelectedId ? " category-tree__link--active" : string.Empty)"><icon name="@Icons.Folder" /> @node.Name</a>
             @if (node.Children.Count > 0)
             {
                 <partial name="_CategoryTree" model="new CategoryTreeModel(node.Children, Model.SelectedId, Model.BrandId, IsRoot: false)" />

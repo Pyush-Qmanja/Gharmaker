@@ -1,10 +1,15 @@
-@* Shown when the API answers 403: signed in, but the user's roles do not include this capability. *@
+@* Shown when the API answers 403: signed in, but the user's access does not include this action. *@
 @{
     ViewData["Title"] = "Not allowed";
 }
 
-<div class="empty-state">
-    <h1 class="page-header__title">You don't have access to this</h1>
-    <p class="empty-state__text">Your roles don't include this action. Ask an administrator if you need it.</p>
-    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Back to dashboard</a>
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-state__icon"><icon name="@Icons.Lock" /></span>
+        <h1 class="empty-state__title">You don't have access to this</h1>
+        <p class="empty-state__text">Your roles and feature access don't include this action here. Ask an administrator if you need it.</p>
+        <div class="empty-state__actions">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to dashboard</a>
+        </div>
+    </div>
 </div>

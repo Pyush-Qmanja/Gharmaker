@@ -37,7 +37,10 @@ choosing the C# name decides all of them.
 | Variant description | `VariantLabel` | `variant_label` | `string` | `VariantName`, `Size`, `Description` (for this) |
 | Several references | `<Entity>Ids` (e.g. `RoleIds`) | `<entity>_ids` | `List<Guid>` | `Roles` (for ids), `RoleList`, `AssignedRoles` |
 | Capability codes | `Capabilities` | `capabilities` | `List<string>` (codes from `Capabilities`) | `Permissions`, `Rights`, `Privileges` |
-| Access areas | `Scopes` of `ScopeType` + `ScopeId` | `scopes[].scope_type`, `scopes[].scope_id` | embedded list | `Access`, `Areas`, `ScopeList` |
+| Access areas (places) | `Scopes` of `ScopeType` + `ScopeId` | `scopes[].scope_type`, `scopes[].scope_id` | embedded list | `Areas`, `Places`, `ScopeList` |
+| Per-feature access given to a user | `Access` of `Feature` + `Level` + `Scopes` | `access[].feature`, `access[].level`, `access[].scopes` | embedded list | `Permissions`, `Grants`, `FeatureRights` |
+| How much of a feature | `Level` (`AccessLevel`: None / View / Manage) | `level` | enum stored as name | `AccessType`, `Mode`, `Right` |
+| Feature code | `Feature` (codes from `Features`) | `feature` | `string` | `Module`, `Area`, `Section` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
 | Postal address | `Address` (`Line1`, `Line2`, `City`, `State`, `Pincode`) | `address.line1` ... `address.pincode` | embedded `Address` / `AddressDto` | `Street`, `Zip`, `PostCode`, `PinCode`, flat address columns |
 | Coordinates | `Lat` / `Lng` | `lat` / `lng` | `double?` (WGS 84; not money, so `double` is fine) | `Latitude`/`Longitude`, `GeoLat`, `Coords` |
