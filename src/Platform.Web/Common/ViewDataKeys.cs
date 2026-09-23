@@ -15,4 +15,16 @@ public static class ViewDataKeys
 
     /// <summary>Capability catalogue as grouped checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
     public const string CapabilityOptions = "CapabilityOptions";
+
+    /// <summary>Scopes the signed-in user can grant, as grouped checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string ScopeOptions = "ScopeOptions";
+
+    /// <summary>Scope text form (e.g. <c>Warehouse:&lt;id&gt;</c>) to label (<c>IReadOnlyDictionary&lt;string, string&gt;</c>).</summary>
+    public const string ScopeNames = "ScopeNames";
+
+    /// <summary>Active users as drop-down options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string UserOptions = "UserOptions";
+
+    /// <summary>User id to name (<c>IReadOnlyDictionary&lt;Guid, string&gt;</c>).</summary>
+    public const string UserNames = "UserNames";
 }

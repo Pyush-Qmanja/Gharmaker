@@ -13,6 +13,7 @@ public static class Navigation
     public static readonly IReadOnlyList<NavigationItem> Items = new[]
     {
         new NavigationItem("Brands", "Brands", Capabilities.BrandsView, "Manage the brands in the catalogue."),
+        new NavigationItem("Warehouses", "Warehouses", Capabilities.WarehousesView, "Stock locations you are responsible for."),
         new NavigationItem("Users", "Users", Capabilities.UsersView, "People who can sign in, their roles and scope."),
         new NavigationItem("Roles", "Roles", Capabilities.RolesView, "Named sets of capabilities to give to users."),
     };

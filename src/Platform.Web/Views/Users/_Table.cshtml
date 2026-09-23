@@ -1,9 +1,9 @@
 @* User rows for the shared CrudIndex page. Role names come from UsersController.PrepareViewAsync. *@
 @using Platform.Shared.Dtos.Identity
-@using Platform.Shared.Entities.Identity
 @model IReadOnlyList<UserDto>
 @{
     var roleNames = ViewData[ViewDataKeys.RoleNames] as IReadOnlyDictionary<Guid, string> ?? new Dictionary<Guid, string>();
+    var scopeNames = ViewData[ViewDataKeys.ScopeNames] as IReadOnlyDictionary<string, string> ?? new Dictionary<string, string>();
 }
 <table class="table data-table">
     <thead>
@@ -21,11 +21,12 @@
         @foreach (var user in Model)
         {
             List<string> userRoles = user.RoleIds.Select(id => roleNames.TryGetValue(id, out var name) ? name : "Unknown role").ToList();
+            List<string> userScopes = user.Scopes.Select(s => scopeNames.TryGetValue(s.ToString(), out var label) ? label : "Outside your scope").ToList();
             <tr>
                 <td>@user.Name</td>
                 <td>@user.Email</td>
                 <td><partial name="_Chips" model="userRoles" /></td>
-                <td>@(user.Scopes.Any(s => s.ScopeType == ScopeType.Global) ? "Everywhere" : user.Scopes.Count == 0 ? "None" : $"{user.Scopes.Count} scoped")</td>
+                <td><partial name="_Chips" model="userScopes" /></td>
                 <td><partial name="_StatusBadge" model="user.IsActive" /></td>
                 <td>@((user.UpdatedAt ?? user.CreatedAt).ToIstString())</td>
                 <partial name="_RowActions" model="user.Id" />

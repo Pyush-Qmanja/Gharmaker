@@ -36,6 +36,8 @@ Before writing anything, check whether one of these already does it:
 | Value in a query filter | `DocumentConverter.ToFirestoreValue(value)` | `Api/Firestore` |
 | Unique value check | `RequireUniqueAsync(...)` inside `EnsureUniqueAsync` | `Api/Services/CrudService` |
 | List/get/create/update/deactivate | derive from `CrudService<...>` | `Api/Services` |
+| Same, limited by scope (warehouse, site, and their contents) | derive from `ScopedCrudService<...>` — out of scope is 404, list filtered | `Api/Services` |
+| Text search | `query.WhereStartsWith(field, prefix)` | `Api/Firestore/QueryExtensions` |
 | REST endpoints | derive from `CrudControllerBase<...>` | `Api/Controllers` |
 | Paging a query | `Repository.GetPagedAsync(query, request)` | `Api/Repositories` |
 | Audit fields on DTO | `.WithAuditFrom(entity)` | `Api/Mapping/DtoMapping` |
@@ -44,7 +46,10 @@ Before writing anything, check whether one of these already does it:
 | API routes | `ApiRoutes.*` — never a literal path | `Shared/Constants` |
 | Calling the API from UI | `ICrudApiClient<...>` / `IApiClient` | `Web/Services/Api` |
 | CRUD screens | derive from `CrudController<...>` | `Web/Controllers` |
-| Form field markup | `<form-field asp-for="X" />` | `Web/TagHelpers` |
+| Form field markup — text, number, checkbox, drop-down (enums automatic, or `items=`) | `<form-field asp-for="X" />` | `Web/TagHelpers` |
+| Load a lookup list for a screen | `api.ListForLookupAsync()` | `Web/Services/Api/CrudApiClientExtensions` |
+| Address fields | `Address` / `AddressDto` + `AddressDtoValidator` + `DtoMapping.ToAddress` | Shared + `Api/Mapping` |
+| Enum / PascalCase display text | `.ToWords()` | `Web/Extensions/TextExtensions` |
 | List/form page layout | shared `CrudIndex` / `CrudForm` views | `Web/Views/Shared` |
 | Status, row actions, pager, search, empty state | `_StatusBadge`, `_RowActions`, `_Pagination`, `_SearchBar`, `_EmptyState` | `Web/Views/Shared` |
 | Show a date | `.ToIstString()` | `Web/Extensions/DateTimeExtensions` |
@@ -121,7 +126,9 @@ Use the same module folder name in every layer.
    fields are derived from the class by `FirestoreNaming` / `DocumentConverter`.
 6. **Api/Mapping/Catalog/CategoryMapper.cs** — implement `IEntityMapper<...>`.
 7. **Api/Services/Catalog/CategoryService.cs** — derive from `CrudService<...>`;
-   override `ApplySearch` / `ApplyOrder` only if needed.
+   override `ApplySearch` / `ApplyOrder` only if needed. If the data belongs to a
+   warehouse or site (P6), derive from `ScopedCrudService<...>` instead and say which
+   `ScopeType` governs it and how to find its scope id.
 8. **Api/Controllers/Catalog/CategoriesController.cs** — derive from
    `CrudControllerBase<...>`, `[Route(ApiRoutes.Categories)]` and
    `[CrudCapabilities(Capabilities.CategoriesView, Capabilities.CategoriesManage)]`.

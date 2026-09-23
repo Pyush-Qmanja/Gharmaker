@@ -1,0 +1,36 @@
+@* Warehouse rows for the shared CrudIndex page. Only warehouses in the user's scope arrive here. *@
+@using Platform.Shared.Dtos.Inventory
+@model IReadOnlyList<WarehouseDto>
+@{
+    var userNames = ViewData[ViewDataKeys.UserNames] as IReadOnlyDictionary<Guid, string> ?? new Dictionary<Guid, string>();
+}
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>City</th>
+            <th>Responsible</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var warehouse in Model)
+        {
+            string responsible = warehouse.OwnerUserId is { } ownerId && userNames.TryGetValue(ownerId, out var ownerName) ? ownerName : "—";
+            <tr>
+                <td><code>@warehouse.Code</code></td>
+                <td>@warehouse.Name</td>
+                <td>@warehouse.Type.ToWords()</td>
+                <td>@warehouse.Address.City</td>
+                <td>@responsible</td>
+                <td><partial name="_StatusBadge" model="warehouse.IsActive" /></td>
+                <td>@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstString())</td>
+                <partial name="_RowActions" model="warehouse.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

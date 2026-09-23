@@ -24,6 +24,10 @@ Every authorisation decision is two questions, always both:
   about permissions is in the JWT — so revoking a role, scope or user applies at
   once. Use `CoversAsync(scopeType, id)` in services for scoped objects and
   return 404 when it is false.
+- Scoped data derives from `ScopedCrudService`: lists show only what is in scope,
+  anything else is 404, and writes that would land outside scope are 403.
+- A user may only grant or remove scopes they hold themselves (`UserService`),
+  so a warehouse admin can never hand out global access.
 - The UI hides what the user cannot use (`IUserAccess`, `Navigation.Items`), but
   that is cosmetic; the API is the enforcement point.
 

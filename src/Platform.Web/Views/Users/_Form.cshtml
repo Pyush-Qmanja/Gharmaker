@@ -17,4 +17,7 @@
                label="Roles"
                empty-text="No active roles yet — create one under Roles first." />
 
-<partial name="_ScopesField" model="Model" />
+<checkbox-list asp-for="Scopes"
+               items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.ScopeOptions]!"
+               label="Scope — where this user's roles apply" />
+<p class="form-field__hint">Without a scope the user's roles apply nowhere. You can only grant scopes you hold yourself.</p>

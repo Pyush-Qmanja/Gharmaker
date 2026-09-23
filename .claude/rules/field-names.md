@@ -31,6 +31,10 @@ choosing the C# name decides all of them.
 | Capability codes | `Capabilities` | `capabilities` | `List<string>` (codes from `Capabilities`) | `Permissions`, `Rights`, `Privileges` |
 | Access areas | `Scopes` of `ScopeType` + `ScopeId` | `scopes[].scope_type`, `scopes[].scope_id` | embedded list | `Access`, `Areas`, `ScopeList` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
+| Postal address | `Address` (`Line1`, `Line2`, `City`, `State`, `Pincode`) | `address.line1` ... `address.pincode` | embedded `Address` / `AddressDto` | `Street`, `Zip`, `PostCode`, `PinCode`, flat address columns |
+| Coordinates | `Lat` / `Lng` | `lat` / `lng` | `double?` (WGS 84; not money, so `double` is fine) | `Latitude`/`Longitude`, `GeoLat`, `Coords` |
+| Responsible person | `OwnerUserId` (or `<Role>UserId`, e.g. `ManagerUserId`) | `owner_user_id` | `Guid?` | `Owner` (for an id), `ResponsibleId`, `InchargeId` |
+| Kind of thing | `Type` (an enum named `<Entity>Type`) | `type` | enum, stored by name | `Kind`, `Category` (for this), `<Entity>Kind` |
 | Image / file link | `<Thing>Url` | `<thing>_url` | `string` | `<Thing>Link`, `<Thing>Path`, `<Thing>Uri` |
 | Free-text notes | `Remarks` | `remarks` | `string?` | `Notes`, `Comment`, `Description` (for notes) |
 | Human reference no. | `ReferenceNo` | `reference_no` | `string` | `RefNo`, `Number`, `DocNo` |

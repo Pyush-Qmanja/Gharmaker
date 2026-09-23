@@ -1,0 +1,30 @@
+@* Warehouse fields for the shared CrudForm page. Responsible-user options come from WarehousesController.PrepareViewAsync. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Inventory
+@model IWarehouseFields
+<div class="form-grid">
+    <form-field asp-for="Code" hint="Letters, digits and hyphens, e.g. WH-PUNE-01. Stored in capitals." />
+    <form-field asp-for="Name" />
+    <form-field asp-for="Type" />
+    <form-field asp-for="OwnerUserId" label="Responsible person"
+                items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.UserOptions]!" empty-option="None" />
+</div>
+
+<fieldset class="form-section">
+    <legend class="form-section__title">Address</legend>
+    <div class="form-grid">
+        <form-field asp-for="Address.Line1" label="Address line 1" />
+        <form-field asp-for="Address.Line2" label="Address line 2" />
+        <form-field asp-for="Address.City" />
+        <form-field asp-for="Address.State" />
+        <form-field asp-for="Address.Pincode" label="PIN code" />
+    </div>
+</fieldset>
+
+<fieldset class="form-section">
+    <legend class="form-section__title">Location <span class="form-field__hint">(optional — used for delivery planning)</span></legend>
+    <div class="form-grid">
+        <form-field asp-for="Lat" label="Latitude" />
+        <form-field asp-for="Lng" label="Longitude" />
+    </div>
+</fieldset>

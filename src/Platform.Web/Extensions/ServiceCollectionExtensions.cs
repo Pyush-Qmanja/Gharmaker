@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
 using Platform.Shared.Dtos.Identity;
+using Platform.Shared.Dtos.Inventory;
 using Platform.Shared.Validation.Common;
 using Platform.Web.Options;
 using Platform.Web.Services.Api;
@@ -90,6 +91,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
         services.AddCrudApiClient<BrandDto, CreateBrandRequest, UpdateBrandRequest>(ApiRoutes.Brands);
+        services.AddCrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest>(ApiRoutes.Warehouses);
         services.AddCrudApiClient<RoleDto, CreateRoleRequest, UpdateRoleRequest>(ApiRoutes.Roles);
         services.AddCrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest>(ApiRoutes.Users);
         services.AddScoped<IUserAccess, UserAccess>();

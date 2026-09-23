@@ -11,6 +11,8 @@ namespace Platform.Web.TagHelpers;
 /// label and validation message:
 /// <c>&lt;checkbox-list asp-for="Capabilities" items="options" /&gt;</c>.
 /// Every multi-select in the UI uses this, so its markup exists once.
+/// Selected values that are not among the options are preserved as hidden
+/// fields, so an editor who cannot see an option never removes it by saving.
 /// </summary>
 [HtmlTargetElement("checkbox-list", Attributes = "asp-for,items", TagStructure = TagStructure.WithoutEndTag)]
 public sealed class CheckboxListTagHelper : TagHelper
@@ -94,6 +96,18 @@ public sealed class CheckboxListTagHelper : TagHelper
             }
 
             output.Content.AppendHtml(groupBox);
+        }
+
+        // Values already selected but not offered (e.g. a scope the editor cannot
+        // see) are kept as hidden fields, so saving never silently removes them.
+        var offered = items.Select(i => i.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (string kept in selected.Where(v => !offered.Contains(v)))
+        {
+            var hidden = new TagBuilder("input") { TagRenderMode = TagRenderMode.SelfClosing };
+            hidden.Attributes["type"] = "hidden";
+            hidden.Attributes["name"] = name;
+            hidden.Attributes["value"] = kept;
+            output.Content.AppendHtml(hidden);
         }
 
         output.Content.AppendHtml(_generator.GenerateValidationMessage(
