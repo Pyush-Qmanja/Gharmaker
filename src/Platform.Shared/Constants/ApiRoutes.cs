@@ -15,6 +15,9 @@ public static class ApiRoutes
     /// <summary>Brand master data.</summary>
     public const string Brands = "api/brands";
 
+    /// <summary>Warehouses (internal only, P1).</summary>
+    public const string Warehouses = "api/warehouses";
+
     /// <summary>Roles and their capabilities.</summary>
     public const string Roles = "api/roles";
 

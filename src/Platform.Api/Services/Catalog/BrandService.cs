@@ -40,10 +40,7 @@ public sealed class BrandService : CrudService<Brand, BrandDto, CreateBrandReque
     protected override Query ApplySearch(Query query, string search)
     {
         string prefix = search.ToLowerInvariant().Replace(' ', '-');
-        return query
-            .WhereGreaterThanOrEqualTo(SlugField, prefix)
-            .WhereLessThan(SlugField, prefix + '')
-            .OrderBy(SlugField);
+        return query.WhereStartsWith(SlugField, prefix);
     }
 
     /// <summary>

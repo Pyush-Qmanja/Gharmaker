@@ -18,6 +18,12 @@ public static class Capabilities
     /// <summary>Create, edit and deactivate brands.</summary>
     public const string BrandsManage = "brands.manage";
 
+    /// <summary>See warehouses in the user's scope.</summary>
+    public const string WarehousesView = "warehouses.view";
+
+    /// <summary>Create, edit and deactivate warehouses (creating needs global scope).</summary>
+    public const string WarehousesManage = "warehouses.manage";
+
     /// <summary>See users.</summary>
     public const string UsersView = "users.view";
 
@@ -35,6 +41,8 @@ public static class Capabilities
     {
         new CapabilityInfo(BrandsView, "Catalog", "View brands"),
         new CapabilityInfo(BrandsManage, "Catalog", "Manage brands"),
+        new CapabilityInfo(WarehousesView, "Inventory", "View warehouses"),
+        new CapabilityInfo(WarehousesManage, "Inventory", "Manage warehouses"),
         new CapabilityInfo(UsersView, "Administration", "View users"),
         new CapabilityInfo(UsersManage, "Administration", "Manage users, their roles and scopes"),
         new CapabilityInfo(RolesView, "Administration", "View roles"),

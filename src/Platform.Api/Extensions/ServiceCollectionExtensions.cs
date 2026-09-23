@@ -15,6 +15,7 @@ using Platform.Api.Mapping;
 using Platform.Api.Controllers;
 using Platform.Api.Mapping.Catalog;
 using Platform.Api.Mapping.Identity;
+using Platform.Api.Mapping.Inventory;
 using Platform.Api.Middleware;
 using Platform.Api.Repositories;
 using Platform.Api.Security;
@@ -23,11 +24,14 @@ using Platform.Api.Services;
 using Platform.Api.Services.Auth;
 using Platform.Api.Services.Catalog;
 using Platform.Api.Services.Identity;
+using Platform.Api.Services.Inventory;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
 using Platform.Shared.Dtos.Identity;
+using Platform.Shared.Dtos.Inventory;
 using Platform.Shared.Entities.Catalog;
 using Platform.Shared.Entities.Identity;
+using Platform.Shared.Entities.Inventory;
 using Platform.Shared.Validation.Common;
 
 namespace Platform.Api.Extensions;
@@ -194,6 +198,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
         services.AddCrudModule<Brand, BrandDto, CreateBrandRequest, UpdateBrandRequest, BrandMapper, BrandService>();
+        services.AddCrudModule<Warehouse, WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest, WarehouseMapper, WarehouseService>();
         services.AddCrudModule<Role, RoleDto, CreateRoleRequest, UpdateRoleRequest, RoleMapper, RoleService>();
         services.AddCrudModule<User, UserDto, CreateUserRequest, UpdateUserRequest, UserMapper, UserService>();
 

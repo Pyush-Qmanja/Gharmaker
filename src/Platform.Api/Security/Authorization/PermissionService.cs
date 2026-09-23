@@ -36,6 +36,14 @@ public interface IPermissionService
     /// <param name="cancellationToken">Cancels the reads.</param>
     /// <returns>True when covered.</returns>
     Task<bool> CoversAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the objects of one type the caller is scoped to.
+    /// </summary>
+    /// <param name="scopeType">Kind of object.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>Null when the caller has global scope (no restriction); otherwise the ids they may see (possibly empty).</returns>
+    Task<IReadOnlySet<Guid>?> GetScopeIdsAsync(ScopeType scopeType, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -76,6 +84,26 @@ public sealed class PermissionService : IPermissionService
         User? user = (await LoadAsync(cancellationToken)).User;
         return user is not null && user.Scopes.Any(s =>
             s.ScopeType == ScopeType.Global || (s.ScopeType == scopeType && s.ScopeId == scopeId));
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlySet<Guid>?> GetScopeIdsAsync(ScopeType scopeType, CancellationToken cancellationToken = default)
+    {
+        User? user = (await LoadAsync(cancellationToken)).User;
+        if (user is null)
+        {
+            return new HashSet<Guid>();
+        }
+
+        if (user.Scopes.Any(s => s.ScopeType == ScopeType.Global))
+        {
+            return null;
+        }
+
+        return user.Scopes
+            .Where(s => s.ScopeType == scopeType && s.ScopeId.HasValue)
+            .Select(s => s.ScopeId!.Value)
+            .ToHashSet();
     }
 
     /// <summary>

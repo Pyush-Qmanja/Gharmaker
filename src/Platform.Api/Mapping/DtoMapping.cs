@@ -27,6 +27,34 @@ public static class DtoMapping
     }
 
     /// <summary>
+    /// Converts a requested address to the stored value object, trimming every field.
+    /// </summary>
+    /// <param name="address">Validated address from a request.</param>
+    /// <returns>The value object to store.</returns>
+    public static Address ToAddress(AddressDto address) => new()
+    {
+        Line1 = Clean(address.Line1),
+        Line2 = CleanOptional(address.Line2),
+        City = Clean(address.City),
+        State = Clean(address.State),
+        Pincode = Clean(address.Pincode),
+    };
+
+    /// <summary>
+    /// Converts a stored address to its DTO.
+    /// </summary>
+    /// <param name="address">Stored value object.</param>
+    /// <returns>The DTO.</returns>
+    public static AddressDto ToAddressDto(Address address) => new()
+    {
+        Line1 = address.Line1,
+        Line2 = address.Line2,
+        City = address.City,
+        State = address.State,
+        Pincode = address.Pincode,
+    };
+
+    /// <summary>
     /// Trims a required string.
     /// </summary>
     /// <param name="value">Input value.</param>

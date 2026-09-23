@@ -1,11 +1,14 @@
+using System.ComponentModel;
 using Platform.Shared.Dtos.Common;
 using Platform.Shared.Entities.Identity;
 
 namespace Platform.Shared.Dtos.Identity;
 
 /// <summary>
-/// One area of access in a user's scope list.
+/// One area of access in a user's scope list. In HTML forms it travels as
+/// text (<c>Global</c>, <c>Warehouse:&lt;id&gt;</c>) via <see cref="ScopeGrantDtoConverter"/>.
 /// </summary>
+[TypeConverter(typeof(ScopeGrantDtoConverter))]
 public class ScopeGrantDto
 {
     /// <summary>Kind of object covered.</summary>
@@ -13,6 +16,12 @@ public class ScopeGrantDto
 
     /// <summary>The object covered; null only for <see cref="ScopeType.Global"/>.</summary>
     public Guid? ScopeId { get; set; }
+
+    /// <summary>
+    /// Returns the compact text form, e.g. <c>Warehouse:3f2c...</c>.
+    /// </summary>
+    /// <returns>The text form.</returns>
+    public override string ToString() => ScopeGrantDtoConverter.Format(this);
 }
 
 /// <summary>

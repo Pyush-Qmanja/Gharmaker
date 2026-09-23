@@ -15,6 +15,12 @@ public static class FieldLengths
     /// <summary>Short business code such as a warehouse or SKU code.</summary>
     public const int Code = 50;
 
+    /// <summary>One address line.</summary>
+    public const int AddressLine = 200;
+
+    /// <summary>City or state name.</summary>
+    public const int Place = 100;
+
     /// <summary>Email address (RFC 5321 practical limit).</summary>
     public const int Email = 254;
 

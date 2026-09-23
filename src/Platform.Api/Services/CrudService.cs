@@ -132,6 +132,7 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     public virtual async Task<TDto> CreateAsync(TCreate request, CancellationToken cancellationToken = default)
     {
         TEntity entity = Mapper.ToEntity(request);
+        await BeforeWriteAsync(entity, isNew: true, cancellationToken);
         await EnsureUniqueAsync(entity, cancellationToken);
         Repository.Add(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
@@ -143,6 +144,7 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     {
         TEntity entity = await LoadAsync(id, cancellationToken);
         Mapper.Apply(request, entity);
+        await BeforeWriteAsync(entity, isNew: false, cancellationToken);
         await EnsureUniqueAsync(entity, cancellationToken);
         Repository.Update(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
@@ -184,6 +186,16 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
         query.OrderByDescending(FirestoreNaming.Field(nameof(BaseEntity.CreatedAt)));
 
     /// <summary>
+    /// Last check before a create or update is saved, after the request has been
+    /// applied to the entity (e.g. scope checks). Default: nothing.
+    /// </summary>
+    /// <param name="entity">Entity about to be written.</param>
+    /// <param name="isNew">True for a create.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>A task that completes when the write may go ahead.</returns>
+    protected virtual Task BeforeWriteAsync(TEntity entity, bool isNew, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
     /// Enforces unique values before a write. Default: nothing is unique.
     /// Override and call <see cref="RequireUniqueAsync"/> per unique field.
     /// </summary>
@@ -216,6 +228,6 @@ public abstract class CrudService<TEntity, TDto, TCreate, TUpdate> : ICrudServic
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>The entity.</returns>
     /// <exception cref="NotFoundException">Absent or out of scope.</exception>
-    protected async Task<TEntity> LoadAsync(Guid id, CancellationToken cancellationToken) =>
+    protected virtual async Task<TEntity> LoadAsync(Guid id, CancellationToken cancellationToken) =>
         await Repository.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(EntityName);
 }

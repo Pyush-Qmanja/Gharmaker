@@ -109,6 +109,28 @@ public sealed class NotFoundException : AppException
 }
 
 /// <summary>
+/// The caller may not perform this action, e.g. creating an object outside
+/// their scope or granting access they do not hold themselves. Reading an
+/// out-of-scope object is <see cref="NotFoundException"/> instead (P6).
+/// </summary>
+public sealed class ForbiddenException : AppException
+{
+    /// <summary>
+    /// Creates the exception.
+    /// </summary>
+    /// <param name="message">Why the action is refused, safe to show.</param>
+    public ForbiddenException(string message) : base(message)
+    {
+    }
+
+    /// <inheritdoc />
+    public override int StatusCode => StatusCodes.Status403Forbidden;
+
+    /// <inheritdoc />
+    public override string Title => "Forbidden";
+}
+
+/// <summary>
 /// The request is well-formed but breaks a business rule.
 /// </summary>
 public sealed class BusinessRuleException : AppException
