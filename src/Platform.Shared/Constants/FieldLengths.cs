@@ -33,6 +33,12 @@ public static class FieldLengths
     /// <summary>Firebase Authentication user id.</summary>
     public const int AuthUid = 128;
 
+    /// <summary>GST HSN code: 4, 6 or 8 digits.</summary>
+    public const int HsnCode = 8;
+
+    /// <summary>SKU variant label, e.g. "600x600 Glossy Ivory".</summary>
+    public const int VariantLabel = 100;
+
     /// <summary>Minimum length of a plain-text password.</summary>
     public const int PasswordMin = 8;
 

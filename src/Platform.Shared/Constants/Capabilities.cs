@@ -18,6 +18,12 @@ public static class Capabilities
     /// <summary>Create, edit and deactivate brands.</summary>
     public const string BrandsManage = "brands.manage";
 
+    /// <summary>Browse categories, products, SKUs and units.</summary>
+    public const string CatalogView = "catalog.view";
+
+    /// <summary>Import and edit categories, products, SKUs and units.</summary>
+    public const string CatalogManage = "catalog.manage";
+
     /// <summary>See warehouses in the user's scope.</summary>
     public const string WarehousesView = "warehouses.view";
 
@@ -39,6 +45,8 @@ public static class Capabilities
     /// <summary>The full catalogue, in display order, grouped for the role editor.</summary>
     public static readonly IReadOnlyList<CapabilityInfo> All = new[]
     {
+        new CapabilityInfo(CatalogView, "Catalog", "Browse the catalogue"),
+        new CapabilityInfo(CatalogManage, "Catalog", "Import and edit the catalogue and units"),
         new CapabilityInfo(BrandsView, "Catalog", "View brands"),
         new CapabilityInfo(BrandsManage, "Catalog", "Manage brands"),
         new CapabilityInfo(WarehousesView, "Inventory", "View warehouses"),

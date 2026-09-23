@@ -1,0 +1,36 @@
+Category,Brand,Product,HSN,SKU Code,Variant,Base Unit,Conversions,Active
+Cement > OPC,UltraTech,UltraTech OPC 53 Grade,2523,CEM-ULT-OPC53-50KG,50 kg bag,BAG,TONNE=20; TRUCK=400,Yes
+Cement > OPC,Ambuja,Ambuja Plus OPC 53 Grade,2523,CEM-AMB-OPC53-50KG,50 kg bag,BAG,TONNE=20; TRUCK=400,Yes
+Cement > PPC,UltraTech,UltraTech PPC,2523,CEM-ULT-PPC-50KG,50 kg bag,BAG,TONNE=20; TRUCK=400,Yes
+Cement > PPC,ACC,ACC Suraksha Power PPC,2523,CEM-ACC-PPC-50KG,50 kg bag,BAG,TONNE=20; TRUCK=400,Yes
+Cement > PPC,Dalmia,Dalmia DSP PPC,2523,CEM-DAL-PPC-50KG,50 kg bag,BAG,TONNE=20; TRUCK=400,Yes
+Steel > TMT Bars,Tata Tiscon,Tata Tiscon 550SD,7214,TMT-TISCON-08MM,8 mm,KG,PCS=4.74; BUNDLE=47.4,Yes
+Steel > TMT Bars,Tata Tiscon,Tata Tiscon 550SD,7214,TMT-TISCON-10MM,10 mm,KG,PCS=7.40; BUNDLE=51.8,Yes
+Steel > TMT Bars,Tata Tiscon,Tata Tiscon 550SD,7214,TMT-TISCON-12MM,12 mm,KG,PCS=10.66; BUNDLE=53.3,Yes
+Steel > TMT Bars,Tata Tiscon,Tata Tiscon 550SD,7214,TMT-TISCON-16MM,16 mm,KG,PCS=18.96; BUNDLE=56.88,Yes
+Steel > TMT Bars,Tata Tiscon,Tata Tiscon 550SD,7214,TMT-TISCON-20MM,20 mm,KG,PCS=29.64; BUNDLE=59.28,Yes
+Steel > TMT Bars,JSW Neosteel,JSW Neosteel 550D,7214,TMT-JSW-08MM,8 mm,KG,PCS=4.74; BUNDLE=47.4,Yes
+Steel > TMT Bars,JSW Neosteel,JSW Neosteel 550D,7214,TMT-JSW-12MM,12 mm,KG,PCS=10.66; BUNDLE=53.3,Yes
+Steel > TMT Bars,JSW Neosteel,JSW Neosteel 550D,7214,TMT-JSW-16MM,16 mm,KG,PCS=18.96; BUNDLE=56.88,Yes
+Bricks & Blocks > Clay Bricks,Unbranded,Red Clay Brick,6901,BRICK-RED-STD,Standard 230x110x75 mm,PCS,TRUCK=3000,Yes
+Bricks & Blocks > Fly Ash Bricks,Unbranded,Fly Ash Brick,6815,BRICK-FLYASH-STD,230x110x75 mm,PCS,TRUCK=3500,Yes
+Bricks & Blocks > AAC Blocks,Magicrete,Magicrete AAC Block,6810,AAC-MAGI-600X200X100,600x200x100 mm,PCS,CUM=83.33,Yes
+Bricks & Blocks > AAC Blocks,Magicrete,Magicrete AAC Block,6810,AAC-MAGI-600X200X150,600x200x150 mm,PCS,CUM=55.56,Yes
+Bricks & Blocks > AAC Blocks,Magicrete,Magicrete AAC Block,6810,AAC-MAGI-600X200X200,600x200x200 mm,PCS,CUM=41.67,Yes
+Sand & Aggregate > Sand,Unbranded,Manufactured Sand,2505,SAND-MSAND-PLASTER,Plaster grade,CFT,TONNE=22.07,Yes
+Sand & Aggregate > Sand,Unbranded,Manufactured Sand,2505,SAND-MSAND-CONCRETE,Concrete grade,CFT,TONNE=22.07,Yes
+Sand & Aggregate > Aggregate,Unbranded,Crushed Stone Aggregate,2517,AGG-10MM,10 mm,CFT,TONNE=24.00,Yes
+Sand & Aggregate > Aggregate,Unbranded,Crushed Stone Aggregate,2517,AGG-20MM,20 mm,CFT,TONNE=24.35,Yes
+Tiles > Vitrified,Kajaria,Kajaria Eternity 600x600,6907,TILE-KAJ-ETR-IVORY,600x600 Glossy Ivory,BOX,SQFT=0.0645; PCS=0.25,Yes
+Tiles > Vitrified,Kajaria,Kajaria Eternity 600x600,6907,TILE-KAJ-ETR-GREY,600x600 Matt Grey,BOX,SQFT=0.0645; PCS=0.25,Yes
+Tiles > Vitrified,Kajaria,Kajaria Eternity 800x800,6907,TILE-KAJ-800-BEIGE,800x800 Polished Beige,BOX,SQFT=0.0484; PCS=0.3333,Yes
+Tiles > Vitrified,Somany,Somany Duragres 600x1200,6907,TILE-SOM-DG-WALNUT,600x1200 Wood Walnut,BOX,SQFT=0.0645; PCS=0.5,Yes
+Plumbing > CPVC Pipes,Supreme,Supreme CPVC SDR 11,3917,PIPE-SUP-CPVC-15MM,1/2 inch (15 mm) 3 m,RMT,PCS=3,Yes
+Plumbing > CPVC Pipes,Supreme,Supreme CPVC SDR 11,3917,PIPE-SUP-CPVC-20MM,3/4 inch (20 mm) 3 m,RMT,PCS=3,Yes
+Plumbing > CPVC Pipes,Astral,Astral CPVC Pro,3917,PIPE-AST-CPVC-25MM,1 inch (25 mm) 3 m,RMT,PCS=3,Yes
+Plumbing > SWR Pipes,Finolex,Finolex SWR Pipe,3917,PIPE-FIN-SWR-110MM,110 mm 6 m,RMT,PCS=6,Yes
+Paint > Interior Emulsion,Asian Paints,Asian Paints Royale Luxury Emulsion,3209,PAINT-AP-ROYALE-1L,1 litre,LTR,CAN=1,Yes
+Paint > Interior Emulsion,Asian Paints,Asian Paints Royale Luxury Emulsion,3209,PAINT-AP-ROYALE-4L,4 litre,LTR,CAN=4,Yes
+Paint > Interior Emulsion,Asian Paints,Asian Paints Royale Luxury Emulsion,3209,PAINT-AP-ROYALE-20L,20 litre,LTR,BUCKET=20,Yes
+Paint > Exterior Emulsion,Berger,Berger WeatherCoat Long Life,3209,PAINT-BER-WCLL-4L,4 litre,LTR,CAN=4,Yes
+Paint > Exterior Emulsion,Berger,Berger WeatherCoat Long Life,3209,PAINT-BER-WCLL-20L,20 litre,LTR,BUCKET=20,Yes

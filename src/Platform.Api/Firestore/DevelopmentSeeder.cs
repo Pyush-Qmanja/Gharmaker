@@ -1,7 +1,11 @@
 using Google.Cloud.Firestore;
+using Platform.Api.Common;
 using Platform.Api.Security;
+using Platform.Api.Services.Catalog.Import;
 using Platform.Shared.Constants;
+using Platform.Shared.Entities.Catalog;
 using Platform.Shared.Entities.Identity;
+using Platform.Shared.Units;
 
 namespace Platform.Api.Firestore;
 
@@ -9,12 +13,16 @@ namespace Platform.Api.Firestore;
 /// Development-only bootstrap. Makes sure the admin from the <c>Seed</c>
 /// section exists as a Firebase Authentication account and a platform user,
 /// with an organisation, an "Administrator" role holding every capability,
-/// and global scope. Safe to run on every start; brings older data up to date.
+/// and global scope; that the organisation has the standard units; and, once,
+/// a starter catalogue. Safe to run on every start; brings older data up to date.
 /// </summary>
 public static class DevelopmentSeeder
 {
     /// <summary>Name of the seeded all-capabilities role.</summary>
     private const string AdminRoleName = "Administrator";
+
+    /// <summary>Starter catalogue file under <c>Seed/</c>, loaded once into an empty organisation.</summary>
+    private const string StarterCatalogueFile = "starter-catalogue.csv";
 
     /// <summary>Display name of the seeded admin user.</summary>
     private const string AdminUserName = "Administrator";
@@ -49,16 +57,80 @@ public static class DevelopmentSeeder
             .Limit(1)
             .GetSnapshotAsync();
 
+        User admin;
         if (existing.Count == 0)
         {
-            await CreateOrganisationWithAdminAsync(context, configuration, email, authUid, now);
+            admin = await CreateOrganisationWithAdminAsync(context, configuration, email, authUid, now);
+        }
+        else
+        {
+            DocumentSnapshot userDocument = existing.Documents[0];
+            admin = DocumentConverter.FromDocument<User>(userDocument);
+            Role role = await EnsureAdminRoleAsync(context, admin.OrgId, now);
+            await UpgradeAdminAsync(userDocument, admin, authUid, role.Id);
+        }
+
+        await EnsureStandardUomsAsync(context, admin.OrgId, now);
+        await LoadStarterCatalogueAsync(scope.ServiceProvider, context, admin);
+    }
+
+    /// <summary>
+    /// Adds any standard unit (<see cref="StandardUoms"/>) the organisation does not have yet.
+    /// </summary>
+    /// <param name="context">Database entry point.</param>
+    /// <param name="orgId">Organisation id.</param>
+    /// <param name="now">Creation time (UTC).</param>
+    /// <returns>A task that completes when missing units are saved.</returns>
+    private static async Task EnsureStandardUomsAsync(IFirestoreContext context, Guid orgId, DateTime now)
+    {
+        QuerySnapshot existing = await context.Collection<Uom>()
+            .WhereEqualTo(FirestoreNaming.Field(nameof(Uom.OrgId)), DocumentConverter.ToFirestoreValue(orgId))
+            .GetSnapshotAsync();
+        var have = existing.Documents
+            .Select(d => DocumentConverter.FromDocument<Uom>(d).Code)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        WriteBatch batch = context.Database.StartBatch();
+        int added = 0;
+        foreach (var (code, name, dimension, baseFactor) in StandardUoms.All.Where(u => !have.Contains(u.Code)))
+        {
+            var unit = new Uom { OrgId = orgId, Code = code, Name = name, Dimension = dimension, BaseFactor = baseFactor, CreatedAt = now };
+            batch.Create(context.Collection<Uom>().Document(unit.Id.ToString()), DocumentConverter.ToDocument(unit));
+            added++;
+        }
+
+        if (added > 0)
+        {
+            await batch.CommitAsync();
+        }
+    }
+
+    /// <summary>
+    /// Loads <c>Seed/starter-catalogue.csv</c> through the normal import, once:
+    /// only when the organisation has no products yet. Runs as the admin so
+    /// tenancy and audit fields are filled exactly as for a user import.
+    /// </summary>
+    /// <param name="services">Scoped services.</param>
+    /// <param name="context">Database entry point.</param>
+    /// <param name="admin">Seeded admin, whose organisation receives the catalogue.</param>
+    /// <returns>A task that completes when the catalogue is loaded or skipped.</returns>
+    private static async Task LoadStarterCatalogueAsync(IServiceProvider services, IFirestoreContext context, User admin)
+    {
+        QuerySnapshot anyProduct = await context.Collection<Product>()
+            .WhereEqualTo(FirestoreNaming.Field(nameof(Product.OrgId)), DocumentConverter.ToFirestoreValue(admin.OrgId))
+            .Limit(1)
+            .GetSnapshotAsync();
+        string path = Path.Combine(AppContext.BaseDirectory, "Seed", StarterCatalogueFile);
+        if (anyProduct.Count > 0 || !File.Exists(path))
+        {
             return;
         }
 
-        DocumentSnapshot userDocument = existing.Documents[0];
-        User admin = DocumentConverter.FromDocument<User>(userDocument);
-        Role role = await EnsureAdminRoleAsync(context, admin.OrgId, now);
-        await UpgradeAdminAsync(userDocument, admin, authUid, role.Id);
+        using (SystemIdentity.Use(admin.OrgId, admin.Id))
+        {
+            await using FileStream file = File.OpenRead(path);
+            await services.GetRequiredService<ICatalogImportService>().ImportAsync(file, StarterCatalogueFile);
+        }
     }
 
     /// <summary>
@@ -69,8 +141,8 @@ public static class DevelopmentSeeder
     /// <param name="email">Admin email.</param>
     /// <param name="authUid">Admin's Firebase uid.</param>
     /// <param name="now">Creation time (UTC).</param>
-    /// <returns>A task that completes when committed.</returns>
-    private static async Task CreateOrganisationWithAdminAsync(
+    /// <returns>The new admin user.</returns>
+    private static async Task<User> CreateOrganisationWithAdminAsync(
         IFirestoreContext context, IConfiguration configuration, string email, string authUid, DateTime now)
     {
         var organisation = new Organisation
@@ -96,6 +168,7 @@ public static class DevelopmentSeeder
         batch.Create(context.Collection<Role>().Document(role.Id.ToString()), DocumentConverter.ToDocument(role));
         batch.Create(context.Collection<User>().Document(admin.Id.ToString()), DocumentConverter.ToDocument(admin));
         await batch.CommitAsync();
+        return admin;
     }
 
     /// <summary>

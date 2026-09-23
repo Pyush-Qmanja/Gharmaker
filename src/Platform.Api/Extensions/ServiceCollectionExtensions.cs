@@ -23,6 +23,7 @@ using Platform.Api.Security.Authorization;
 using Platform.Api.Services;
 using Platform.Api.Services.Auth;
 using Platform.Api.Services.Catalog;
+using Platform.Api.Services.Catalog.Import;
 using Platform.Api.Services.Identity;
 using Platform.Api.Services.Inventory;
 using Platform.Shared.Constants;
@@ -198,6 +199,11 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
         services.AddCrudModule<Brand, BrandDto, CreateBrandRequest, UpdateBrandRequest, BrandMapper, BrandService>();
+        services.AddCrudModule<Uom, UomDto, CreateUomRequest, UpdateUomRequest, UomMapper, UomService>();
+        services.AddMemoryCache();
+        services.AddScoped<IUomConversionProvider, UomConversionProvider>();
+        services.AddScoped<ICatalogBrowseService, CatalogBrowseService>();
+        services.AddScoped<ICatalogImportService, CatalogImportService>();
         services.AddCrudModule<Warehouse, WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest, WarehouseMapper, WarehouseService>();
         services.AddCrudModule<Role, RoleDto, CreateRoleRequest, UpdateRoleRequest, RoleMapper, RoleService>();
         services.AddCrudModule<User, UserDto, CreateUserRequest, UpdateUserRequest, UserMapper, UserService>();

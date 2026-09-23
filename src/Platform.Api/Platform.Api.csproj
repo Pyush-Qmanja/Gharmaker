@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="FirebaseAdmin" Version="3.6.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.4.0" />
@@ -10,6 +11,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Platform.Shared\Platform.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Seed/starter-catalogue.csv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

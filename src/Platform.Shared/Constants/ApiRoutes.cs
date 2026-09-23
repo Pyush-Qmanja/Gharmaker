@@ -15,6 +15,12 @@ public static class ApiRoutes
     /// <summary>Brand master data.</summary>
     public const string Brands = "api/brands";
 
+    /// <summary>Units of measure.</summary>
+    public const string Uoms = "api/uoms";
+
+    /// <summary>Catalogue browsing and import (categories, products, SKUs).</summary>
+    public const string Catalog = "api/catalog";
+
     /// <summary>Warehouses (internal only, P1).</summary>
     public const string Warehouses = "api/warehouses";
 
