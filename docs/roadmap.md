@@ -1,7 +1,8 @@
 # Roadmap
 
 Nine phases. Each ends at a gate that proves something works, not at a date.
-Current position: **Phase 0**.
+Current position: **Phase 1 and Phase 2 built; Phase 3 next.** Phase 0's business
+checklist (sign-off, open decisions, environments, spikes) is still open.
 
 | Phase | Name | Weeks | Gate proves |
 | --- | --- | --- | --- |
@@ -29,6 +30,13 @@ weeks, but only if Phase 1's permission contract is genuinely locked first.
 
 Running real stock from the end of Phase 2 is the most valuable scheduling
 decision here — it earns the stock number the availability promise rests on.
+
+## Gates passed
+
+| Phase | How the gate is proven |
+| --- | --- |
+| 1 | Scope suites: a user scoped to one warehouse sees and changes only that warehouse (404 elsewhere); per-feature access with its own places; nobody can give access they do not hold. |
+| 2 | Stock suite: receipts, two-step transfers, adjustments, opening stock and reversals all post through one transactional path; stock never goes negative; 12 concurrent transfers racing for the same stock never over-spend; the ledger check finds zero mismatches after every run. |
 
 ## Phase 0 checklist
 

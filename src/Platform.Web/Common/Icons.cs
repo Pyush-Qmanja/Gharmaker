@@ -102,4 +102,28 @@ public static class Icons
 
     /// <summary>Tick marks.</summary>
     public const string Check = "check";
+
+    /// <summary>Stock on hand.</summary>
+    public const string Layers = "layers";
+
+    /// <summary>Goods receipts.</summary>
+    public const string Truck = "truck";
+
+    /// <summary>Adjustments.</summary>
+    public const string Clipboard = "clipboard";
+
+    /// <summary>Audit log.</summary>
+    public const string History = "history";
+
+    /// <summary>Movement lists.</summary>
+    public const string List = "list";
+
+    /// <summary>Ledger check.</summary>
+    public const string Scale = "scale";
+
+    /// <summary>Reversals.</summary>
+    public const string Undo = "undo";
+
+    /// <summary>Receiving a transfer.</summary>
+    public const string PackageCheck = "package-check";
 }

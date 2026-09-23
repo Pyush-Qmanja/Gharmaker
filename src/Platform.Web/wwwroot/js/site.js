@@ -87,6 +87,11 @@
             shell.classList.remove(NAV_OPEN_CLASS);
         }
 
+        const addLine = target.closest("[data-add-line]");
+        if (addLine) {
+            addLineRow(addLine);
+        }
+
         const dismiss = target.closest("[data-dismiss]");
         if (dismiss) {
             const message = dismiss.closest("[data-dismissable]");
@@ -100,6 +105,28 @@
                 menu.removeAttribute("open");
             }
         });
+    }
+
+    /**
+     * Adds a blank row to a line editor (data-lines) by copying its template
+     * row (data-line-template) with the next free index, then focuses it.
+     * @param {Element} button - The "Add a line" button inside the editor.
+     */
+    function addLineRow(button) {
+        const editor = button.closest("[data-lines]");
+        const rows = editor ? editor.querySelector("[data-line-rows]") : null;
+        const template = editor ? editor.querySelector("template[data-line-template]") : null;
+        if (!rows || !template) {
+            return;
+        }
+
+        const index = rows.children.length;
+        const html = template.innerHTML.replace(/__index__/g, String(index));
+        rows.insertAdjacentHTML("beforeend", html.trim());
+        const first = rows.lastElementChild ? rows.lastElementChild.querySelector("input") : null;
+        if (first) {
+            first.focus();
+        }
     }
 
     /**

@@ -72,7 +72,12 @@ Before writing anything, check whether one of these already does it:
 | Multi-select field | `<checkbox-list asp-for="X" items="..." />` | `Web/TagHelpers` |
 | Lookup data for a screen | override `PrepareViewAsync` + `ViewDataKeys` | `Web/Controllers/CrudController` |
 | JSON settings | `JsonDefaults` (enums as names) | `Shared/Common` |
-| Errors from API | throw `NotFoundException` / `BusinessRuleException` | `Api/Common/Exceptions` |
+| Errors from API | throw `NotFoundException` / `BusinessRuleException` / `BusyException` | `Api/Common/Exceptions` |
+| Read-check-write that must be consistent | `IUnitOfWork.RunInTransactionAsync` (reads first, repeatable, retries then 409) | `Api/Repositories/UnitOfWork` |
+| Move stock | build a `StockPosting` and call `IStockPoster.PostAsync` — never write balances | `Api/Services/Inventory/Stock` |
+| Record-per-combination id (e.g. balance of SKU in warehouse) | `IdGenerator.FromName(...)` | `Shared/Common` |
+| Audit log (P10) | automatic in `UnitOfWork` for every write; mark caches/trails `INotAudited` | `Api/Firestore/AuditBuilder` |
+| A stock document screen | derive from `StockDocumentController<TCreate>` + one `_Header` partial | `Web/Controllers` |
 
 If you find yourself copying a block, extract it into one of these (or a new
 generic helper next to them) instead.

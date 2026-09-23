@@ -155,7 +155,7 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
     protected override async Task BeforeWriteAsync(TEntity entity, bool isNew, CancellationToken cancellationToken)
     {
         await base.BeforeWriteAsync(entity, isNew, cancellationToken);
-        if (!await Permissions.CoversAsync(Feature.ManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
+        if (!await Permissions.CoversAsync(Feature.RequiredManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
         {
             throw new ForbiddenException($"You cannot change this {EntityName.ToLowerInvariant()} — it is outside the scope where you manage {Feature.Name.ToLowerInvariant()}.");
         }
@@ -172,7 +172,7 @@ public abstract class ScopedCrudService<TEntity, TDto, TCreate, TUpdate> : CrudS
     protected override async Task BeforeDeleteAsync(TEntity entity, CancellationToken cancellationToken)
     {
         await base.BeforeDeleteAsync(entity, cancellationToken);
-        if (!await Permissions.CoversAsync(Feature.ManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
+        if (!await Permissions.CoversAsync(Feature.RequiredManageCapability, ScopeType, ScopeIdOf(entity), cancellationToken))
         {
             throw new ForbiddenException($"You cannot deactivate this {EntityName.ToLowerInvariant()} — it is outside the scope where you manage {Feature.Name.ToLowerInvariant()}.");
         }

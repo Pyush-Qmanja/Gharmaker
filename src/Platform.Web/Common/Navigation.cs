@@ -23,10 +23,20 @@ public static class Navigation
             "Units of measure and their standard sizes.", ApiRoutes.Uoms),
         new NavigationItem("Warehouses", "Warehouses", "Inventory", Icons.Warehouse, Capabilities.WarehousesView,
             "Stock locations, their addresses and who runs them.", ApiRoutes.Warehouses),
+        new NavigationItem("Stock", "Stock", "Inventory", Icons.Layers, Capabilities.StockView,
+            "What is on hand in each warehouse, every movement, and the ledger check.", $"{ApiRoutes.Stock}/balances?inStockOnly=true"),
+        new NavigationItem("Goods receipts", "Receipts", "Inventory", Icons.Truck, Capabilities.ReceiptsView,
+            "Stock received from suppliers against their invoice or challan.", $"{ApiRoutes.Stock}/documents?type=Receipt"),
+        new NavigationItem("Transfers", "Transfers", "Inventory", Icons.Convert, Capabilities.TransfersView,
+            "Stock sent between warehouses, in transit until received.", $"{ApiRoutes.Stock}/documents?type=Transfer"),
+        new NavigationItem("Adjustments", "Adjustments", "Inventory", Icons.Clipboard, Capabilities.StockView,
+            "Damage, expiry and count corrections, each with a reason.", $"{ApiRoutes.Stock}/documents?type=Adjustment"),
         new NavigationItem("Users", "Users", "Administration", Icons.Users, Capabilities.UsersView,
             "People who sign in, their roles and feature access.", ApiRoutes.Users),
         new NavigationItem("Roles", "Roles", "Administration", Icons.Shield, Capabilities.RolesView,
             "Standard sets of access to give to users.", ApiRoutes.Roles),
+        new NavigationItem("Audit log", "Audit", "Administration", Icons.History, Capabilities.AuditView,
+            "Who changed what, when and from where.", ApiRoutes.Audit),
     };
 
     /// <summary>

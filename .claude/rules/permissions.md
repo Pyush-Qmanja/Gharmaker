@@ -38,6 +38,9 @@ Every authorisation decision is two questions, always both:
   a change would add — through a role, a role scope or a feature access row — must
   be held by the editor in that place. Giving the Administrator role needs every
   capability, everywhere.
+- Stock features are warehouse-scoped: `stock` (view / adjust + opening + ledger check),
+  `receipts`, `transfers`. Sending a transfer needs manage at the source, receiving it
+  manage at the destination; the ledger check needs stock-adjust everywhere.
 - The UI hides what the user cannot use (`IUserAccess`, `Navigation.Items`), but
   that is cosmetic; the API is the enforcement point.
 

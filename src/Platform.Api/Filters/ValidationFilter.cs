@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Platform.Shared.Dtos.Common;
 
 namespace Platform.Api.Filters;
 
@@ -38,6 +39,10 @@ public sealed class ValidationFilter : IAsyncActionFilter
             {
                 continue;
             }
+
+            // Tidy the request first (drop blank lines, add implied capabilities...),
+            // so the API and the UI validate exactly the same canonical form.
+            (argument as INormalisable)?.Normalise();
 
             Type validatorType = typeof(IValidator<>).MakeGenericType(argument.GetType());
             if (_serviceProvider.GetService(validatorType) is not IValidator validator)

@@ -117,7 +117,7 @@ public sealed class AccessGridModel
         : level switch
         {
             AccessLevel.View => row.Feature.ViewCapability,
-            AccessLevel.Manage => row.Feature.ManageCapability,
+            AccessLevel.Manage => row.Feature.ManageCapability ?? string.Empty,
             _ => string.Empty,
         };
 }

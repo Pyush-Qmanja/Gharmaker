@@ -212,7 +212,8 @@ a.identity__primary:hover {
 }
 
 /* Cards stacked directly on a page are spaced; cards inside grids are not. */
-.content__inner > .card + .card {
+.content__inner > .card + .card,
+.content__inner > .card + .form-panel {
     margin-top: var(--space-5);
 }
 
@@ -315,6 +316,7 @@ a.identity__primary:hover {
 
 .data-table__num {
     text-align: right;
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
@@ -1234,6 +1236,29 @@ a.data-table__primary:hover {
     color: var(--color-tile-green);
 }
 
+.icon-tile--layers,
+.icon-tile--package-check {
+    background: var(--color-tile-green-bg);
+    color: var(--color-tile-green);
+}
+
+.icon-tile--truck {
+    background: var(--color-tile-blue-bg);
+    color: var(--color-tile-blue);
+}
+
+.icon-tile--convert {
+    background: var(--color-tile-teal-bg);
+    color: var(--color-tile-teal);
+}
+
+.icon-tile--clipboard,
+.icon-tile--undo {
+    background: var(--color-tile-amber-bg);
+    color: var(--color-tile-amber);
+}
+
+.icon-tile--history,
 .icon-tile--shield,
 .icon-tile--spreadsheet {
     background: var(--color-tile-violet-bg);
@@ -1296,4 +1321,21 @@ a.data-table__primary:hover {
     .access-grid__where {
         min-width: 0;
     }
+}
+
+.notice--success {
+    border-color: var(--color-success-border);
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.notice + .card,
+.notice + .stat-grid,
+.card + .notice,
+.page-header + .notice {
+    margin-top: var(--space-5);
+}
+
+.notice {
+    margin-bottom: var(--space-5);
 }

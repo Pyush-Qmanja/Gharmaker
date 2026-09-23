@@ -41,6 +41,17 @@ choosing the C# name decides all of them.
 | Per-feature access given to a user | `Access` of `Feature` + `Level` + `Scopes` | `access[].feature`, `access[].level`, `access[].scopes` | embedded list | `Permissions`, `Grants`, `FeatureRights` |
 | How much of a feature | `Level` (`AccessLevel`: None / View / Manage) | `level` | enum stored as name | `AccessType`, `Mode`, `Right` |
 | Feature code | `Feature` (codes from `Features`) | `feature` | `string` | `Module`, `Area`, `Section` |
+| Why stock moved | `Reason` (`StockReason`) | `reason` | enum stored as name | `ReasonCode`, `MovementType`, `TxnType` |
+| In or out | `Direction` (`StockDirection`) | `direction` | enum stored as name | `Sign`, `IsIn`, `Type` (for this) |
+| Source of a ledger entry | `RefType` + `RefId` (+ `ReferenceNo` for display) | `ref_type`, `ref_id` | `string` + `Guid` | `SourceDoc`, `DocId`, `TxnRef` |
+| Entry / document a reversal cancels | `ReversesEntryId` / `ReversesDocumentId`; on the original `ReversedByDocumentId` | `reverses_entry_id` ... | `Guid?` | `OriginalId`, `CancelledBy` |
+| Stock on hand / promised | `OnHand` / `Reserved` (+ `Uom`); available is computed | `on_hand`, `reserved` | `decimal` | `Qty`, `Stock`, `Balance` (for this), `Available` stored |
+| Balance right after an entry | `BalanceAfter` | `balance_after` | `decimal` | `RunningBalance`, `ClosingQty` |
+| Amount in the SKU's base unit | `BaseQuantity` + `BaseUom` | `base_quantity`, `base_uom` | `decimal` + `string` | `ConvertedQty`, `StockQty` |
+| Supplier on a receipt | `SupplierName`, `SupplierReferenceNo` | `supplier_name`, `supplier_reference_no` | `string` | `Vendor`, `InvoiceNo`, `ChallanNo` |
+| Every warehouse a document touches | `WarehouseIds` | `warehouse_ids` | `List<Guid>` | `Locations`, `WarehouseList` |
+| Destination warehouse | `ToWarehouseId` | `to_warehouse_id` | `Guid?` | `DestinationId`, `TargetWarehouse` |
+| Audited record | `Entity` + `EntityId`, `Action` (`AuditAction`), `Label`, `Changes` (`Field`, `Before`, `After`), `Ip`, `Device` | `entity`, `entity_id` ... | see `AuditEntry` | `Table`, `RecordId`, `Diff`, `UserAgent` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
 | Postal address | `Address` (`Line1`, `Line2`, `City`, `State`, `Pincode`) | `address.line1` ... `address.pincode` | embedded `Address` / `AddressDto` | `Street`, `Zip`, `PostCode`, `PinCode`, flat address columns |
 | Coordinates | `Lat` / `Lng` | `lat` / `lng` | `double?` (WGS 84; not money, so `double` is fine) | `Latitude`/`Longitude`, `GeoLat`, `Coords` |

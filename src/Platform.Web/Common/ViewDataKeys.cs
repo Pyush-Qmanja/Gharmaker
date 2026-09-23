@@ -28,6 +28,18 @@ public static class ViewDataKeys
     /// <summary>User id to name (<c>IReadOnlyDictionary&lt;Guid, string&gt;</c>).</summary>
     public const string UserNames = "UserNames";
 
+    /// <summary>Whether the user may create a record on this screen (<c>bool</c>).</summary>
+    public const string CanCreate = "CanCreate";
+
+    /// <summary>Warehouses for a filter (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string WarehouseOptions = "WarehouseOptions";
+
+    /// <summary>Warehouses a transfer can go to (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string DestinationOptions = "DestinationOptions";
+
+    /// <summary>Choices for a reason drop-down (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string ReasonOptions = "ReasonOptions";
+
     /// <summary>One-line description under a page title (<c>string</c>).</summary>
     public const string Subtitle = "Subtitle";
 }

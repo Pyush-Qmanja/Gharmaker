@@ -1,0 +1,82 @@
+@* The Phase 2 gate on screen: every balance added up from the ledger. Rebuild appears only when something disagrees. *@
+@using Platform.Shared.Dtos.Inventory
+@model StockReconcileResultDto
+@{
+    ViewData["Title"] = "Ledger check";
+    bool agrees = Model.Mismatches.Count == 0;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Stock</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>Ledger check</span>
+        </nav>
+        <h1 class="page-header__title">Ledger check</h1>
+        <p class="page-header__subtitle">Adds up every movement in the ledger and compares the result with each stock balance. The ledger is always right.</p>
+    </div>
+    <div class="page-header__actions">
+        <a asp-action="Reconcile" class="btn btn-secondary"><icon name="@Icons.Scale" /> Check again</a>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="card stat @(agrees ? "stat--success" : "stat--danger")">
+        <span class="stat__label"><icon name="@(agrees ? Icons.CheckCircle : Icons.AlertCircle)" /> Balances that disagree</span>
+        <span class="stat__value">@Model.Mismatches.Count</span>
+    </div>
+    <div class="card stat">
+        <span class="stat__label"><icon name="@Icons.List" /> Ledger entries added up</span>
+        <span class="stat__value">@Model.EntriesChecked.ToString("#,0")</span>
+    </div>
+    <div class="card stat">
+        <span class="stat__label"><icon name="@Icons.Layers" /> Balances compared</span>
+        <span class="stat__value">@Model.BalancesChecked.ToString("#,0")</span>
+    </div>
+</div>
+
+@if (agrees)
+{
+    <div class="notice notice--success">
+        <icon name="@Icons.CheckCircle" />
+        <p><strong>Every balance agrees with its ledger.</strong> Checked @Model.CheckedAt.ToIstString().</p>
+    </div>
+}
+else
+{
+    <div class="notice notice--danger">
+        <icon name="@Icons.AlertCircle" />
+        <p>These balances do not match what their ledger adds up to. Rebuilding sets each one to its ledger total; the ledger itself is never changed.</p>
+    </div>
+
+    <section class="card data-card">
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>Warehouse</th>
+                        <th>SKU</th>
+                        <th class="data-table__num">Balance says</th>
+                        <th class="data-table__num">Ledger adds up to</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Mismatches)
+                    {
+                        <tr class="data-table__row--error">
+                            <td><span class="code-tag">@row.WarehouseCode</span></td>
+                            <td><span class="code-tag">@row.SkuCode</span></td>
+                            <td class="data-table__num">@row.BalanceOnHand.ToQuantityText() @row.Uom</td>
+                            <td class="data-table__num"><strong>@row.LedgerOnHand.ToQuantityText() @row.Uom</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <form asp-action="Rebuild" method="post" class="import-actions" data-confirm="Rewrite @Model.Mismatches.Count balance(s) from the ledger?">
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Undo" /> Rebuild balances from the ledger</button>
+    </form>
+}

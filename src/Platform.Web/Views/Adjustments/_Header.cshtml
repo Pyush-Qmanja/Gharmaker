@@ -1,0 +1,18 @@
+@* Adjustment header fields for the shared StockDocumentForm page. Only the three adjustment reasons are offered. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Inventory
+@using Platform.Shared.Validation.Inventory
+@model CreateAdjustmentRequest
+@{
+    var reasons = CreateAdjustmentRequestValidator.Reasons
+        .Select(r => new SelectListItem(r.ToText(), r.ToString(), r == Model.Reason))
+        .ToList();
+}
+<form-panel title="Adjustment" description="Why stock is being changed. Damage and expiry take stock away; a count correction brings the record in line with a physical count.">
+    <div class="form-grid">
+        <form-field asp-for="WarehouseId" label="Warehouse"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.WarehouseOptions]!" empty-option="Choose a warehouse" />
+        <form-field asp-for="Reason" items="reasons" />
+        <form-field asp-for="Remarks" label="Reason in words" hint="Required, e.g. 12 bags wet after rain on 3 Sep." />
+    </div>
+</form-panel>

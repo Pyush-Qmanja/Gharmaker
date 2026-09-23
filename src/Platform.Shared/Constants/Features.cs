@@ -3,10 +3,10 @@ using Platform.Shared.Entities.Identity;
 namespace Platform.Shared.Constants;
 
 /// <summary>
-/// The platform's features, each a pair of capabilities (view and manage).
-/// The access grid in the role and user editors is built from <see cref="All"/>,
-/// and <see cref="Capabilities.All"/> is derived from it, so a new feature is
-/// added here once and appears everywhere.
+/// The platform's features, each a view capability and (usually) a manage
+/// capability. The access grid in the role and user editors is built from
+/// <see cref="All"/>, and <see cref="Capabilities.All"/> is derived from it, so
+/// a new feature is added here once and appears everywhere.
 /// </summary>
 public static class Features
 {
@@ -19,11 +19,23 @@ public static class Features
     /// <summary>Warehouses (limited by warehouse scope).</summary>
     public const string Warehouses = "warehouses";
 
+    /// <summary>Stock levels, movements, adjustments and opening stock (limited by warehouse scope).</summary>
+    public const string Stock = "stock";
+
+    /// <summary>Goods receipts (limited by warehouse scope).</summary>
+    public const string Receipts = "receipts";
+
+    /// <summary>Transfers between warehouses (limited by warehouse scope).</summary>
+    public const string Transfers = "transfers";
+
     /// <summary>Users, their roles and access.</summary>
     public const string Users = "users";
 
     /// <summary>Roles.</summary>
     public const string Roles = "roles";
+
+    /// <summary>Audit log (view only).</summary>
+    public const string Audit = "audit";
 
     /// <summary>Every feature, in display order.</summary>
     public static readonly IReadOnlyList<FeatureInfo> All = new[]
@@ -34,10 +46,18 @@ public static class Features
             Capabilities.BrandsView, Capabilities.BrandsManage, ScopeType: null),
         new FeatureInfo(Warehouses, "Warehouses", "Inventory", "Stock locations, addresses and who runs them.",
             Capabilities.WarehousesView, Capabilities.WarehousesManage, ScopeType.Warehouse),
+        new FeatureInfo(Stock, "Stock", "Inventory", "Stock levels and movements. Manage: adjustments, opening stock, ledger check.",
+            Capabilities.StockView, Capabilities.StockAdjust, ScopeType.Warehouse),
+        new FeatureInfo(Receipts, "Goods receipts", "Inventory", "Stock received from suppliers. Manage: post and reverse receipts.",
+            Capabilities.ReceiptsView, Capabilities.ReceiptsManage, ScopeType.Warehouse),
+        new FeatureInfo(Transfers, "Transfers", "Inventory", "Stock moved between warehouses. Manage: send and receive.",
+            Capabilities.TransfersView, Capabilities.TransfersManage, ScopeType.Warehouse),
         new FeatureInfo(Users, "Users", "Administration", "People who sign in, their roles and access.",
             Capabilities.UsersView, Capabilities.UsersManage, ScopeType: null),
         new FeatureInfo(Roles, "Roles", "Administration", "Named sets of access to give to users.",
             Capabilities.RolesView, Capabilities.RolesManage, ScopeType: null),
+        new FeatureInfo(Audit, "Audit log", "Administration", "Who changed what, when and from where.",
+            Capabilities.AuditView, ManageCapability: null, ScopeType: null),
     };
 
     /// <summary>Lookup by code.</summary>
@@ -49,6 +69,15 @@ public static class Features
     /// <param name="code">Feature code.</param>
     /// <returns>The feature, or null when the code is unknown.</returns>
     public static FeatureInfo? Find(string code) => ByCode.GetValueOrDefault(code);
+
+    /// <summary>
+    /// Finds a feature that must exist, e.g. from one of the constants above.
+    /// </summary>
+    /// <param name="code">Feature code.</param>
+    /// <returns>The feature.</returns>
+    /// <exception cref="ArgumentException">The code is not a feature.</exception>
+    public static FeatureInfo Get(string code) =>
+        Find(code) ?? throw new ArgumentException($"Unknown feature '{code}'.", nameof(code));
 
     /// <summary>
     /// Position of a feature in <see cref="All"/>, for sorting into display order.
@@ -85,7 +114,7 @@ public static class Features
     public static List<string> Complete(IEnumerable<string?> codes)
     {
         var set = codes.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => c!.Trim()).ToHashSet(StringComparer.Ordinal);
-        foreach (FeatureInfo feature in All.Where(f => set.Contains(f.ManageCapability)))
+        foreach (FeatureInfo feature in All.Where(f => f.ManageCapability is not null && set.Contains(f.ManageCapability)))
         {
             set.Add(feature.ViewCapability);
         }
@@ -96,7 +125,7 @@ public static class Features
 }
 
 /// <summary>
-/// One feature: what it is, its two capabilities, and whether access to it is
+/// One feature: what it is, its capabilities, and whether access to it is
 /// limited by scope.
 /// </summary>
 /// <param name="Code">Stored code, e.g. <c>warehouses</c>. Permanent once shipped.</param>
@@ -104,7 +133,7 @@ public static class Features
 /// <param name="Group">Heading the access grid groups it under.</param>
 /// <param name="Description">One-line explanation shown in the grid.</param>
 /// <param name="ViewCapability">Capability for seeing records.</param>
-/// <param name="ManageCapability">Capability for changing records.</param>
+/// <param name="ManageCapability">Capability for changing records; null for a view-only feature.</param>
 /// <param name="ScopeType">
 /// Kind of object that limits access (e.g. warehouse), or null when the feature
 /// is organisation-wide.
@@ -115,21 +144,32 @@ public sealed record FeatureInfo(
     string Group,
     string Description,
     string ViewCapability,
-    string ManageCapability,
+    string? ManageCapability,
     ScopeType? ScopeType)
 {
     /// <summary>True when access is limited to chosen objects (e.g. warehouses).</summary>
     public bool IsScoped => ScopeType.HasValue;
 
+    /// <summary>True when the feature has a manage level.</summary>
+    public bool CanManage => ManageCapability is not null;
+
+    /// <summary>
+    /// The manage capability of a feature that has one.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The feature is view-only.</exception>
+    public string RequiredManageCapability =>
+        ManageCapability ?? throw new InvalidOperationException($"Feature '{Code}' is view-only.");
+
     /// <summary>
     /// Capabilities a level grants.
     /// </summary>
     /// <param name="level">Access level.</param>
-    /// <returns>None, view, or view and manage.</returns>
+    /// <returns>None, view, or view and manage (view only for a view-only feature).</returns>
     public IReadOnlyList<string> CapabilitiesFor(AccessLevel level) => level switch
     {
         AccessLevel.View => new[] { ViewCapability },
-        AccessLevel.Manage => new[] { ViewCapability, ManageCapability },
+        AccessLevel.Manage when ManageCapability is not null => new[] { ViewCapability, ManageCapability },
+        AccessLevel.Manage => new[] { ViewCapability },
         _ => Array.Empty<string>(),
     };
 
@@ -141,7 +181,7 @@ public sealed record FeatureInfo(
     public AccessLevel LevelIn(IEnumerable<string> capabilities)
     {
         var held = capabilities as IReadOnlyCollection<string> ?? capabilities.ToList();
-        return held.Contains(ManageCapability) ? AccessLevel.Manage
+        return ManageCapability is not null && held.Contains(ManageCapability) ? AccessLevel.Manage
             : held.Contains(ViewCapability) ? AccessLevel.View
             : AccessLevel.None;
     }

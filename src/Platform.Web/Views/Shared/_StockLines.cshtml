@@ -1,0 +1,71 @@
+@* Line editor for stock documents: SKU code and unit come from pick lists (datalists), so they can be typed or chosen. "Add a line" copies the template row (site.js); without script, the blank rows are enough. *@
+@using System.Globalization
+@model StockDocumentFormViewModel
+@{
+    string Amount(decimal value, string skuCode) =>
+        string.IsNullOrEmpty(skuCode) && value == 0 ? string.Empty : value.ToString(CultureInfo.InvariantCulture);
+    string? ErrorFor(int index, string field) =>
+        ViewData.ModelState.TryGetValue($"Lines[{index}].{field}", out var entry) && entry.Errors.Count > 0 ? entry.Errors[0].ErrorMessage : null;
+    var listErrors = ViewData.ModelState.TryGetValue("Lines", out var linesEntry) ? linesEntry.Errors.Select(e => e.ErrorMessage).ToList() : new List<string>();
+}
+<div class="line-editor" data-lines>
+    <table class="line-editor__table">
+        <thead>
+            <tr>
+                <th scope="col">SKU code</th>
+                <th scope="col" class="line-editor__qty">Amount</th>
+                <th scope="col" class="line-editor__uom">Unit</th>
+            </tr>
+        </thead>
+        <tbody data-line-rows>
+            @for (int i = 0; i < Model.Lines.Count; i++)
+            {
+                var line = Model.Lines[i];
+                <tr>
+                    <td>
+                        <input type="text" name="Lines[@i].SkuCode" value="@line.SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code, line @(i + 1)" />
+                        @if (ErrorFor(i, "SkuCode") is { } skuError) { <span class="form-field__error">@skuError</span> }
+                    </td>
+                    <td>
+                        <input type="number" step="any" name="Lines[@i].Quantity" value="@Amount(line.Quantity, line.SkuCode)" class="form-control" aria-label="Amount, line @(i + 1)" />
+                        @if (ErrorFor(i, "Quantity") is { } qtyError) { <span class="form-field__error">@qtyError</span> }
+                    </td>
+                    <td>
+                        <input type="text" name="Lines[@i].Uom" value="@line.Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit, line @(i + 1)" />
+                        @if (ErrorFor(i, "Uom") is { } uomError) { <span class="form-field__error">@uomError</span> }
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <template data-line-template>
+            <tr>
+                <td><input type="text" name="Lines[__index__].SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code" /></td>
+                <td><input type="number" step="any" name="Lines[__index__].Quantity" class="form-control" aria-label="Amount" /></td>
+                <td><input type="text" name="Lines[__index__].Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit" /></td>
+            </tr>
+        </template>
+    </table>
+
+    <div class="line-editor__footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-add-line><icon name="@Icons.Plus" /> Add a line</button>
+        <span class="form-field__hint">@Model.QuantityHint</span>
+    </div>
+
+    @foreach (var error in listErrors)
+    {
+        <p class="form-field__error">@error</p>
+    }
+
+    <datalist id="sku-options">
+        @foreach (var sku in Model.SkuOptions)
+        {
+            <option value="@sku.Code">@sku.Name — in @string.Join(", ", sku.Units)</option>
+        }
+    </datalist>
+    <datalist id="unit-options">
+        @foreach (var unit in Model.UnitCodes)
+        {
+            <option value="@unit"></option>
+        }
+    </datalist>
+</div>

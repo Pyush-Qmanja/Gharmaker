@@ -1,0 +1,13 @@
+@* Goods receipt header fields for the shared StockDocumentForm page. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Inventory
+@model CreateReceiptRequest
+<form-panel title="Receipt" description="Which warehouse received the goods and from whom. The supplier's invoice or challan number helps match it later.">
+    <div class="form-grid">
+        <form-field asp-for="WarehouseId" label="Receiving warehouse"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.WarehouseOptions]!" empty-option="Choose a warehouse" />
+        <form-field asp-for="SupplierName" label="Supplier" />
+        <form-field asp-for="SupplierReferenceNo" label="Supplier invoice / challan no." />
+        <form-field asp-for="Remarks" hint="Optional, e.g. vehicle number or condition on arrival." />
+    </div>
+</form-panel>

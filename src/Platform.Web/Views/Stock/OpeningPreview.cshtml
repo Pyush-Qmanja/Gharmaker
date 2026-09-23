@@ -1,0 +1,92 @@
+@* Opening stock step 2: each row's result. Confirm posts one opening document per warehouse; any error blocks posting. *@
+@using Platform.Shared.Dtos.Catalog
+@using Platform.Shared.Dtos.Inventory
+@model OpeningStockPreviewDto
+@{
+    ViewData["Title"] = "Check opening stock";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Stock</a>
+            <icon name="@Icons.ChevronRight" />
+            <a asp-action="Opening">Opening stock</a>
+        </nav>
+        <h1 class="page-header__title">Check before posting</h1>
+        <p class="page-header__subtitle"><icon name="@Icons.Spreadsheet" class="icon--sm" /> @Model.FileName · @Model.Rows.Count.Counted("row")</p>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="card stat"><span class="stat__label"><icon name="@Icons.Check" /> Rows ready</span><span class="stat__value">@Model.ValidRows</span></div>
+    <div class="card stat"><span class="stat__label"><icon name="@Icons.Warehouse" /> Warehouses</span><span class="stat__value">@Model.Warehouses.Count</span></div>
+    <div class="card stat @(Model.ErrorRows > 0 ? "stat--danger" : "stat--success")">
+        <span class="stat__label"><icon name="@(Model.ErrorRows > 0 ? Icons.AlertCircle : Icons.CheckCircle)" /> Rows with errors</span>
+        <span class="stat__value">@Model.ErrorRows</span>
+    </div>
+</div>
+
+<div class="import-actions">
+    @if (Model.CanCommit)
+    {
+        <div class="notice">
+            <icon name="@Icons.Info" />
+            <p>Posting adds these amounts to what is already recorded in @string.Join(", ", Model.Warehouses).</p>
+        </div>
+        <form asp-action="OpeningCommit" method="post" class="inline-form" data-confirm="Post opening stock for @Model.ValidRows.Counted("row")?">
+            <input type="hidden" name="importId" value="@Model.ImportId" />
+            <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Confirm and post</button>
+        </form>
+    }
+    else
+    {
+        <div class="notice notice--danger" role="alert">
+            <icon name="@Icons.AlertCircle" />
+            <p>Nothing can be posted while rows have errors. Fix them in your file and upload it again.</p>
+        </div>
+    }
+    <a asp-action="Opening" class="btn btn-secondary"><icon name="@Icons.Upload" /> Upload a different file</a>
+</div>
+
+<section class="card data-card">
+    <div class="data-card__scroll">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th class="data-table__num">Row</th>
+                    <th>Result</th>
+                    <th>Warehouse</th>
+                    <th>SKU</th>
+                    <th class="data-table__num">As entered</th>
+                    <th class="data-table__num">In base unit</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr class="@(row.Status == ImportRowStatus.Error ? "data-table__row--error" : string.Empty)">
+                        <td class="data-table__num data-table__muted">@row.RowNumber</td>
+                        <td><span class="status-badge status-badge--@(row.Status == ImportRowStatus.Error ? "error" : "new")">@(row.Status == ImportRowStatus.Error ? "Error" : "Ready")</span></td>
+                        <td><span class="code-tag">@row.WarehouseCode</span></td>
+                        <td>
+                            <span class="identity__text">
+                                <span class="identity__primary">@(row.Name ?? row.SkuCode)</span>
+                                <span class="identity__secondary">@row.SkuCode</span>
+                            </span>
+                        </td>
+                        <td class="data-table__num">@row.Quantity @row.Uom</td>
+                        <td class="data-table__num">@(row.BaseQuantity is { } q ? $"{q.ToQuantityText()} {row.BaseUom}" : "—")</td>
+                        <td>
+                            @foreach (var message in row.Messages)
+                            {
+                                <div class="import-message">@message</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

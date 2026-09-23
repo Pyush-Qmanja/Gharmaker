@@ -1,0 +1,104 @@
+@* Stock on hand: filter by warehouse and SKU code; actions the user may take in some warehouse. *@
+@using Platform.Shared.Dtos.Inventory
+@model StockIndexViewModel
+@{
+    ViewData["Title"] = "Stock";
+    var rows = (IReadOnlyList<StockBalanceDto>)Model.Balances.Items;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Stock</h1>
+        <p class="page-header__subtitle">What is on hand in each warehouse, straight from the stock ledger.</p>
+    </div>
+    <div class="page-header__actions">
+        <a asp-action="Movements" class="btn btn-secondary"><icon name="@Icons.List" /> Movements</a>
+        @if (Model.Can.Adjust)
+        {
+            <a asp-action="Reconcile" class="btn btn-secondary"><icon name="@Icons.Scale" /> Ledger check</a>
+            <a asp-action="Opening" class="btn btn-secondary"><icon name="@Icons.Upload" /> Opening stock</a>
+            <a asp-controller="Adjustments" asp-action="Create" class="btn btn-secondary"><icon name="@Icons.Clipboard" /> Adjust</a>
+        }
+        @if (Model.Can.Transfer)
+        {
+            <a asp-controller="Transfers" asp-action="Create" class="btn btn-secondary"><icon name="@Icons.Convert" /> Transfer</a>
+        }
+        @if (Model.Can.Receive)
+        {
+            <a asp-controller="Receipts" asp-action="Create" class="btn btn-primary"><icon name="@Icons.Truck" /> Receive goods</a>
+        }
+    </div>
+</div>
+
+<section class="card data-card">
+    <form asp-action="Index" method="get" class="data-card__toolbar" role="search">
+        <div class="search-field">
+            <icon name="@Icons.Search" class="search-field__icon" />
+            <input type="search" name="search" value="@Model.Balances.Search" class="form-control search-field__input"
+                   placeholder="SKU code starts with…" aria-label="Search by SKU code" />
+        </div>
+        <select name="warehouseId" class="form-select filter-select" aria-label="Warehouse" data-auto-submit>
+            <option value="">All my warehouses</option>
+            @foreach (var option in Model.WarehouseOptions)
+            {
+                <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+            }
+        </select>
+        <label class="toggle-filter">
+            <input type="checkbox" name="inStockOnly" value="true" class="form-check-input" checked="@Model.InStockOnly" data-auto-submit />
+            <span>In stock only</span>
+        </label>
+        <span class="data-card__count">@Model.Balances.TotalCount.Counted("row")</span>
+    </form>
+
+    @if (Model.Balances.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Layers" /></span>
+            <h2 class="empty-state__title">No stock here yet</h2>
+            <p class="empty-state__text">Stock appears as soon as goods are received, transferred in, or loaded as opening stock.</p>
+            @if (Model.Can.Receive)
+            {
+                <div class="empty-state__actions">
+                    <a asp-controller="Receipts" asp-action="Create" class="btn btn-primary"><icon name="@Icons.Truck" /> Receive goods</a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Warehouse</th>
+                        <th class="data-table__num">On hand</th>
+                        <th class="data-table__num">Reserved</th>
+                        <th class="data-table__num">Available</th>
+                        <th>Last movement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in rows)
+                    {
+                        <tr>
+                            <td>
+                                <span class="identity__text">
+                                    <a asp-action="Sku" asp-route-id="@row.SkuId" class="identity__primary">@row.Name</a>
+                                    <span class="identity__secondary"><span class="code-tag">@row.SkuCode</span></span>
+                                </span>
+                            </td>
+                            <td><span class="code-tag">@row.WarehouseCode</span></td>
+                            <td class="data-table__num"><span class="qty@(row.OnHand == 0 ? " qty--zero" : string.Empty)">@row.OnHand.ToQuantityText()</span> <span class="qty__uom">@row.Uom</span></td>
+                            <td class="data-table__num data-table__muted">@row.Reserved.ToQuantityText()</td>
+                            <td class="data-table__num">@row.Available.ToQuantityText() <span class="qty__uom">@row.Uom</span></td>
+                            <td class="data-table__muted" title="@row.LastMovedAt.ToIstString()">@(row.LastMovedAt is { } at ? at.ToIstDateString() : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model.Balances" />
+    }
+</section>

@@ -42,16 +42,39 @@ public static class Capabilities
     /// <summary>Create, edit and deactivate roles.</summary>
     public const string RolesManage = "roles.manage";
 
+    /// <summary>See stock levels and movement history in the user's warehouses.</summary>
+    public const string StockView = "stock.view";
+
+    /// <summary>Post adjustments (damage, expiry, count corrections) and opening stock; reconcile the ledger.</summary>
+    public const string StockAdjust = "stock.adjust";
+
+    /// <summary>See goods receipts.</summary>
+    public const string ReceiptsView = "receipts.view";
+
+    /// <summary>Post and reverse goods receipts.</summary>
+    public const string ReceiptsManage = "receipts.manage";
+
+    /// <summary>See transfers.</summary>
+    public const string TransfersView = "transfers.view";
+
+    /// <summary>Send transfers from, and receive them into, the user's warehouses.</summary>
+    public const string TransfersManage = "transfers.manage";
+
+    /// <summary>Read the audit log.</summary>
+    public const string AuditView = "audit.view";
+
     /// <summary>
     /// Every capability, in display order: each feature in <see cref="Features.All"/>
-    /// contributes its view and manage pair.
+    /// contributes its view capability and, if it has one, its manage capability.
     /// </summary>
     public static readonly IReadOnlyList<CapabilityInfo> All = Features.All
-        .SelectMany(f => new[]
-        {
-            new CapabilityInfo(f.ViewCapability, f.Group, $"View {f.Name.ToLowerInvariant()}"),
-            new CapabilityInfo(f.ManageCapability, f.Group, $"Manage {f.Name.ToLowerInvariant()}"),
-        })
+        .SelectMany(f => f.ManageCapability is null
+            ? new[] { new CapabilityInfo(f.ViewCapability, f.Group, $"View {f.Name.ToLowerInvariant()}") }
+            : new[]
+            {
+                new CapabilityInfo(f.ViewCapability, f.Group, $"View {f.Name.ToLowerInvariant()}"),
+                new CapabilityInfo(f.ManageCapability, f.Group, $"Manage {f.Name.ToLowerInvariant()}"),
+            })
         .ToList();
 
     /// <summary>Fast lookup of valid codes.</summary>

@@ -60,7 +60,7 @@ src/
   Platform.Api/              Web API
     Controllers/             CrudControllerBase<> + thin per-resource controllers
     Services/                CrudService<> + per-module services, AuthService
-    Repositories/            IRepository<> (generic, org-scoped), UnitOfWork (batch + audit fields)
+    Repositories/            IRepository<> (generic, org-scoped), UnitOfWork (batch or transaction, audit fields + audit log)
     Mapping/                 IEntityMapper<> + per-entity mappers
     Firestore/               FirestoreContext (one client), naming, DocumentConverter, seeder
     Security/                JWT issuing
@@ -74,6 +74,14 @@ src/
     wwwroot/img/icons.svg    icon sprite used by <icon>
     wwwroot/js/              site.js (behaviour via data- attributes)
 ```
+
+## What works today
+
+- Sign-in (Firebase Authentication), users, roles, per-feature access with its own places,
+  and an audit log of every change.
+- Catalogue: brands, units with conversions, categories and products, Excel import.
+- Warehouses and stock: goods receipts, two-step transfers, adjustments, opening stock
+  import, reversals, movement history, and a ledger check that proves every balance.
 
 ## Using this repo with Claude Code
 

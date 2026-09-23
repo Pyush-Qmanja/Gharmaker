@@ -41,4 +41,24 @@ public static class IdGenerator
 
         return new Guid(bytes, bigEndian: true);
     }
+
+    /// <summary>
+    /// Derives a stable key from a name (UUID version 5 style, SHA-1 based):
+    /// the same name always gives the same id. Used for records that exist
+    /// once per combination, such as the stock balance of one SKU in one
+    /// warehouse, so they can be read and written by key without a query.
+    /// </summary>
+    /// <param name="name">Unique name, e.g. <c>stock_balance:&lt;warehouse&gt;:&lt;sku&gt;</c>.</param>
+    /// <returns>The derived <see cref="Guid"/>.</returns>
+    public static Guid FromName(string name)
+    {
+        byte[] hash = SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(name));
+        Span<byte> bytes = hash.AsSpan(0, 16);
+
+        // Version 5 in the high nibble of byte 6, RFC variant in byte 8.
+        bytes[6] = (byte)((bytes[6] & 0x0F) | 0x50);
+        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+
+        return new Guid(bytes, bigEndian: true);
+    }
 }

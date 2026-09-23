@@ -19,3 +19,6 @@ raise it instead.
 | # | Question | Decision | Where |
 | --- | --- | --- | --- |
 | DB | Relational or document store | Firestore only (supersedes PostgreSQL) | `adr/0002-firestore.md` |
+| S1 | May stock go negative? | No. A posting that would take any balance below zero is refused (422), checked inside the transaction | `StockPoster` |
+| S2 | Batches and bins in Phase 2? | Not yet: the ledger is keyed by warehouse and SKU. `batch_id` / `bin_id` are added when batch-tracked materials (cement dates, tile shades) are needed | `ledgers.md` |
+| S3 | Transfers in one step or two? | Two: stock leaves on send (in transit), arrives when the destination receives it | `StockService` |

@@ -1,0 +1,120 @@
+@* Shared list of one kind of stock document (receipts, transfers, adjustments), newest first. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Inventory
+@using Platform.Shared.Entities.Inventory
+@model IListViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    NavigationItem? screen = Navigation.Find(ViewContext.RouteData.Values["controller"] as string);
+    var rows = (IReadOnlyList<StockDocumentDto>)Model.Items;
+    var warehouses = ViewData[ViewDataKeys.WarehouseOptions] as IReadOnlyList<SelectListItem> ?? Array.Empty<SelectListItem>();
+    bool canCreate = ViewData[ViewDataKeys.CanCreate] as bool? == true;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">@Model.Title</h1>
+        @if (screen is not null)
+        {
+            <p class="page-header__subtitle">@screen.Description</p>
+        }
+    </div>
+    @if (canCreate)
+    {
+        <div class="page-header__actions">
+            <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New @Model.ItemName</a>
+        </div>
+    }
+</div>
+
+<section class="card data-card">
+    <form asp-action="Index" method="get" class="data-card__toolbar">
+        <select name="warehouseId" class="form-select filter-select" aria-label="Warehouse" data-auto-submit>
+            <option value="">All my warehouses</option>
+            @foreach (var option in warehouses)
+            {
+                <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+            }
+        </select>
+        <span class="data-card__count">@Model.TotalCount.Counted(Model.ItemName)</span>
+    </form>
+
+    @if (Model.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@(screen?.Icon ?? Icons.Inbox)" /></span>
+            <h2 class="empty-state__title">No @Model.Title.ToLowerInvariant() yet</h2>
+            <p class="empty-state__text">Posted documents appear here, newest first.</p>
+            @if (canCreate)
+            {
+                <div class="empty-state__actions">
+                    <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New @Model.ItemName</a>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Posted</th>
+                        <th>Warehouse</th>
+                        <th>Details</th>
+                        <th class="data-table__num">Lines</th>
+                        <th>Status</th>
+                        <th>By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doc in rows)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@doc.Id" class="data-table__primary">@doc.ReferenceNo</a>
+                                @if (doc.ReversesDocumentId is not null)
+                                {
+                                    <span class="chip">Reversal</span>
+                                }
+                            </td>
+                            <td class="data-table__muted" title="@doc.CreatedAt.ToIstString()">@doc.CreatedAt.ToIstDateString()</td>
+                            <td>
+                                <span class="code-tag">@doc.WarehouseCode</span>
+                                @if (doc.ToWarehouseCode is not null)
+                                {
+                                    <icon name="@Icons.ArrowRight" class="icon--sm" /> <span class="code-tag">@doc.ToWarehouseCode</span>
+                                }
+                            </td>
+                            <td>
+                                @if (doc.Type == StockDocumentType.Receipt)
+                                {
+                                    <span class="identity__text">
+                                        <span class="identity__primary">@doc.SupplierName</span>
+                                        <span class="identity__secondary">@doc.SupplierReferenceNo</span>
+                                    </span>
+                                }
+                                else if (doc.Type == StockDocumentType.Transfer)
+                                {
+                                    <span class="data-table__muted">@(doc.Remarks ?? "—")</span>
+                                }
+                                else
+                                {
+                                    <span class="identity__text">
+                                        <span class="identity__primary">@doc.Reason.ToText()</span>
+                                        <span class="identity__secondary">@doc.Remarks</span>
+                                    </span>
+                                }
+                            </td>
+                            <td class="data-table__num">@doc.Lines.Count</td>
+                            <td><span class="status-badge status-badge--@doc.Status.ToBadge()">@doc.Status.ToText()</span></td>
+                            <td class="data-table__muted">@(doc.CreatedByName ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model" />
+    }
+</section>

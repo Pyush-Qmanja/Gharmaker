@@ -20,6 +20,10 @@ public sealed class HomeController : PlatformControllerBase
     /// <summary>Shortcuts offered on the dashboard, each shown only to users holding its capability.</summary>
     private static readonly IReadOnlyList<QuickAction> AllActions = new[]
     {
+        new QuickAction("Receive goods", "Record stock arriving from a supplier.", Icons.Truck, "Receipts", "Create", Capabilities.ReceiptsManage),
+        new QuickAction("Send a transfer", "Move stock to another warehouse.", Icons.Convert, "Transfers", "Create", Capabilities.TransfersManage),
+        new QuickAction("Adjust stock", "Record damage, expiry or a count correction.", Icons.Clipboard, "Adjustments", "Create", Capabilities.StockAdjust),
+        new QuickAction("Import opening stock", "Load stock on hand from an Excel sheet.", Icons.Layers, "Stock", "Opening", Capabilities.StockAdjust),
         new QuickAction("Import catalogue", "Add or update products from an Excel sheet.", Icons.Spreadsheet, "Catalog", "Import", Capabilities.CatalogManage),
         new QuickAction("Add a warehouse", "Register a new stock location.", Icons.Warehouse, "Warehouses", "Create", Capabilities.WarehousesManage),
         new QuickAction("Invite a user", "Create a sign-in and choose what they can do.", Icons.Users, "Users", "Create", Capabilities.UsersManage),
@@ -100,7 +104,8 @@ public sealed class HomeController : PlatformControllerBase
     /// <returns>The total the user can see, or null when the call fails.</returns>
     private async Task<int?> CountAsync(string route, CancellationToken cancellationToken)
     {
-        var result = await _api.GetAsync<PagedResult<JsonElement>>($"{route}?page=1&pageSize=1", cancellationToken);
+        string separator = route.Contains('?') ? "&" : "?";
+        var result = await _api.GetAsync<PagedResult<JsonElement>>($"{route}{separator}page=1&pageSize=1", cancellationToken);
         return result.IsSuccess ? result.Value?.TotalCount : null;
     }
 }

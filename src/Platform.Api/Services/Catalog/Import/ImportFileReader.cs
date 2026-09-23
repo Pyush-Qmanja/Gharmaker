@@ -27,13 +27,25 @@ public sealed record ImportFileRow(int RowNumber, IReadOnlyDictionary<string, st
 public static class ImportFileReader
 {
     /// <summary>
-    /// Reads the first worksheet (Excel) or the whole file (CSV).
+    /// Reads a catalogue file (columns from <see cref="CatalogImportColumns"/>).
     /// </summary>
     /// <param name="content">File content.</param>
     /// <param name="fileName">Original file name; its extension picks the format.</param>
     /// <returns>Non-empty data rows.</returns>
     /// <exception cref="FieldValidationException">Unsupported type, unreadable file, missing columns or too many rows.</exception>
-    public static IReadOnlyList<ImportFileRow> Read(Stream content, string fileName)
+    public static IReadOnlyList<ImportFileRow> Read(Stream content, string fileName) =>
+        Read(content, fileName, CatalogImportColumns.All.Where(c => c.Required).Select(c => c.Name).ToList(), CatalogImportColumns.MaxRows);
+
+    /// <summary>
+    /// Reads the first worksheet (Excel) or the whole file (CSV).
+    /// </summary>
+    /// <param name="content">File content.</param>
+    /// <param name="fileName">Original file name; its extension picks the format.</param>
+    /// <param name="requiredColumns">Headings that must be present.</param>
+    /// <param name="maxRows">Most data rows accepted.</param>
+    /// <returns>Non-empty data rows.</returns>
+    /// <exception cref="FieldValidationException">Unsupported type, unreadable file, missing columns or too many rows.</exception>
+    public static IReadOnlyList<ImportFileRow> Read(Stream content, string fileName, IReadOnlyList<string> requiredColumns, int maxRows)
     {
         string extension = Path.GetExtension(fileName).ToLowerInvariant();
         (List<string> headers, List<(int Row, List<string> Values)> rows) = extension switch
@@ -43,9 +55,8 @@ public static class ImportFileReader
             _ => throw new FieldValidationException("File", "Upload an Excel (.xlsx) or CSV (.csv) file."),
         };
 
-        string[] missing = CatalogImportColumns.All
-            .Where(c => c.Required && !headers.Contains(c.Name, StringComparer.OrdinalIgnoreCase))
-            .Select(c => c.Name)
+        string[] missing = requiredColumns
+            .Where(c => !headers.Contains(c, StringComparer.OrdinalIgnoreCase))
             .ToArray();
         if (missing.Length > 0)
         {
@@ -68,9 +79,9 @@ public static class ImportFileReader
             throw new FieldValidationException("File", "The file has no data rows.");
         }
 
-        if (result.Count > CatalogImportColumns.MaxRows)
+        if (result.Count > maxRows)
         {
-            throw new FieldValidationException("File", $"At most {CatalogImportColumns.MaxRows} rows per file; split it and import in parts.");
+            throw new FieldValidationException("File", $"At most {maxRows} rows per file; split it and import in parts.");
         }
 
         return result;

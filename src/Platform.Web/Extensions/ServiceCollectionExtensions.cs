@@ -96,6 +96,8 @@ public static class ServiceCollectionExtensions
         services.AddCrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest>(ApiRoutes.Warehouses);
         services.AddCrudApiClient<RoleDto, CreateRoleRequest, UpdateRoleRequest>(ApiRoutes.Roles);
         services.AddCrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest>(ApiRoutes.Users);
+        services.AddScoped<IStockApiClient, StockApiClient>();
+        services.AddScoped<IAuditApiClient, AuditApiClient>();
         services.AddScoped<IUserAccess, UserAccess>();
 
         return services;

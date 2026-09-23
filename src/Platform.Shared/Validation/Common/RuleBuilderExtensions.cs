@@ -143,6 +143,45 @@ public static class RuleBuilderExtensions
         rule.GreaterThanOrEqualTo(0);
 
     /// <summary>
+    /// Optional free-text notes within <see cref="FieldLengths.Remarks"/>.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule builder for the property.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> ValidOptionalRemarks<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.MaximumLength(FieldLengths.Remarks);
+
+    /// <summary>
+    /// Required free-text notes (e.g. the reason for an adjustment) within <see cref="FieldLengths.Remarks"/>.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule builder for the property.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> ValidRequiredRemarks<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.NotEmpty().WithMessage("Say why, in a few words.").MaximumLength(FieldLengths.Remarks);
+
+    /// <summary>
+    /// Optional human reference (e.g. a supplier's invoice number) within <see cref="FieldLengths.ReferenceNo"/>.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule builder for the property.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> ValidOptionalReferenceNo<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.MaximumLength(FieldLengths.ReferenceNo);
+
+    /// <summary>
+    /// A quantity with at most four decimal places (<c>Quantity.Scale</c>), within a sane range.
+    /// Sign rules are added by the caller.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule builder for the property.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> ValidQuantity<T>(this IRuleBuilder<T, decimal> rule) =>
+        rule.InclusiveBetween(-1_000_000_000m, 1_000_000_000m)
+            .PrecisionScale(18, 4, ignoreTrailingZeros: true)
+            .WithMessage("'{PropertyName}' can have at most 4 decimal places.");
+
+    /// <summary>
     /// True when the value is empty (the field is optional) or an absolute http(s) URL.
     /// </summary>
     /// <param name="value">Candidate URL.</param>

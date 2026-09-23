@@ -29,13 +29,34 @@ public abstract class AppException : Exception
 }
 
 /// <summary>
+/// Too many people changed the same records at the same moment and the
+/// transaction could not get through after several attempts. Nothing was
+/// saved; the caller should simply try again. Returned as 409.
+/// </summary>
+public sealed class BusyException : AppException
+{
+    /// <summary>
+    /// Creates the exception.
+    /// </summary>
+    public BusyException() : base("Someone else is changing the same stock right now. Nothing was saved — please try again.")
+    {
+    }
+
+    /// <inheritdoc />
+    public override int StatusCode => StatusCodes.Status409Conflict;
+
+    /// <inheritdoc />
+    public override string Title => "Busy, try again";
+}
+
+/// <summary>
 /// A field's value is well-formed but refers to something that does not exist
 /// or cannot be used (e.g. an unknown role id). Returned as a 400 with the
 /// message on that field, like a validation error.
 /// </summary>
 public sealed class FieldValidationException : AppException
 {
-    private readonly string _field;
+    private readonly IDictionary<string, string[]> _errors;
 
     /// <summary>
     /// Creates the exception for one field.
@@ -44,7 +65,17 @@ public sealed class FieldValidationException : AppException
     /// <param name="message">Safe-to-show message.</param>
     public FieldValidationException(string field, string message) : base(message)
     {
-        _field = field;
+        _errors = new Dictionary<string, string[]> { [field] = new[] { message } };
+    }
+
+    /// <summary>
+    /// Creates the exception for several fields at once (e.g. every bad line of a document).
+    /// </summary>
+    /// <param name="errors">Messages keyed by property path, e.g. <c>Lines[2].Uom</c>.</param>
+    public FieldValidationException(IDictionary<string, string[]> errors)
+        : base(errors.Values.SelectMany(m => m).FirstOrDefault() ?? "One or more values are not valid.")
+    {
+        _errors = errors;
     }
 
     /// <inheritdoc />
@@ -54,8 +85,7 @@ public sealed class FieldValidationException : AppException
     public override string Title => "One or more validation errors occurred.";
 
     /// <inheritdoc />
-    public override IDictionary<string, string[]> FieldErrors =>
-        new Dictionary<string, string[]> { [_field] = new[] { Message } };
+    public override IDictionary<string, string[]> FieldErrors => _errors;
 }
 
 /// <summary>

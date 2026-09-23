@@ -1,0 +1,128 @@
+@* One stock document: header facts, lines in entered and base units, and — when allowed — receive (transfers) and reverse. *@
+@using Platform.Shared.Dtos.Inventory
+@using Platform.Shared.Entities.Inventory
+@model StockDocumentDto
+@{
+    ViewData["Title"] = Model.ReferenceNo;
+    string listController = Model.Type.ToController();
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-controller="@listController" asp-action="Index">@(Navigation.Find(listController)?.Title ?? listController)</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@Model.ReferenceNo</span>
+        </nav>
+        <h1 class="page-header__title">@Model.ReferenceNo</h1>
+        <div class="page-header__meta">
+            <span class="chip">@Model.Type.ToText()</span>
+            <span class="status-badge status-badge--@Model.Status.ToBadge()">@Model.Status.ToText()</span>
+            @if (Model.ReversesDocumentId is { } original)
+            {
+                <span class="chip chip--primary">Reversal of <a asp-action="Details" asp-route-id="@original">the original</a></span>
+            }
+        </div>
+    </div>
+    @if (Model.CanReceive)
+    {
+        <div class="page-header__actions">
+            <form asp-controller="Transfers" asp-action="Receive" asp-route-id="@Model.Id" method="post" class="inline-form"
+                  data-confirm="Confirm that everything on @Model.ReferenceNo has arrived at @Model.ToWarehouseCode?">
+                <button type="submit" class="btn btn-primary"><icon name="@Icons.PackageCheck" /> Receive into @Model.ToWarehouseCode</button>
+            </form>
+        </div>
+    }
+</div>
+
+@if (Model.Status == StockDocumentStatus.InTransit)
+{
+    <div class="notice notice--warning">
+        <icon name="@Icons.Truck" />
+        <p>In transit: the stock has left <strong>@Model.WarehouseCode</strong> and will be added to <strong>@Model.ToWarehouseCode</strong> when it is received there.</p>
+    </div>
+}
+@if (Model.ReversedByDocumentId is { } reversal)
+{
+    <div class="notice">
+        <icon name="@Icons.Undo" />
+        <p>This document was cancelled. Its stock movements were undone by <a asp-action="Details" asp-route-id="@reversal">the reversal</a>.</p>
+    </div>
+}
+
+<section class="card">
+    <div class="card__body">
+        <dl class="facts">
+            <div class="facts__item">
+                <dt>@(Model.Type == StockDocumentType.Transfer ? "From" : "Warehouse")</dt>
+                <dd><span class="code-tag">@Model.WarehouseCode</span></dd>
+            </div>
+            @if (Model.ToWarehouseCode is not null)
+            {
+                <div class="facts__item"><dt>To</dt><dd><span class="code-tag">@Model.ToWarehouseCode</span></dd></div>
+            }
+            @if (Model.Type == StockDocumentType.Receipt)
+            {
+                <div class="facts__item"><dt>Supplier</dt><dd>@Model.SupplierName</dd></div>
+                <div class="facts__item"><dt>Supplier invoice / challan</dt><dd>@(Model.SupplierReferenceNo ?? "—")</dd></div>
+            }
+            else
+            {
+                <div class="facts__item"><dt>Reason</dt><dd>@Model.Reason.ToText()</dd></div>
+            }
+            <div class="facts__item"><dt>Posted</dt><dd>@Model.CreatedAt.ToIstString() · @(Model.CreatedByName ?? "—")</dd></div>
+            @if (Model.ReceivedAt is { } receivedAt)
+            {
+                <div class="facts__item"><dt>Received</dt><dd>@receivedAt.ToIstString()</dd></div>
+            }
+            <div class="facts__item facts__item--wide"><dt>Remarks</dt><dd>@(Model.Remarks ?? "—")</dd></div>
+        </dl>
+    </div>
+</section>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.Package" class="icon--sm" /> Lines</h2>
+        <span class="data-card__count">@Model.Lines.Count.Counted("line")</span>
+    </div>
+    <div class="data-card__scroll">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th class="data-table__num">As entered</th>
+                    <th class="data-table__num">In base unit</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr>
+                        <td>
+                            <span class="identity__text">
+                                <a asp-controller="Stock" asp-action="Sku" asp-route-id="@line.SkuId" class="identity__primary">@line.Name</a>
+                                <span class="identity__secondary"><span class="code-tag">@line.SkuCode</span></span>
+                            </span>
+                        </td>
+                        <td class="data-table__num">@line.Quantity.ToQuantityText() <span class="qty__uom">@line.Uom</span></td>
+                        <td class="data-table__num"><strong>@line.BaseQuantity.ToQuantityText()</strong> <span class="qty__uom">@line.BaseUom</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if (Model.CanReverse)
+{
+    <form-panel title="Reverse this document" description="Posts a new document that undoes every movement of this one. Nothing is deleted; both stay on record. Refused if the stock has already been used.">
+        <form asp-action="Reverse" asp-route-id="@Model.Id" method="post" class="reverse-form"
+              data-confirm="Reverse @Model.ReferenceNo? This posts a new document that undoes its stock movements.">
+            <label class="form-field">
+                <span class="form-field__label">Why is it being reversed?</span>
+                <input type="text" name="Remarks" class="form-control" required maxlength="@FieldLengths.Remarks" placeholder="e.g. entered against the wrong warehouse" />
+            </label>
+            <button type="submit" class="btn btn-danger"><icon name="@Icons.Undo" /> Reverse</button>
+        </form>
+    </form-panel>
+}

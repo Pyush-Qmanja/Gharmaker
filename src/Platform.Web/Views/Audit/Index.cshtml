@@ -1,0 +1,98 @@
+@* The audit log, newest first: who changed what and when. Filter by kind of record. *@
+@using Platform.Shared.Entities.Common
+@model IListViewModel
+@{
+    ViewData["Title"] = "Audit log";
+    var rows = (IReadOnlyList<AuditEntryDto>)Model.Items;
+    string? entity = ViewData[nameof(AuditListRequest.Entity)] as string;
+    string Badge(AuditAction action) => action switch
+    {
+        AuditAction.Created => "new",
+        AuditAction.Deactivated => "error",
+        AuditAction.Restored => "active",
+        _ => "update",
+    };
+    string EntityLabel(string name) => Platform.Web.Controllers.AuditController.Entities.FirstOrDefault(e => e.Entity == name).Label ?? name;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Audit log</h1>
+        <p class="page-header__subtitle">Every change to every record: who, what, when and from where. Written automatically; nothing here can be edited.</p>
+    </div>
+</div>
+
+<section class="card data-card">
+    <form asp-action="Index" method="get" class="data-card__toolbar">
+        <select name="entity" class="form-select filter-select" aria-label="Kind of record" data-auto-submit>
+            <option value="">All records</option>
+            @foreach (var (name, label) in Platform.Web.Controllers.AuditController.Entities)
+            {
+                <option value="@name" selected="@(name == entity)">@label</option>
+            }
+        </select>
+        <span class="data-card__count">@Model.TotalCount.Counted("entry", "entries")</span>
+    </form>
+
+    @if (Model.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.History" /></span>
+            <h2 class="empty-state__title">Nothing recorded yet</h2>
+            <p class="empty-state__text">Changes appear here as soon as anyone saves something.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Who</th>
+                        <th>Action</th>
+                        <th>Record</th>
+                        <th>Fields changed</th>
+                        <th>From</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in rows)
+                    {
+                        var fields = entry.Changes.Select(c => c.Field).ToList();
+                        <tr>
+                            <td class="data-table__muted"><a asp-action="Details" asp-route-id="@entry.Id">@entry.CreatedAt.ToIstString()</a></td>
+                            <td>
+                                <div class="identity">
+                                    <span class="avatar">@((entry.CreatedByName ?? "System").Initials())</span>
+                                    <span>@(entry.CreatedByName ?? "System")</span>
+                                </div>
+                            </td>
+                            <td><span class="status-badge status-badge--@Badge(entry.Action)">@entry.Action</span></td>
+                            <td>
+                                <span class="identity__text">
+                                    <a asp-action="Details" asp-route-id="@entry.Id" class="identity__primary">@(string.IsNullOrEmpty(entry.Label) ? "(no name)" : entry.Label)</a>
+                                    <span class="identity__secondary">@EntityLabel(entry.Entity)</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="chips">
+                                    @foreach (var field in fields.Take(4))
+                                    {
+                                        <span class="chip">@field</span>
+                                    }
+                                    @if (fields.Count > 4)
+                                    {
+                                        <span class="chip chip--empty">+@(fields.Count - 4) more</span>
+                                    }
+                                </span>
+                            </td>
+                            <td class="data-table__muted">@(entry.Ip ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model" />
+    }
+</section>

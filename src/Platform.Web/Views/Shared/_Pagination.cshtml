@@ -27,7 +27,7 @@
                 <span class="pager__page">Page @Model.Page of @Model.TotalPages</span>
                 @if (Model.HasPrevious)
                 {
-                    <a class="btn btn-sm btn-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page - 1)"><icon name="@Icons.ChevronLeft" /> Previous</a>
+                    <a class="btn btn-sm btn-secondary" asp-action="@Model.PageAction" asp-all-route-data="RouteFor(Model.Page - 1)"><icon name="@Icons.ChevronLeft" /> Previous</a>
                 }
                 else
                 {
@@ -35,7 +35,7 @@
                 }
                 @if (Model.HasNext)
                 {
-                    <a class="btn btn-sm btn-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page + 1)">Next <icon name="@Icons.ChevronRight" /></a>
+                    <a class="btn btn-sm btn-secondary" asp-action="@Model.PageAction" asp-all-route-data="RouteFor(Model.Page + 1)">Next <icon name="@Icons.ChevronRight" /></a>
                 }
                 else
                 {

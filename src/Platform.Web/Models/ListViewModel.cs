@@ -24,6 +24,9 @@ public interface IListViewModel
     /// <summary>Rows per page.</summary>
     int PageSize { get; }
 
+    /// <summary>Action the pager links to (usually <c>Index</c>).</summary>
+    string PageAction { get; }
+
     /// <summary>Total number of pages.</summary>
     int TotalPages { get; }
 
@@ -62,13 +65,16 @@ public sealed class ListViewModel<T> : IListViewModel
     /// <param name="search">Search text that produced the page.</param>
     /// <param name="routeValues">Extra filters to keep when paging or searching.</param>
     /// <param name="itemName">One row's name, e.g. "brand"; defaults to the title in lower case without a trailing "s".</param>
+    /// <param name="pageAction">Action the pager links to; defaults to <c>Index</c>.</param>
     public ListViewModel(
         string title,
         PagedResult<T> result,
         string? search,
         IReadOnlyDictionary<string, string?>? routeValues = null,
-        string? itemName = null)
+        string? itemName = null,
+        string pageAction = "Index")
     {
+        PageAction = pageAction;
         Title = title;
         ItemName = (itemName ?? title.TrimEnd('s')).ToLowerInvariant();
         _result = result;
@@ -90,6 +96,9 @@ public sealed class ListViewModel<T> : IListViewModel
 
     /// <inheritdoc />
     public int PageSize => _result.PageSize;
+
+    /// <inheritdoc />
+    public string PageAction { get; }
 
     /// <inheritdoc />
     public int TotalPages => _result.TotalPages;

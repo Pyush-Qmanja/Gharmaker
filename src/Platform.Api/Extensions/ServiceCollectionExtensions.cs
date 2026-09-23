@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Platform.Api.Services.Inventory.Stock;
 using Microsoft.AspNetCore.Authorization;
 using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
@@ -207,6 +208,13 @@ public static class ServiceCollectionExtensions
         services.AddCrudModule<Warehouse, WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest, WarehouseMapper, WarehouseService>();
         services.AddCrudModule<Role, RoleDto, CreateRoleRequest, UpdateRoleRequest, RoleMapper, RoleService>();
         services.AddCrudModule<User, UserDto, CreateUserRequest, UpdateUserRequest, UserMapper, UserService>();
+        services.AddScoped<IStockLineResolver, StockLineResolver>();
+        services.AddScoped<IStockPoster, StockPoster>();
+        services.AddScoped<IStockService, StockService>();
+        services.AddScoped<IStockQueryService, StockQueryService>();
+        services.AddScoped<IStockReconcileService, StockReconcileService>();
+        services.AddScoped<IOpeningStockImportService, OpeningStockImportService>();
+        services.AddScoped<IAuditService, AuditService>();
 
         EnsureCrudControllersDeclareCapabilities();
 

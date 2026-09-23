@@ -1,0 +1,58 @@
+@* One audit entry: who, when, from where, and each field's value before and after. *@
+@model AuditEntryDto
+@{
+    ViewData["Title"] = "Audit entry";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Audit log</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@Model.CreatedAt.ToIstString()</span>
+        </nav>
+        <h1 class="page-header__title">@Model.Action @Model.Entity.ToWords().ToLowerInvariant()@(string.IsNullOrEmpty(Model.Label) ? string.Empty : $" · {Model.Label}")</h1>
+        <div class="page-header__meta">
+            <a asp-action="Index" asp-route-entity="@Model.Entity" asp-route-entityId="@Model.EntityId" class="chip chip--primary"><icon name="@Icons.History" class="icon--sm" /> Full history of this record</a>
+        </div>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card__body">
+        <dl class="facts">
+            <div class="facts__item"><dt>Who</dt><dd>@(Model.CreatedByName ?? "System")</dd></div>
+            <div class="facts__item"><dt>When</dt><dd>@Model.CreatedAt.ToIstString()</dd></div>
+            <div class="facts__item"><dt>IP address</dt><dd>@(Model.Ip ?? "—")</dd></div>
+            <div class="facts__item facts__item--wide"><dt>Device</dt><dd class="data-table__muted">@(Model.Device ?? "—")</dd></div>
+        </dl>
+    </div>
+</section>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.List" class="icon--sm" /> Changes</h2>
+        <span class="data-card__count">@Model.Changes.Count.Counted("field")</span>
+    </div>
+    <div class="data-card__scroll">
+        <table class="table data-table audit-changes">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var change in Model.Changes)
+                {
+                    <tr>
+                        <td><span class="code-tag">@change.Field</span></td>
+                        <td><code class="audit-changes__value audit-changes__value--before">@(change.Before ?? "—")</code></td>
+                        <td><code class="audit-changes__value audit-changes__value--after">@(change.After ?? "—")</code></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

@@ -63,7 +63,13 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
         }
 
         TEntity entity = DocumentConverter.FromDocument<TEntity>(snapshot);
-        return IsInScope(entity) ? entity : null;
+        if (!IsInScope(entity))
+        {
+            return null;
+        }
+
+        _changeTracker.Loaded(entity);
+        return entity;
     }
 
     /// <inheritdoc />
@@ -84,7 +90,9 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseEnti
     public async Task<IReadOnlyList<TEntity>> ListAsync(Query query, CancellationToken cancellationToken = default)
     {
         QuerySnapshot snapshot = await query.GetSnapshotAsync(cancellationToken);
-        return snapshot.Documents.Select(DocumentConverter.FromDocument<TEntity>).ToList();
+        var entities = snapshot.Documents.Select(DocumentConverter.FromDocument<TEntity>).ToList();
+        entities.ForEach(_changeTracker.Loaded);
+        return entities;
     }
 
     /// <inheritdoc />

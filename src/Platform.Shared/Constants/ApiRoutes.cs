@@ -29,4 +29,10 @@ public static class ApiRoutes
 
     /// <summary>Users, their roles and scopes.</summary>
     public const string Users = "api/users";
+
+    /// <summary>Stock: balances, ledger, documents (receipts, transfers, adjustments), opening stock, reconcile.</summary>
+    public const string Stock = "api/stock";
+
+    /// <summary>Audit log.</summary>
+    public const string Audit = "api/audit";
 }

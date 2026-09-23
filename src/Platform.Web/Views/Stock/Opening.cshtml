@@ -1,0 +1,74 @@
+@* Opening stock step 1: template, what to enter, and upload. Column help comes from OpeningStockColumns so it always matches the importer. *@
+@{
+    ViewData["Title"] = "Opening stock";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Stock</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>Opening stock</span>
+        </nav>
+        <h1 class="page-header__title">Import opening stock</h1>
+        <p class="page-header__subtitle">Load what is physically on hand when you start using the platform. It goes into the ledger as opening stock, like any other movement.</p>
+    </div>
+</div>
+
+<ol class="steps">
+    <li class="card step-card">
+        <span class="step-card__number">1</span>
+        <div>
+            <h2 class="step-card__title">Download the template</h2>
+            <p class="step-card__text">One row per SKU per warehouse. It has example rows and these instructions.</p>
+            <a asp-action="OpeningTemplate" class="btn btn-secondary"><icon name="@Icons.Download" /> Download Excel template</a>
+        </div>
+    </li>
+
+    <li class="card step-card">
+        <span class="step-card__number">2</span>
+        <div>
+            <h2 class="step-card__title">Fill in what you counted</h2>
+            <p class="step-card__text">Use any unit the SKU can be counted in — tonnes of steel, bags of cement — it is converted to the SKU's base unit.</p>
+            <div class="step-card__table">
+                <table class="table data-table">
+                    <thead>
+                        <tr><th>Column</th><th>Required</th><th>What to enter</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (name, required, help) in OpeningStockColumns.All)
+                        {
+                            <tr>
+                                <td class="data-table__primary">@name</td>
+                                <td>@if (required) { <span class="chip chip--primary">Required</span> } else { <span class="chip chip--empty">Optional</span> }</td>
+                                <td>@help</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </li>
+
+    <li class="card step-card">
+        <span class="step-card__number">3</span>
+        <div>
+            <h2 class="step-card__title">Upload and check</h2>
+            <p class="step-card__text">Nothing is saved yet — you will see each row's result and confirm first. Up to @OpeningStockColumns.MaxRows rows per file.</p>
+            <form asp-action="Opening" method="post" enctype="multipart/form-data">
+                <label class="dropzone">
+                    <span class="dropzone__icon"><icon name="@Icons.Spreadsheet" /></span>
+                    <span class="dropzone__title"><strong>Choose a file</strong> to upload</span>
+                    <span class="form-field__hint">Excel (.xlsx) or CSV (.csv), up to 10 MB</span>
+                    <span class="dropzone__file" data-file-name></span>
+                    <input type="file" name="file" accept=".xlsx,.csv" class="dropzone__input" required data-file-input />
+                </label>
+                @Html.ValidationMessage("file", new { @class = "form-field__error" })
+                <div class="import-actions">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><icon name="@Icons.Upload" /> Upload and check</button>
+                </div>
+            </form>
+        </div>
+    </li>
+</ol>

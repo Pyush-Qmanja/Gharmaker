@@ -1,0 +1,88 @@
+@* One SKU: stock in each warehouse the user can see, then its movements. *@
+@model SkuStockViewModel
+@{
+    var stock = Model.Stock;
+    ViewData["Title"] = stock.Name;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Stock</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@stock.SkuCode</span>
+        </nav>
+        <h1 class="page-header__title">@stock.Name</h1>
+        <div class="page-header__meta">
+            <span class="code-tag">@stock.SkuCode</span>
+            <span class="chip chip--primary">Counted in @stock.Uom</span>
+        </div>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="card stat">
+        <span class="stat__label"><icon name="@Icons.Layers" /> On hand, all my warehouses</span>
+        <span class="stat__value">@stock.TotalOnHand.ToQuantityText() <span class="stat__unit">@stock.Uom</span></span>
+    </div>
+    <div class="card stat">
+        <span class="stat__label"><icon name="@Icons.Warehouse" /> Warehouses holding it</span>
+        <span class="stat__value">@stock.Balances.Count(b => b.OnHand > 0)</span>
+    </div>
+</div>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.Warehouse" class="icon--sm" /> By warehouse</h2>
+    </div>
+    @if (stock.Balances.Count == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Inbox" /></span>
+            <h2 class="empty-state__title">Not stocked yet</h2>
+            <p class="empty-state__text">None of your warehouses has received this SKU.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>Warehouse</th>
+                        <th class="data-table__num">On hand</th>
+                        <th class="data-table__num">Reserved</th>
+                        <th class="data-table__num">Available</th>
+                        <th>Last movement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in stock.Balances)
+                    {
+                        <tr>
+                            <td><span class="code-tag">@row.WarehouseCode</span></td>
+                            <td class="data-table__num"><span class="qty">@row.OnHand.ToQuantityText()</span> <span class="qty__uom">@row.Uom</span></td>
+                            <td class="data-table__num data-table__muted">@row.Reserved.ToQuantityText()</td>
+                            <td class="data-table__num">@row.Available.ToQuantityText() <span class="qty__uom">@row.Uom</span></td>
+                            <td class="data-table__muted">@row.LastMovedAt.ToIstString()</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.List" class="icon--sm" /> Movements</h2>
+        <span class="data-card__count">@Model.Movements.TotalCount.Counted("movement")</span>
+    </div>
+    @if (Model.Movements.TotalCount > 0)
+    {
+        <div class="data-card__scroll">
+            <partial name="_LedgerTable" model="Model.Movements.Items" />
+        </div>
+        <partial name="_Pagination" model="Model.Movements" />
+    }
+</section>

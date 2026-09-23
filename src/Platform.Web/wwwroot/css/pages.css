@@ -539,3 +539,133 @@
 .import-message + .import-message {
     margin-top: var(--space-1);
 }
+
+/* ---------- Stock: quantities, filters, facts, line editor ---------- */
+.qty {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.qty--zero {
+    color: var(--color-text-subtle);
+}
+
+.qty--in {
+    color: var(--color-success);
+}
+
+.qty--out {
+    color: var(--color-danger);
+}
+
+.qty__uom {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.stat__unit {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+}
+
+.toggle-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-4) var(--space-6);
+    margin: 0;
+}
+
+.facts__item--wide {
+    grid-column: 1 / -1;
+}
+
+.facts dt {
+    margin-bottom: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.facts dd {
+    margin: 0;
+    color: var(--color-text);
+}
+
+.line-editor__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 var(--space-2);
+}
+
+.line-editor__table th {
+    padding: 0 var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-align: left;
+}
+
+.line-editor__table td {
+    padding: 0 var(--space-2) 0 0;
+    vertical-align: top;
+}
+
+.line-editor__qty {
+    width: 160px;
+}
+
+.line-editor__uom {
+    width: 140px;
+}
+
+.line-editor__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.reverse-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+.reverse-form .form-field {
+    flex: 1;
+    min-width: 260px;
+    margin: 0;
+}
+
+/* ---------- Audit log ---------- */
+.audit-changes__value {
+    display: block;
+    max-width: 480px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    font-size: var(--font-size-xs);
+}
+
+.audit-changes__value--before {
+    color: var(--color-danger);
+}
+
+.audit-changes__value--after {
+    color: var(--color-success);
+}

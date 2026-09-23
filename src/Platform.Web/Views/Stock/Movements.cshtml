@@ -1,0 +1,46 @@
+@* Every stock movement (ledger entry), newest first; filter by warehouse. *@
+@model MovementsViewModel
+@{
+    ViewData["Title"] = "Movements";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Stock</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>Movements</span>
+        </nav>
+        <h1 class="page-header__title">Movements</h1>
+        <p class="page-header__subtitle">The stock ledger: every movement ever posted, newest first. Entries are never edited — a mistake is undone by a reversal.</p>
+    </div>
+</div>
+
+<section class="card data-card">
+    <form asp-action="Movements" method="get" class="data-card__toolbar">
+        <select name="warehouseId" class="form-select filter-select" aria-label="Warehouse" data-auto-submit>
+            <option value="">All my warehouses</option>
+            @foreach (var option in Model.WarehouseOptions)
+            {
+                <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+            }
+        </select>
+        <span class="data-card__count">@Model.Movements.TotalCount.Counted("movement")</span>
+    </form>
+
+    @if (Model.Movements.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.List" /></span>
+            <h2 class="empty-state__title">No movements yet</h2>
+            <p class="empty-state__text">Receipts, transfers, adjustments and opening stock all show up here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <partial name="_LedgerTable" model="Model.Movements.Items" />
+        </div>
+        <partial name="_Pagination" model="Model.Movements" />
+    }
+</section>

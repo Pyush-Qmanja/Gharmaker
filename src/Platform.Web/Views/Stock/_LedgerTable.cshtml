@@ -1,0 +1,47 @@
+@* Ledger entries (movements) as a table; each links to its document and SKU. Used by the SKU and movements pages. *@
+@using Platform.Shared.Dtos.Inventory
+@using Platform.Shared.Entities.Inventory
+@model IReadOnlyList<StockLedgerEntryDto>
+@{
+    string DocumentController(StockReason reason) => reason switch
+    {
+        StockReason.GrnReceipt => "Receipts",
+        StockReason.TransferIn or StockReason.TransferOut => "Transfers",
+        _ => "Adjustments",
+    };
+}
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>When</th>
+            <th>Document</th>
+            <th>Warehouse</th>
+            <th>SKU</th>
+            <th>Reason</th>
+            <th class="data-table__num">Change</th>
+            <th class="data-table__num">Balance after</th>
+            <th>By</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Model)
+        {
+            <tr>
+                <td class="data-table__muted">@entry.CreatedAt.ToIstString()</td>
+                <td>
+                    <a asp-controller="@DocumentController(entry.Reason)" asp-action="Details" asp-route-id="@entry.RefId" class="data-table__primary">@entry.ReferenceNo</a>
+                    @if (entry.ReversesEntryId is not null)
+                    {
+                        <span class="chip">Reversal</span>
+                    }
+                </td>
+                <td><span class="code-tag">@entry.WarehouseCode</span></td>
+                <td><a asp-controller="Stock" asp-action="Sku" asp-route-id="@entry.SkuId" class="code-tag">@entry.SkuCode</a></td>
+                <td>@entry.Reason.ToText()</td>
+                <td class="data-table__num"><span class="qty @(entry.Direction == StockDirection.In ? "qty--in" : "qty--out")">@entry.Quantity.ToSignedText(entry.Direction)</span> <span class="qty__uom">@entry.Uom</span></td>
+                <td class="data-table__num">@entry.BalanceAfter.ToQuantityText() <span class="qty__uom">@entry.Uom</span></td>
+                <td class="data-table__muted">@(entry.CreatedByName ?? "—")</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,13 @@
+@* Transfer header fields for the shared StockDocumentForm page. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Inventory
+@model CreateTransferRequest
+<form-panel title="Transfer" description="Send from one of your warehouses to any other. The receiving warehouse confirms arrival, which adds the stock there.">
+    <div class="form-grid">
+        <form-field asp-for="WarehouseId" label="From"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.WarehouseOptions]!" empty-option="Choose a warehouse" />
+        <form-field asp-for="ToWarehouseId" label="To"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.DestinationOptions]!" empty-option="Choose a warehouse" />
+        <form-field asp-for="Remarks" hint="Optional, e.g. vehicle number and driver." />
+    </div>
+</form-panel>

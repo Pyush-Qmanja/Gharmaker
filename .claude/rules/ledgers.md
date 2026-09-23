@@ -24,6 +24,25 @@ caches of them, never independent truth.
   is wrong.
 - Reason codes come from the enum, never a free-text string.
 
+## How stock is built here
+
+- `StockLedgerEntry` (`stock_ledger_entries`) is the ledger; `StockBalance` (`stock_balances`,
+  id derived from warehouse + SKU) is the cache; `StockDocument` (`stock_documents`) is the
+  source document every entry names in `RefType` / `RefId` / `ReferenceNo`.
+- **Only `IStockPoster` writes stock.** In one Firestore transaction it reads the balances,
+  refuses anything below zero, numbers the document, and writes document, entries and
+  balances together. Services build a `StockPosting`; they never touch balances.
+- Ledger entry ids are derived (`StockPoster.EntryId(document, line, phase)`), so a reversal
+  names the entries it cancels in `ReversesEntryId` without a query, and a repeated
+  posting fails instead of writing twice.
+- Documents are never edited (P9). A transfer moves `InTransit` → `Received`; any document
+  can be cancelled once by a reversal document (`ReversesDocumentId` /
+  `ReversedByDocumentId`).
+- `IStockReconcileService` is `RebuildBalancesFromLedger`: check compares every balance
+  with its ledger total; rebuild rewrites the ones that disagree.
+- Quantities are entered in any unit and stored in the SKU's base unit via the one
+  conversion service (P7); the document line keeps both.
+
 ## Stock reason codes
 
 `GRN_RECEIPT` · `TRANSFER_OUT` · `TRANSFER_IN` · `SALE_DISPATCH` ·

@@ -48,7 +48,7 @@
                                 <input type="hidden" name="Access[@row.Index].Feature" value="@row.Feature.Code" />
                             }
                             <div class="segmented" role="radiogroup" aria-label="@row.Feature.Name access">
-                                @foreach (var level in AccessGridModel.Levels)
+                                @foreach (var level in AccessGridModel.Levels.Where(l => l != AccessLevel.Manage || row.Feature.CanManage))
                                 {
                                     string id = $"access-{row.Index}-{level}";
                                     <input type="radio" class="segmented__input" id="@id" name="@field" value="@Model.LevelValue(row, level)"

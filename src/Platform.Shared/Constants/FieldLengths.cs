@@ -44,4 +44,13 @@ public static class FieldLengths
 
     /// <summary>Maximum length of a plain-text password.</summary>
     public const int PasswordMax = 128;
+
+    /// <summary>Human reference number, ours or a supplier's.</summary>
+    public const int ReferenceNo = 50;
+
+    /// <summary>Free-text notes.</summary>
+    public const int Remarks = 500;
+
+    /// <summary>Most lines on one stock document (keeps a posting inside one Firestore transaction).</summary>
+    public const int StockLines = 100;
 }

@@ -95,7 +95,8 @@ public static class UserFieldsNormaliser
 {
     /// <summary>
     /// Drops "no access" rows, keeps one row per feature (in catalogue order),
-    /// and clears scopes on organisation-wide features (they have nowhere to be limited to).
+    /// lowers Manage to View on a view-only feature, and clears scopes on
+    /// organisation-wide features (they have nowhere to be limited to).
     /// </summary>
     /// <param name="access">Access rows as posted.</param>
     /// <returns>The canonical rows.</returns>
@@ -108,7 +109,7 @@ public static class UserFieldsNormaliser
             .Select(a => new FeatureAccessDto
             {
                 Feature = a.Feature,
-                Level = a.Level,
+                Level = a.Level == AccessLevel.Manage && Features.Find(a.Feature)?.CanManage == false ? AccessLevel.View : a.Level,
                 Scopes = Features.Find(a.Feature)?.IsScoped == true
                     ? a.Scopes.DistinctBy(s => (s.ScopeType, s.ScopeId)).ToList()
                     : new List<ScopeGrantDto>(),

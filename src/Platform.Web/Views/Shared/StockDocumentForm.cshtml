@@ -1,0 +1,29 @@
+@* Shared create page for stock documents: the controller's own _Header partial, then the line editor. *@
+@model StockDocumentFormViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData[ViewDataKeys.WarehouseOptions] = Model.WarehouseOptions;
+    ViewData[ViewDataKeys.DestinationOptions] = Model.DestinationOptions;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">@Model.Title</h1>
+        <p class="page-header__subtitle">@Model.Subtitle</p>
+    </div>
+</div>
+
+<form asp-action="Create" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <partial name="_Header" model="Model.Form" />
+
+    <form-panel title="Lines" stacked="true" description="Type or pick a SKU code, the amount and its unit. Unused rows are ignored.">
+        <partial name="_StockLines" model="Model" />
+    </form-panel>
+
+    <div class="form-footer">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> @Model.SubmitText</button>
+    </div>
+</form>

@@ -119,7 +119,8 @@ Bridge          Site materials --indent--> Orders   (the only crossing)
 
 ## Current phase
 
-Phase 0 — discovery and foundation. See `docs/roadmap.md`.
+Phase 3 — storefront, cart, pricing, tax — is next. Phases 1 and 2 are built and
+their gates proven (see `docs/roadmap.md`); Phase 0's business checklist is still open.
 Open decisions are in `docs/decisions-pending.md`; do not code around one, ask.
 
 ## Working agreements
