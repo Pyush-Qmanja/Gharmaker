@@ -1,0 +1,60 @@
+@* Catalogue browse page: category tree on the left, brand filter + search and products on the right. *@
+@model CatalogIndexViewModel
+@{
+    ViewData["Title"] = Model.CategoryName ?? "Catalogue";
+}
+
+<div class="page-header">
+    <h1 class="page-header__title">@(Model.CategoryName ?? "Catalogue")</h1>
+    @if (Model.CanImport)
+    {
+        <a asp-action="Import" class="btn btn-primary">Import from Excel</a>
+    }
+</div>
+
+<div class="catalog-layout">
+    <aside class="card catalog-layout__tree" aria-label="Categories">
+        <partial name="_CategoryTree" model="new CategoryTreeModel(Model.Categories, Model.CategoryId, Model.BrandId, IsRoot: true)" />
+    </aside>
+
+    <section class="catalog-layout__main">
+        <form asp-action="Index" method="get" class="filter-bar" role="search">
+            @if (Model.CategoryId is { } categoryId)
+            {
+                <input type="hidden" name="categoryId" value="@categoryId" />
+            }
+            <select name="brandId" class="form-select filter-bar__brand" aria-label="Brand" data-auto-submit>
+                <option value="">All brands</option>
+                @foreach (var brand in Model.BrandOptions)
+                {
+                    <option value="@brand.Value" selected="@brand.Selected">@brand.Text</option>
+                }
+            </select>
+            <input type="search" name="search" value="@Model.Products.Search" class="form-control filter-bar__search"
+                   placeholder="Search name, brand, size or SKU code — e.g. tiscon 12" aria-label="Search" />
+            <button type="submit" class="btn btn-outline-primary">Search</button>
+            @if (!string.IsNullOrEmpty(Model.Products.Search) || Model.BrandId is not null)
+            {
+                <a asp-action="Index" asp-route-categoryId="@Model.CategoryId" class="btn btn-link">Clear filters</a>
+            }
+        </form>
+
+        @if (Model.Products.TotalCount == 0)
+        {
+            <div class="empty-state card">
+                <p class="empty-state__text">No products match.</p>
+                @if (Model.CanImport)
+                {
+                    <a asp-action="Import" class="btn btn-primary">Import products from Excel</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card data-card">
+                <partial name="_ProductTable" model="Model.Products.Items" />
+            </div>
+            <partial name="_Pagination" model="Model.Products" />
+        }
+    </section>
+</div>

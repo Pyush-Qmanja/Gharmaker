@@ -1,0 +1,22 @@
+@* One level of the category tree; renders itself for each node's children. Keeps the brand filter when switching category. *@
+@model CategoryTreeModel
+<ul class="category-tree@(Model.IsRoot ? " category-tree--root" : string.Empty)">
+    @if (Model.IsRoot)
+    {
+        <li>
+            <a asp-action="Index" asp-route-brandId="@Model.BrandId"
+               class="category-tree__link@(Model.SelectedId is null ? " category-tree__link--active" : string.Empty)">All products</a>
+        </li>
+    }
+    @foreach (var node in Model.Nodes.Where(n => n.IsActive))
+    {
+        <li>
+            <a asp-action="Index" asp-route-categoryId="@node.Id" asp-route-brandId="@Model.BrandId"
+               class="category-tree__link@(node.Id == Model.SelectedId ? " category-tree__link--active" : string.Empty)">@node.Name</a>
+            @if (node.Children.Count > 0)
+            {
+                <partial name="_CategoryTree" model="new CategoryTreeModel(node.Children, Model.SelectedId, Model.BrandId, IsRoot: false)" />
+            }
+        </li>
+    }
+</ul>

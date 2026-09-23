@@ -32,6 +32,12 @@ public interface IListViewModel
 
     /// <summary>The rows, passed as the model of the entity's <c>_Table</c> partial.</summary>
     object Items { get; }
+
+    /// <summary>
+    /// Extra filters (e.g. category, brand) that the pager and search box must
+    /// carry along so changing page or search keeps them.
+    /// </summary>
+    IReadOnlyDictionary<string, string?> RouteValues { get; }
 }
 
 /// <summary>
@@ -48,11 +54,13 @@ public sealed class ListViewModel<T> : IListViewModel
     /// <param name="title">Page heading.</param>
     /// <param name="result">Page of rows from the API.</param>
     /// <param name="search">Search text that produced the page.</param>
-    public ListViewModel(string title, PagedResult<T> result, string? search)
+    /// <param name="routeValues">Extra filters to keep when paging or searching.</param>
+    public ListViewModel(string title, PagedResult<T> result, string? search, IReadOnlyDictionary<string, string?>? routeValues = null)
     {
         Title = title;
         _result = result;
         Search = search;
+        RouteValues = routeValues ?? new Dictionary<string, string?>();
     }
 
     /// <inheritdoc />
@@ -78,4 +86,7 @@ public sealed class ListViewModel<T> : IListViewModel
 
     /// <inheritdoc />
     public object Items => _result.Items;
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, string?> RouteValues { get; }
 }

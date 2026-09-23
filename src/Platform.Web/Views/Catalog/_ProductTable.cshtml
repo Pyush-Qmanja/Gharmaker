@@ -1,0 +1,26 @@
+@* Product rows for the catalogue browse page. Model is the page's products. *@
+@using Platform.Shared.Dtos.Catalog
+@model IReadOnlyList<ProductListItemDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Brand</th>
+            <th>Category</th>
+            <th>Variants</th>
+            <th>HSN</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model)
+        {
+            <tr>
+                <td><a asp-action="Product" asp-route-id="@product.Id" class="data-table__primary-link">@product.Name</a></td>
+                <td>@product.BrandName</td>
+                <td>@product.CategoryName</td>
+                <td><partial name="_Chips" model="product.Variants" /></td>
+                <td><code>@product.HsnCode</code></td>
+            </tr>
+        }
+    </tbody>
+</table>

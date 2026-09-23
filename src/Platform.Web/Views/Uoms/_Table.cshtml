@@ -1,0 +1,29 @@
+@* Unit rows for the shared CrudIndex page. *@
+@using System.Globalization
+@using Platform.Shared.Dtos.Catalog
+@model IReadOnlyList<UomDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Measures</th>
+            <th>Standard size</th>
+            <th>Status</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var unit in Model)
+        {
+            <tr>
+                <td><code>@unit.Code</code></td>
+                <td>@unit.Name</td>
+                <td>@unit.Dimension.ToWords()</td>
+                <td>@(unit.BaseFactor is { } factor ? Platform.Shared.Common.Quantity.Normalise(factor).ToString(CultureInfo.InvariantCulture) : "Depends on product")</td>
+                <td><partial name="_StatusBadge" model="unit.IsActive" /></td>
+                <partial name="_RowActions" model="unit.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

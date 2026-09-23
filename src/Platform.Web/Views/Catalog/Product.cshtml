@@ -1,0 +1,106 @@
+@* Product page: breadcrumb, SKUs with their units, and a unit converter (P7) that runs on the server. *@
+@using System.Globalization
+@model ProductPageViewModel
+@{
+    var product = Model.Product;
+    ViewData["Title"] = product.Name;
+    var allUnits = product.Skus.SelectMany(s => s.Units.Select(u => u.Uom)).Distinct().ToList();
+    string Number(decimal value) => Platform.Shared.Common.Quantity.Normalise(value).ToString(CultureInfo.InvariantCulture);
+}
+
+<nav class="breadcrumb-trail" aria-label="Category">
+    <a asp-action="Index">Catalogue</a>
+    @foreach (var crumb in product.Breadcrumb)
+    {
+        <span class="breadcrumb-trail__sep">›</span>
+        <a asp-action="Index" asp-route-categoryId="@crumb.Id">@crumb.Name</a>
+    }
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">@product.Name</h1>
+        <p class="page-header__meta">@product.BrandName · HSN <code>@product.HsnCode</code> · @product.Skus.Count variant(s)</p>
+    </div>
+    <partial name="_StatusBadge" model="product.IsActive" />
+</div>
+
+<div class="card data-card">
+    <table class="table data-table">
+        <thead>
+            <tr>
+                <th>SKU code</th>
+                <th>Variant</th>
+                <th>Stocked in</th>
+                <th>Its own conversions</th>
+                <th>Can be expressed in</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var sku in product.Skus)
+            {
+                <tr>
+                    <td><code>@sku.Code</code></td>
+                    <td>@sku.VariantLabel</td>
+                    <td><strong>@sku.BaseUom</strong></td>
+                    <td>
+                        @if (sku.Conversions.Count == 0)
+                        {
+                            <span class="chip chip--empty">None</span>
+                        }
+                        @foreach (var conversion in sku.Conversions)
+                        {
+                            <div class="conversion-line">1 @conversion.Uom = @Number(conversion.Factor) @sku.BaseUom</div>
+                        }
+                    </td>
+                    <td><partial name="_Chips" model="sku.Units.Select(u => u.Uom).ToList()" /></td>
+                    <td><partial name="_StatusBadge" model="sku.IsActive" /></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (product.Skus.Count > 0)
+{
+    <section class="card converter" aria-labelledby="converter-title">
+        <h2 id="converter-title" class="converter__title">Unit converter</h2>
+        <p class="form-field__hint">Converts using this product's own conversions plus the standard ones (kg ↔ tonne, sqft ↔ sqm…).</p>
+        <form asp-action="Product" asp-route-id="@product.Id" method="get" class="converter__form">
+            <select name="skuId" class="form-select" aria-label="Variant">
+                @foreach (var sku in product.Skus)
+                {
+                    <option value="@sku.Id" selected="@(sku.Id == Model.ConvertSkuId)">@sku.VariantLabel</option>
+                }
+            </select>
+            <input type="number" name="value" step="any" min="0" class="form-control converter__value"
+                   value="@(Model.ConvertValue?.ToString(CultureInfo.InvariantCulture) ?? "1")" aria-label="Amount" />
+            <select name="from" class="form-select" aria-label="From unit">
+                @foreach (var unit in allUnits)
+                {
+                    <option value="@unit" selected="@(unit == Model.ConvertFrom)">@unit</option>
+                }
+            </select>
+            <span class="converter__arrow">→</span>
+            <select name="to" class="form-select" aria-label="To unit">
+                @foreach (var unit in allUnits)
+                {
+                    <option value="@unit" selected="@(unit == (Model.ConvertTo ?? product.Skus[0].BaseUom))">@unit</option>
+                }
+            </select>
+            <button type="submit" class="btn btn-primary">Convert</button>
+        </form>
+
+        @if (Model.Conversion is { } result)
+        {
+            <p class="converter__result">
+                @Number(result.From.Value) @result.From.Uom = <strong>@Number(result.To.Value) @result.To.Uom</strong>
+            </p>
+        }
+        else if (Model.ConversionError is { } error)
+        {
+            <p class="converter__error">@error</p>
+        }
+    </section>
+}

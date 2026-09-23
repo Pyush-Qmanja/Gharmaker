@@ -48,7 +48,34 @@ public interface IApiClient
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <returns>The result.</returns>
     Task<ApiResult> DeleteAsync(string path, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads one file as <c>multipart/form-data</c> in a field named <c>file</c>.
+    /// </summary>
+    /// <typeparam name="TResponse">Response body type.</typeparam>
+    /// <param name="path">Relative path.</param>
+    /// <param name="content">File content.</param>
+    /// <param name="fileName">File name sent to the API.</param>
+    /// <param name="cancellationToken">Cancels the request.</param>
+    /// <returns>The result.</returns>
+    Task<ApiResult<TResponse>> PostFileAsync<TResponse>(string path, Stream content, string fileName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Downloads a file (e.g. an Excel template).
+    /// </summary>
+    /// <param name="path">Relative path.</param>
+    /// <param name="cancellationToken">Cancels the request.</param>
+    /// <returns>The file on success.</returns>
+    Task<ApiResult<ApiFile>> GetFileAsync(string path, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// A file downloaded from the API.
+/// </summary>
+/// <param name="Content">File bytes.</param>
+/// <param name="ContentType">MIME type.</param>
+/// <param name="FileName">Suggested file name.</param>
+public sealed record ApiFile(byte[] Content, string ContentType, string FileName);
 
 /// <summary>
 /// <see cref="HttpClient"/> implementation of <see cref="IApiClient"/>. The
@@ -95,6 +122,33 @@ public sealed class ApiClient : IApiClient
         return response.IsSuccessStatusCode
             ? new ApiResult { StatusCode = response.StatusCode }
             : await ReadErrorAsync<object>(response, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<TResponse>> PostFileAsync<TResponse>(string path, Stream content, string fileName, CancellationToken cancellationToken = default)
+    {
+        using var form = new MultipartFormDataContent();
+        using var file = new StreamContent(content);
+        form.Add(file, "file", fileName);
+        using var response = await _httpClient.PostAsync(path, form, cancellationToken);
+        return await ReadAsync<TResponse>(response, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<ApiFile>> GetFileAsync(string path, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync(path, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return await ReadErrorAsync<ApiFile>(response, cancellationToken);
+        }
+
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        string contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        string fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? "download";
+        return new ApiResult<ApiFile> { StatusCode = response.StatusCode, Value = new ApiFile(bytes, contentType, fileName) };
     }
 
     /// <summary>

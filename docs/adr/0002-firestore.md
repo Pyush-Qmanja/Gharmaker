@@ -26,7 +26,8 @@ opacity (P1) stay enforced in one place — the API.
 | Roles, user roles, user scopes | `roles` collection; `role_ids` and `scopes` embedded on each user (blueprint's `user_roles` / `user_scopes`) |
 | Money and quantity `decimal(18,4)` | Stored as invariant strings — exact, never `double` |
 | Pagination | `Count()` aggregation + `Offset`/`Limit` |
-| Search | Prefix match on a normalised field (e.g. `slug`); no "contains" search |
+| Search | Prefix match on a normalised field (`WhereStartsWith`), or for products a `search_terms` array of words + prefixes queried with `array-contains` |
+| "Everything under a category" | Each product stores `category_path` (ancestor ids); one `array-contains` query |
 | Schema changes | No migrations. New fields appear on write; composite indexes live in `firestore.indexes.json` |
 
 ## Consequences — accepted knowingly

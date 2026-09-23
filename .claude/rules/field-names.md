@@ -27,6 +27,14 @@ choosing the C# name decides all of them.
 | Sort position | `DisplayOrder` | `display_order` | `int` | `SortOrder`, `Sequence`, `Position`, `Rank` |
 | Email | `Email` | `email` | `string` | `EmailAddress`, `Mail`, `EmailId` |
 | Sign-in account id | `AuthUid` | `auth_uid` | `string` (Firebase Auth uid) | `FirebaseUid`, `Uid`, `ExternalId`, `LoginId` |
+| Parent in a tree | `ParentId` | `parent_id` | `Guid?` | `Parent`, `ParentCategoryId` (on a category itself) |
+| Ancestor ids, root first | `<Thing>Path` (e.g. `CategoryPath`) | `category_path` | `List<Guid>` | `Ancestors`, `Breadcrumb`, `PathIds` |
+| Search words and prefixes | `SearchTerms` | `search_terms` | `List<string>` (API-maintained) | `Keywords`, `Tags` (for search), `SearchIndex` |
+| GST HSN code | `HsnCode` | `hsn_code` | `string` (4/6/8 digits) | `Hsn`, `HSN`, `TaxCode` |
+| Unit a SKU is counted in | `BaseUom` | `base_uom` | `string` (unit code) | `Unit`, `StockUnit`, `DefaultUom` |
+| Unit conversions | `Conversions` of `Uom` + `Factor` (1 Uom = Factor base units) | `conversions[].uom`, `conversions[].factor` | embedded list | `Ratio`, `Multiplier`, `PackSize` |
+| What a unit measures / its standard size | `Dimension` / `BaseFactor` | `dimension` / `base_factor` | enum / `decimal?` | `UnitType`, `ConversionFactor` (on a unit) |
+| Variant description | `VariantLabel` | `variant_label` | `string` | `VariantName`, `Size`, `Description` (for this) |
 | Several references | `<Entity>Ids` (e.g. `RoleIds`) | `<entity>_ids` | `List<Guid>` | `Roles` (for ids), `RoleList`, `AssignedRoles` |
 | Capability codes | `Capabilities` | `capabilities` | `List<string>` (codes from `Capabilities`) | `Permissions`, `Rights`, `Privileges` |
 | Access areas | `Scopes` of `ScopeType` + `ScopeId` | `scopes[].scope_type`, `scopes[].scope_id` | embedded list | `Access`, `Areas`, `ScopeList` |

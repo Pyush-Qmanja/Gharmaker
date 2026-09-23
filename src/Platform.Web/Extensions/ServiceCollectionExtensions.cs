@@ -91,6 +91,8 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
         services.AddCrudApiClient<BrandDto, CreateBrandRequest, UpdateBrandRequest>(ApiRoutes.Brands);
+        services.AddCrudApiClient<UomDto, CreateUomRequest, UpdateUomRequest>(ApiRoutes.Uoms);
+        services.AddScoped<ICatalogApiClient, CatalogApiClient>();
         services.AddCrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest>(ApiRoutes.Warehouses);
         services.AddCrudApiClient<RoleDto, CreateRoleRequest, UpdateRoleRequest>(ApiRoutes.Roles);
         services.AddCrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest>(ApiRoutes.Users);

@@ -1,0 +1,10 @@
+@* Unit fields for the shared CrudForm page. *@
+@using Platform.Shared.Dtos.Catalog
+@model IUomFields
+<div class="form-grid">
+    <form-field asp-for="Code" hint="Short code used everywhere, e.g. BAG, KG, SQFT." />
+    <form-field asp-for="Name" />
+    <form-field asp-for="Dimension" label="Measures" />
+    <form-field asp-for="BaseFactor" label="Standard size"
+                hint="How many KG / CFT / SQFT / M / PCS one of this unit is. Leave empty for packs whose size depends on the product (bag, box, bundle)." />
+</div>

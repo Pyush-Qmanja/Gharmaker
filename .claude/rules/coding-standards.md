@@ -53,6 +53,14 @@ Before writing anything, check whether one of these already does it:
 | List/form page layout | shared `CrudIndex` / `CrudForm` views | `Web/Views/Shared` |
 | Status, row actions, pager, search, empty state | `_StatusBadge`, `_RowActions`, `_Pagination`, `_SearchBar`, `_EmptyState` | `Web/Views/Shared` |
 | Show a date | `.ToIstString()` | `Web/Extensions/DateTimeExtensions` |
+| Convert between units (P7) | `IUomConversionService` (Shared) via `IUomConversionProvider` (API) — never your own arithmetic | `Shared/Units`, `Api/Services/Catalog` |
+| A quantity | `Quantity(Value, Uom)`; display with `Quantity.Normalise` | `Shared/Common` |
+| Make a slug / search words | `Slug.From(...)` / `SearchTerms.Build(...)` | `Shared/Common`, `Api/Services/Catalog` |
+| Bulk import from Excel/CSV | follow `CatalogImportService`: reader → pure planner → preview (cached) → commit re-plans → batched save | `Api/Services/Catalog/Import` |
+| Act as an organisation outside a request | `using (SystemIdentity.Use(orgId, userId))` | `Api/Common/CurrentUser` |
+| Upload / download a file via the API | `IApiClient.PostFileAsync` / `GetFileAsync` | `Web/Services/Api` |
+| Pager and search that keep extra filters | `ListViewModel(..., routeValues)` | `Web/Models` |
+| Count with plural | `n.Counted("SKU")` | `Web/Extensions/TextExtensions` |
 | Guard an API controller / action | `[CrudCapabilities(view, manage)]` / `[RequiresCapability(code)]` | `Api/Security/Authorization` |
 | Check capability or scope in a service | `IPermissionService.HasCapabilityAsync` / `CoversAsync` (out of scope → 404) | `Api/Security/Authorization` |
 | Show UI only when allowed | `IUserAccess.CanAsync(code)`; menus via `Navigation.Items` | `Web/Services/Auth`, `Web/Common` |

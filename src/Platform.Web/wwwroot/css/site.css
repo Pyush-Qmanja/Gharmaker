@@ -371,3 +371,243 @@
         align-items: flex-start;
     }
 }
+
+/* ---------- Catalogue: layout, tree, filters ---------- */
+.catalog-layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.catalog-layout__tree {
+    padding: var(--space-3);
+    position: sticky;
+    top: var(--space-4);
+}
+
+.catalog-layout__main {
+    min-width: 0;
+}
+
+.category-tree {
+    list-style: none;
+    margin: 0;
+    padding-left: var(--space-4);
+}
+
+.category-tree--root {
+    padding-left: 0;
+}
+
+.category-tree__link {
+    display: block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+}
+
+.category-tree__link:hover {
+    background: var(--color-chip-bg);
+}
+
+.category-tree__link--active {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+}
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.filter-bar__brand {
+    max-width: 220px;
+}
+
+.filter-bar__search {
+    flex: 1;
+    min-width: 220px;
+}
+
+.data-table__primary-link {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* ---------- Breadcrumb and page meta ---------- */
+.breadcrumb-trail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-3);
+}
+
+.breadcrumb-trail__sep {
+    color: var(--color-text-muted);
+}
+
+.page-header__meta {
+    color: var(--color-text-muted);
+    margin: var(--space-1) 0 0;
+}
+
+/* ---------- Product page: conversions and converter ---------- */
+.conversion-line {
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.converter {
+    margin-top: var(--space-4);
+    padding: var(--space-5);
+}
+
+.converter__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+}
+
+.converter__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.converter__form .form-select {
+    width: auto;
+}
+
+.converter__value {
+    max-width: 140px;
+}
+
+.converter__arrow {
+    color: var(--color-text-muted);
+}
+
+.converter__result {
+    margin: var(--space-4) 0 0;
+    font-size: var(--font-size-lg);
+}
+
+.converter__error {
+    margin: var(--space-4) 0 0;
+    color: var(--color-danger);
+}
+
+/* ---------- Import ---------- */
+.steps {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+}
+
+.steps__item {
+    padding: var(--space-5);
+}
+
+.steps__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+}
+
+.upload-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    max-width: var(--form-max-width);
+}
+
+.upload-form .form-control {
+    flex: 1;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4);
+}
+
+.stat__value {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.stat__label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.stat--error .stat__value {
+    color: var(--color-danger);
+}
+
+.import-new {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.import-new p {
+    margin: var(--space-2) 0 var(--space-1);
+}
+
+.import-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.import-actions__blocked {
+    margin: 0;
+}
+
+.import-message {
+    font-size: var(--font-size-sm);
+}
+
+.data-table__row--error {
+    background: var(--color-row-error-bg);
+}
+
+.status-badge--new {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+.status-badge--update {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.status-badge--error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+@media (max-width: 768px) {
+    .catalog-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .catalog-layout__tree {
+        position: static;
+    }
+}

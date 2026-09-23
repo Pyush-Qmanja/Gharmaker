@@ -1,0 +1,93 @@
+@* Import step 2: what each row will do. Confirm saves; any error blocks saving until the file is fixed. *@
+@using Platform.Shared.Dtos.Catalog
+@model ImportPreviewDto
+@{
+    ViewData["Title"] = "Check import";
+}
+
+<nav class="breadcrumb-trail" aria-label="Back">
+    <a asp-action="Index">Catalogue</a>
+    <span class="breadcrumb-trail__sep">›</span>
+    <a asp-action="Import">Import</a>
+    <span class="breadcrumb-trail__sep">›</span>
+    <span>@Model.FileName</span>
+</nav>
+
+<div class="page-header">
+    <h1 class="page-header__title">Check before saving</h1>
+</div>
+
+<div class="stat-grid">
+    <div class="card stat"><span class="stat__value">@Model.NewSkus</span><span class="stat__label">new SKUs</span></div>
+    <div class="card stat"><span class="stat__value">@Model.UpdatedSkus</span><span class="stat__label">SKUs updated</span></div>
+    <div class="card stat"><span class="stat__value">@Model.NewProducts</span><span class="stat__label">new products</span></div>
+    <div class="card stat@(Model.ErrorRows > 0 ? " stat--error" : string.Empty)"><span class="stat__value">@Model.ErrorRows</span><span class="stat__label">rows with errors</span></div>
+</div>
+
+@if (Model.NewCategories.Count > 0 || Model.NewBrands.Count > 0)
+{
+    <div class="card import-new">
+        @if (Model.NewCategories.Count > 0)
+        {
+            <p><strong>New categories:</strong></p>
+            <partial name="_Chips" model="Model.NewCategories" />
+        }
+        @if (Model.NewBrands.Count > 0)
+        {
+            <p><strong>New brands:</strong></p>
+            <partial name="_Chips" model="Model.NewBrands" />
+        }
+    </div>
+}
+
+<div class="import-actions">
+    @if (Model.CanCommit)
+    {
+        <form asp-action="Commit" method="post" class="inline-form" data-confirm="Save @(Model.NewSkus + Model.UpdatedSkus) rows to the catalogue?">
+            <input type="hidden" name="importId" value="@Model.ImportId" />
+            <button type="submit" class="btn btn-primary">Confirm and save</button>
+        </form>
+    }
+    else
+    {
+        <p class="alert alert-danger import-actions__blocked">Nothing can be saved while rows have errors. Fix the rows marked <strong>Error</strong> in your file and upload it again.</p>
+    }
+    <a asp-action="Import" class="btn btn-outline-secondary">Upload a different file</a>
+</div>
+
+<div class="card data-card">
+    <table class="table data-table">
+        <thead>
+            <tr>
+                <th class="data-table__num">Row</th>
+                <th>Result</th>
+                <th>Category</th>
+                <th>Brand / Product</th>
+                <th>SKU code</th>
+                <th>Variant</th>
+                <th>Unit</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr class="@(row.Status == ImportRowStatus.Error ? "data-table__row--error" : string.Empty)">
+                    <td class="data-table__num">@row.RowNumber</td>
+                    <td><span class="status-badge status-badge--@row.Status.ToString().ToLowerInvariant()">@row.Status</span></td>
+                    <td>@row.CategoryPath</td>
+                    <td>@row.Brand<br /><span class="form-field__hint">@row.Product</span></td>
+                    <td><code>@row.SkuCode</code></td>
+                    <td>@row.Variant</td>
+                    <td>@row.BaseUnit</td>
+                    <td>
+                        @foreach (var message in row.Messages)
+                        {
+                            <div class="import-message">@message</div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

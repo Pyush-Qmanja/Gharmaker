@@ -87,6 +87,132 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "brand_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "category_path",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "category_path",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "brand_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "search_terms",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "search_terms",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "brand_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "uoms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "org_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "code",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

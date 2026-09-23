@@ -22,6 +22,11 @@
     --color-danger: #b42318;
     --color-danger-bg: #fdecea;
     --color-chip-bg: #eef2f6;
+    --color-info: #1d5fa8;
+    --color-info-bg: #e5effa;
+    --color-warning: #8a5a00;
+    --color-warning-bg: #fdf1dc;
+    --color-row-error-bg: #fff6f5;
 
     /* Spacing scale */
     --space-1: 0.25rem;
@@ -43,4 +48,5 @@
     --header-height: 56px;
     --form-max-width: 720px;
     --auth-max-width: 400px;
+    --sidebar-width: 260px;
 }

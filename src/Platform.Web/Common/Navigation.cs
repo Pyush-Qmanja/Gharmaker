@@ -12,8 +12,10 @@ public static class Navigation
     /// <summary>Every screen, in menu order.</summary>
     public static readonly IReadOnlyList<NavigationItem> Items = new[]
     {
+        new NavigationItem("Catalogue", "Catalog", Capabilities.CatalogView, "Browse products by category and brand; import from Excel."),
         new NavigationItem("Brands", "Brands", Capabilities.BrandsView, "Manage the brands in the catalogue."),
         new NavigationItem("Warehouses", "Warehouses", Capabilities.WarehousesView, "Stock locations you are responsible for."),
+        new NavigationItem("Units", "Uoms", Capabilities.CatalogView, "Units of measure and their standard sizes."),
         new NavigationItem("Users", "Users", Capabilities.UsersView, "People who can sign in, their roles and scope."),
         new NavigationItem("Roles", "Roles", Capabilities.RolesView, "Named sets of capabilities to give to users."),
     };

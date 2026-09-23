@@ -33,7 +33,20 @@
         });
     }
 
+    /**
+     * Submits the surrounding form when a field marked data-auto-submit
+     * changes (e.g. a filter drop-down), so no extra click is needed.
+     * @param {Event} event - The change event bubbling to the document.
+     */
+    function autoSubmitOnChange(event) {
+        const field = event.target;
+        if (field instanceof HTMLElement && field.hasAttribute("data-auto-submit") && field.form) {
+            field.form.requestSubmit();
+        }
+    }
+
     document.addEventListener("submit", confirmBeforeSubmit);
+    document.addEventListener("change", autoSubmitOnChange);
     document.addEventListener("DOMContentLoaded", function () {
         autoDismissMessages(document);
     });

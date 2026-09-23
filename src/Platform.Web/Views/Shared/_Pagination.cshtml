@@ -1,5 +1,20 @@
-@* Pager for any list page. Keeps the current search text. *@
+@* Pager for any list page. Keeps the current search text and any extra filters (Model.RouteValues). *@
 @model IListViewModel
+@{
+    Dictionary<string, string> RouteFor(int page)
+    {
+        var values = Model.RouteValues
+            .Where(v => !string.IsNullOrEmpty(v.Value))
+            .ToDictionary(v => v.Key, v => v.Value!);
+        values["page"] = page.ToString();
+        if (!string.IsNullOrEmpty(Model.Search))
+        {
+            values["search"] = Model.Search;
+        }
+
+        return values;
+    }
+}
 @if (Model.TotalPages > 1)
 {
     <nav class="pager" aria-label="Pages">
@@ -7,13 +22,11 @@
         <div class="pager__buttons">
             @if (Model.HasPrevious)
             {
-                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
-                   asp-route-page="@(Model.Page - 1)" asp-route-search="@Model.Search">Previous</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page - 1)">Previous</a>
             }
             @if (Model.HasNext)
             {
-                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
-                   asp-route-page="@(Model.Page + 1)" asp-route-search="@Model.Search">Next</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-all-route-data="RouteFor(Model.Page + 1)">Next</a>
             }
         </div>
     </nav>
