@@ -1,0 +1,42 @@
+@* The customer's orders, newest first. *@
+@model ListViewModel<ShopOrderSummaryDto>
+@{
+    ViewData["Title"] = "My orders";
+    var orders = (IReadOnlyList<ShopOrderSummaryDto>)Model.Items;
+}
+
+<div class="shop-page-head">
+    <h1 class="shop-page-head__title">My orders</h1>
+    <p class="shop-page-head__meta">@Model.TotalCount.Counted("order")</p>
+</div>
+
+@if (orders.Count == 0)
+{
+    <div class="card empty-state">
+        <span class="empty-state__icon"><icon name="@Icons.Receipt" /></span>
+        <h2 class="empty-state__title">No orders yet</h2>
+        <p class="empty-state__text">When you place an order it will show here, with its delivery date.</p>
+        <div class="empty-state__actions"><a asp-controller="Products" asp-action="Index" class="btn btn-primary">Start shopping</a></div>
+    </div>
+}
+else
+{
+    <div class="order-list">
+        @foreach (var order in orders)
+        {
+            <a class="card order-row" asp-action="Details" asp-route-id="@order.Id">
+                <span class="order-row__ref"><span class="code-tag">@order.ReferenceNo</span></span>
+                <span class="order-row__date">Placed @order.PlacedAt.ToIstDateString()</span>
+                <span class="order-row__items">@order.LineCount.Counted("item")</span>
+                <span class="order-row__delivery"><icon name="@Icons.Calendar" class="icon--sm" /> @order.Delivery.ToWindowText()</span>
+                <span class="order-row__total">@order.TotalAmount.ToRupees()</span>
+                <span class="status-badge @order.Status.ToBadge()">@order.Status.ToLabel()</span>
+                <icon name="@Icons.ChevronRight" />
+            </a>
+        }
+    </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card shop-pager"><partial name="_Pagination" model="Model" /></div>
+    }
+}

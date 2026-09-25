@@ -1,0 +1,50 @@
+@* Business details for GST: legal name, GSTIN and the one registered address the business invoices from. *@
+@model BusinessSettingsViewModel
+@{
+    ViewData["Title"] = "Business settings";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Business settings</h1>
+        <p class="page-header__subtitle">You invoice from one registered address; warehouses are internal stock points and never appear on a tax document.</p>
+    </div>
+</div>
+
+@if (Model.IsComplete)
+{
+    <div class="notice notice--success"><icon name="@Icons.CheckCircle" /><p>The store can take orders. GST is CGST + SGST for deliveries in @Model.Form.Address.State and IGST for other states.</p></div>
+}
+else
+{
+    <div class="notice notice--warning"><icon name="@Icons.AlertCircle" /><p>The store cannot take orders until these details are complete: GST depends on the state you are registered in.</p></div>
+}
+
+<form asp-action="Index" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <fieldset disabled="@(!Model.CanManage)" class="form-fieldset">
+        <form-panel title="Registration" description="As printed on your GST registration certificate.">
+            <div class="form-grid">
+                <form-field asp-for="Form.LegalName" label="Legal name" />
+                <form-field asp-for="Form.Gstin" label="GSTIN" hint="15 characters; the first two are your state's code." />
+            </div>
+        </form-panel>
+
+        <form-panel title="Registered address" description="The state decides CGST + SGST or IGST on every order.">
+            <div class="form-grid">
+                <form-field asp-for="Form.Address.Line1" label="Address line 1" />
+                <form-field asp-for="Form.Address.Line2" label="Address line 2" />
+                <form-field asp-for="Form.Address.City" label="City" />
+                <form-field asp-for="Form.Address.State" label="State" items="SalesOptions.States(Model.Form.Address.State)" empty-option="Choose a state" />
+                <form-field asp-for="Form.Address.Pincode" label="PIN code" />
+            </div>
+        </form-panel>
+    </fieldset>
+
+    @if (Model.CanManage)
+    {
+        <div class="form-footer">
+            <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save business details</button>
+        </div>
+    }
+</form>

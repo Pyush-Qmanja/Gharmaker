@@ -53,4 +53,16 @@ public static class FieldLengths
 
     /// <summary>Most lines on one stock document (keeps a posting inside one Firestore transaction).</summary>
     public const int StockLines = 100;
+
+    /// <summary>GSTIN: 15 characters.</summary>
+    public const int Gstin = 15;
+
+    /// <summary>Most quantity slabs on one price.</summary>
+    public const int PriceSlabs = 10;
+
+    /// <summary>Most lines in one cart or order.</summary>
+    public const int CartLines = 50;
+
+    /// <summary>Most PIN codes added in one request.</summary>
+    public const int PincodesPerRequest = 500;
 }

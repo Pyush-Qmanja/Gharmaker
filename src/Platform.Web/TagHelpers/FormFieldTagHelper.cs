@@ -130,10 +130,18 @@ public sealed class FormFieldTagHelper : TagHelper
                 ViewContext, For.ModelExplorer, EmptyOption, For.Name, options, allowMultiple: false, new { @class = "form-select" });
         }
 
+        string inputType = InputType ?? DefaultInputType();
+        if (inputType == "password")
+        {
+            // A password is masked and never written back into the page, even after a failed post.
+            return _generator.GeneratePassword(
+                ViewContext, For.ModelExplorer, For.Name, value: null, new { @class = "form-control" });
+        }
+
         var attributes = new Dictionary<string, object>
         {
             ["class"] = "form-control",
-            ["type"] = InputType ?? DefaultInputType(),
+            ["type"] = inputType,
         };
         if (IsFractional())
         {
@@ -160,9 +168,20 @@ public sealed class FormFieldTagHelper : TagHelper
     /// <summary>
     /// Picks the HTML input type from the property's CLR type.
     /// </summary>
-    /// <returns>"number" for numeric types, otherwise "text".</returns>
+    /// <returns>"password" for a property named Password, "email" for Email, "number" for numeric types, otherwise "text".</returns>
     private string DefaultInputType()
     {
+        string property = For.Metadata.PropertyName ?? string.Empty;
+        if (property.EndsWith("Password", StringComparison.Ordinal))
+        {
+            return "password";
+        }
+
+        if (property == "Email")
+        {
+            return "email";
+        }
+
         Type type = Nullable.GetUnderlyingType(For.ModelExplorer.ModelType) ?? For.ModelExplorer.ModelType;
         return type == typeof(int) || type == typeof(long) || type == typeof(decimal) || type == typeof(double)
             ? "number"

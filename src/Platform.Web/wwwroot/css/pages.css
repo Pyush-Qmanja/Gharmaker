@@ -582,29 +582,6 @@
     cursor: pointer;
 }
 
-.facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--space-4) var(--space-6);
-    margin: 0;
-}
-
-.facts__item--wide {
-    grid-column: 1 / -1;
-}
-
-.facts dt {
-    margin-bottom: var(--space-1);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-}
-
-.facts dd {
-    margin: 0;
-    color: var(--color-text);
-}
-
 .line-editor__table {
     width: 100%;
     border-collapse: separate;
@@ -622,6 +599,18 @@
 .line-editor__table td {
     padding: 0 var(--space-2) 0 0;
     vertical-align: top;
+}
+
+.line-editor__table td.line-editor__no {
+    padding-top: var(--space-2);
+}
+
+.line-editor__no {
+    width: 32px;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 .line-editor__qty {
@@ -668,4 +657,64 @@
 
 .audit-changes__value--after {
     color: var(--color-success);
+}
+
+/* ---------- Role hierarchy ---------- */
+.role-tree {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-2) 0;
+}
+
+.role-tree__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-3) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.role-tree__item:last-child {
+    border-bottom: 0;
+}
+
+.role-tree__item--depth-1 { padding-left: calc(var(--space-5) + 1 * var(--space-7)); }
+.role-tree__item--depth-2 { padding-left: calc(var(--space-5) + 2 * var(--space-7)); }
+.role-tree__item--depth-3 { padding-left: calc(var(--space-5) + 3 * var(--space-7)); }
+.role-tree__item--depth-4 { padding-left: calc(var(--space-5) + 4 * var(--space-7)); }
+.role-tree__item--depth-5 { padding-left: calc(var(--space-5) + 5 * var(--space-7)); }
+.role-tree__item--depth-6 { padding-left: calc(var(--space-5) + 6 * var(--space-7)); }
+
+.role-tree__item:not(.role-tree__item--depth-0) .role-tree__head::before {
+    content: "\2514";
+    color: var(--color-border-strong);
+    margin-right: var(--space-1);
+}
+
+.role-tree__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.role-tree__name {
+    font-weight: 600;
+}
+
+.role-tree__access {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+@media (max-width: 640px) {
+    .role-tree__item--depth-1,
+    .role-tree__item--depth-2,
+    .role-tree__item--depth-3,
+    .role-tree__item--depth-4,
+    .role-tree__item--depth-5,
+    .role-tree__item--depth-6 { padding-left: calc(var(--space-4) + var(--space-5)); }
 }

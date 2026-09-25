@@ -3,6 +3,7 @@
 @model IReadOnlyList<WarehouseDto>
 @{
     var userNames = ViewData[ViewDataKeys.UserNames] as IReadOnlyDictionary<Guid, string> ?? new Dictionary<Guid, string>();
+    var stockIds = ViewData[ViewDataKeys.StockWarehouseIds] as IReadOnlySet<Guid> ?? new HashSet<Guid>();
 }
 <table class="table data-table">
     <thead>
@@ -13,6 +14,7 @@
             <th>City</th>
             <th>Responsible</th>
             <th>Status</th>
+            <th>Stock</th>
             <th>Last updated</th>
             <th><span class="visually-hidden">Actions</span></th>
         </tr>
@@ -42,6 +44,16 @@
                     }
                 </td>
                 <td><partial name="_StatusBadge" model="warehouse.IsActive" /></td>
+                <td>
+                    @if (stockIds.Contains(warehouse.Id))
+                    {
+                        <a asp-controller="Stock" asp-action="Index" asp-route-warehouseId="@warehouse.Id" class="link-action">View stock <icon name="@Icons.ArrowRight" class="icon--sm" /></a>
+                    }
+                    else
+                    {
+                        <span class="data-table__muted">—</span>
+                    }
+                </td>
                 <td class="data-table__muted" title="@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstString())">@((warehouse.UpdatedAt ?? warehouse.CreatedAt).ToIstDateString())</td>
                 <partial name="_RowActions" model="warehouse.Id" />
             </tr>

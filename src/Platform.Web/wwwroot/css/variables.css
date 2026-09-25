@@ -5,25 +5,27 @@
  */
 :root {
     /* Type */
-    /* System fonts only (no CDN): Inter is used when installed, otherwise Segoe UI / SF / Roboto. */
+    /* System fonts only (no CDN): Inter when installed, otherwise Segoe UI / SF / Roboto.
+       Sized for reading at a desk all day: 15px body, nothing under 12px, and grey
+       text dark enough to pass WCAG AA on white. */
     --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Consolas, monospace;
-    --font-size-2xs: 0.6875rem;
-    --font-size-xs: 0.75rem;
-    --font-size-sm: 0.8125rem;
-    --font-size-base: 0.875rem;
+    --font-size-2xs: 0.75rem;
+    --font-size-xs: 0.8125rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 0.9375rem;
     --font-size-md: 1rem;
     --font-size-lg: 1.125rem;
-    --font-size-xl: 1.375rem;
-    --font-size-2xl: 1.75rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 1.875rem;
     --font-size-3xl: 2.25rem;
     --font-weight-regular: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --line-height-tight: 1.25;
-    --line-height-base: 1.5;
-    --letter-spacing-caps: 0.06em;
+    --line-height-base: 1.55;
+    --letter-spacing-caps: 0.05em;
 
     /* Brand */
     --color-primary: #2563eb;
@@ -44,15 +46,15 @@
     --color-border: #e5e7eb;
     --color-border-strong: #d0d5dd;
     --color-text: #101828;
-    --color-text-secondary: #344054;
-    --color-text-muted: #667085;
-    --color-text-subtle: #98a2b3;
+    --color-text-secondary: #1d2939;
+    --color-text-muted: #475467;
+    --color-text-subtle: #667085;
 
     /* Sidebar */
     --color-sidebar: #0f172a;
     --color-sidebar-border: #1e293b;
-    --color-sidebar-text: #cbd5e1;
-    --color-sidebar-muted: #64748b;
+    --color-sidebar-text: #e2e8f0;
+    --color-sidebar-muted: #94a3b8;
     --color-sidebar-hover: rgba(255, 255, 255, 0.06);
     --color-sidebar-active: rgba(255, 255, 255, 0.1);
     --color-sidebar-active-text: #ffffff;
@@ -143,9 +145,13 @@
     --content-max-width: 1320px;
     --form-label-width: 300px;
     --catalog-tree-width: 264px;
-    --control-height: 38px;
-    --control-height-sm: 32px;
+    --control-height: 40px;
+    --control-height-sm: 34px;
     --auth-panel-max-width: 400px;
+    --shop-max-width: 1240px;
+    --shop-filters-width: 240px;
+    --shop-summary-width: 360px;
+    --control-height-lg: 48px;
     --z-sidebar: 40;
     --z-overlay: 35;
     --z-topbar: 30;

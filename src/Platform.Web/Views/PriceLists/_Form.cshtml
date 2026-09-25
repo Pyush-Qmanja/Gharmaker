@@ -1,0 +1,14 @@
+@* Price list form sections for the shared CrudForm page. Customer options come from PriceListsController.PrepareViewAsync. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Platform.Shared.Dtos.Pricing
+@model IPriceListFields
+<form-panel title="Price list" description="Retail is for everyone. A tier list is shared by a group of customers you choose on each customer. A contract list holds agreed prices for one customer.">
+    <div class="form-grid">
+        <form-field asp-for="Name" />
+        <form-field asp-for="Code" hint="Letters, digits and hyphens, e.g. CONTRACTORS. Stored in capitals." />
+        <form-field asp-for="Type" label="Applies to" />
+        <form-field asp-for="CustomerId" label="Customer (contract lists only)"
+                    items="(IEnumerable<SelectListItem>)ViewData[ViewDataKeys.UserOptions]!" empty-option="—" />
+    </div>
+    <form-field asp-for="Remarks" label="Notes" />
+</form-panel>

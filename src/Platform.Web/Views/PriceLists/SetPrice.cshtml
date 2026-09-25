@@ -1,0 +1,150 @@
+@* Sets one SKU's price in a list: unit, quantity slabs (the whole order takes the highest slab reached), optional start date; history below. *@
+@using System.Globalization
+@model SetPriceViewModel
+@{
+    var list = Model.List;
+    var sku = Model.Sku;
+    ViewData["Title"] = $"{sku.Code} price";
+    string? ErrorFor(string key) => ViewData.ModelState.TryGetValue(key, out var entry) ? entry.Errors.FirstOrDefault()?.ErrorMessage : null;
+    var slabErrors = ViewData.ModelState.Where(e => e.Key.StartsWith("Slabs", StringComparison.Ordinal))
+        .SelectMany(e => e.Value!.Errors).Select(e => e.ErrorMessage).Distinct().ToList();
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Price lists</a>
+            <icon name="@Icons.ChevronRight" />
+            <a asp-action="Prices" asp-route-id="@list.Id">@list.Name</a>
+            <icon name="@Icons.ChevronRight" />
+            <span class="code-tag">@sku.Code</span>
+        </nav>
+        <h1 class="page-header__title">@Model.Product.Name · @sku.VariantLabel</h1>
+        <p class="page-header__subtitle">Price in <strong>@list.Name</strong>, excluding GST. Stock is counted in @sku.BaseUom; you can price it in any unit it is sold in.</p>
+    </div>
+</div>
+
+<form asp-action="SetPrice" asp-route-id="@list.Id" asp-route-productId="@Model.Product.Id" asp-route-skuId="@sku.Id" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <form-panel title="Price" description="The first row is the normal price. Add rows for better rates on larger orders: the whole order takes the rate of the highest row it reaches.">
+        <div class="form-grid">
+            <div class="form-field">
+                <label class="form-field__label" for="Uom">Price per</label>
+                <select id="Uom" name="Uom" class="form-select">
+                    @foreach (var unit in sku.Units)
+                    {
+                        <option value="@unit.Uom" selected="@(string.Equals(unit.Uom, Model.Form.Uom, StringComparison.OrdinalIgnoreCase))">@unit.Uom</option>
+                    }
+                </select>
+                <span class="form-field__error">@ErrorFor("Uom")</span>
+            </div>
+        </div>
+
+        <table class="slab-editor">
+            <thead>
+                <tr>
+                    <th scope="col">From quantity</th>
+                    <th scope="col">Price per unit (₹, excl. GST)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Form.Slabs.Count; i++)
+                {
+                    var slab = Model.Form.Slabs[i];
+                    <tr>
+                        <td>
+                            @if (i == 0)
+                            {
+                                <input type="hidden" name="Slabs[0].MinQuantity" value="0" />
+                                <span class="slab-editor__fixed">Any quantity</span>
+                            }
+                            else
+                            {
+                                <input type="number" step="any" min="0" name="Slabs[@i].MinQuantity" class="form-control"
+                                       value="@(slab.MinQuantity == 0 ? string.Empty : slab.MinQuantity.ToString(CultureInfo.InvariantCulture))"
+                                       aria-label="From quantity, row @(i + 1)" placeholder="@(i == 1 ? "e.g. 100" : string.Empty)" />
+                            }
+                        </td>
+                        <td>
+                            <input type="number" step="any" min="0" name="Slabs[@i].UnitPrice" class="form-control"
+                                   value="@(slab.UnitPrice == 0 ? string.Empty : slab.UnitPrice.ToString(CultureInfo.InvariantCulture))"
+                                   aria-label="Price, row @(i + 1)" placeholder="@(i == 0 ? "e.g. 400" : string.Empty)" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @foreach (var error in slabErrors)
+        {
+            <p class="form-field__error">@error</p>
+        }
+    </form-panel>
+
+    <form-panel title="When" description="Leave the start empty to change the price now. A later start announces a change: the current price stays until then.">
+        <div class="form-grid">
+            <div class="form-field">
+                <label class="form-field__label" for="ValidFromIst">Starts (India time)</label>
+                <input type="datetime-local" id="ValidFromIst" name="ValidFromIst" class="form-control"
+                       value="@Model.Form.ValidFromIst?.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture)" />
+                <span class="form-field__error">@ErrorFor("ValidFrom")</span>
+            </div>
+            <div class="form-field">
+                <label class="form-field__label" for="Remarks">Reason (optional)</label>
+                <input type="text" id="Remarks" name="Remarks" class="form-control" value="@Model.Form.Remarks" placeholder="e.g. Supplier rate revision" />
+            </div>
+        </div>
+    </form-panel>
+
+    <div class="form-footer">
+        <a asp-action="Prices" asp-route-id="@list.Id" class="btn btn-secondary">Back to prices</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save price</button>
+    </div>
+</form>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.History" class="icon--sm" /> Price history</h2>
+        <span class="data-card__count">@Model.History.Count.Counted("price")</span>
+    </div>
+    @if (Model.History.Count == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Rupee" /></span>
+            <h2 class="empty-state__title">No price yet</h2>
+            <p class="empty-state__text">Until it has one, customers on this list cannot buy this SKU.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead><tr><th>From</th><th>Price</th><th>Reason</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var price in Model.History)
+                    {
+                        <tr>
+                            <td>@price.ValidFrom.ToIstString()</td>
+                            <td><partial name="_PriceSummary" model="price" /></td>
+                            <td class="data-table__muted">@(price.Remarks ?? "—")</td>
+                            <td>
+                                @if (price.IsCurrent)
+                                {
+                                    <span class="status-badge status-badge--active">In force</span>
+                                }
+                                else if (price.ValidFrom > DateTime.UtcNow)
+                                {
+                                    <span class="status-badge status-badge--new">Upcoming</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-badge--inactive">Replaced</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

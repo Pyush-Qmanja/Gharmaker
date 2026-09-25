@@ -2,14 +2,27 @@
 @using Platform.Shared.Dtos.Inventory
 @model StockIndexViewModel
 @{
-    ViewData["Title"] = "Stock";
     var rows = (IReadOnlyList<StockBalanceDto>)Model.Balances.Items;
+    var warehouse = Model.WarehouseId is { } selectedId ? Model.Warehouses.FirstOrDefault(w => w.Id == selectedId) : null;
+    ViewData["Title"] = warehouse is null ? "Stock" : $"Stock in {warehouse.Name}";
 }
 
 <div class="page-header">
     <div class="page-header__text">
-        <h1 class="page-header__title">Stock</h1>
-        <p class="page-header__subtitle">What is on hand in each warehouse, straight from the stock ledger.</p>
+        @if (warehouse is not null)
+        {
+            <nav class="page-header__eyebrow" aria-label="Back">
+                <a asp-action="Index">All warehouses</a>
+                <icon name="@Icons.ChevronRight" />
+                <span class="code-tag">@warehouse.Code</span>
+            </nav>
+        }
+        <h1 class="page-header__title">@ViewData["Title"]</h1>
+        <p class="page-header__subtitle">
+            @(warehouse is null
+                ? "What is on hand in each warehouse you can see, straight from the stock ledger. Pick a warehouse to see only its materials."
+                : "Every material this warehouse holds or has held, straight from the stock ledger.")
+        </p>
     </div>
     <div class="page-header__actions">
         <a asp-action="Movements" class="btn btn-secondary"><icon name="@Icons.List" /> Movements</a>
@@ -48,7 +61,7 @@
             <input type="checkbox" name="inStockOnly" value="true" class="form-check-input" checked="@Model.InStockOnly" data-auto-submit />
             <span>In stock only</span>
         </label>
-        <span class="data-card__count">@Model.Balances.TotalCount.Counted("row")</span>
+        <span class="data-card__count">@Model.Balances.TotalCount.Counted("item")</span>
     </form>
 
     @if (Model.Balances.TotalCount == 0)
@@ -72,7 +85,10 @@
                 <thead>
                     <tr>
                         <th>SKU</th>
-                        <th>Warehouse</th>
+                        @if (warehouse is null)
+                        {
+                            <th>Warehouse</th>
+                        }
                         <th class="data-table__num">On hand</th>
                         <th class="data-table__num">Reserved</th>
                         <th class="data-table__num">Available</th>
@@ -89,7 +105,10 @@
                                     <span class="identity__secondary"><span class="code-tag">@row.SkuCode</span></span>
                                 </span>
                             </td>
-                            <td><span class="code-tag">@row.WarehouseCode</span></td>
+                            @if (warehouse is null)
+                            {
+                                <td><a asp-action="Index" asp-route-warehouseId="@row.WarehouseId" title="Only this warehouse"><span class="code-tag">@row.WarehouseCode</span></a></td>
+                            }
                             <td class="data-table__num"><span class="qty@(row.OnHand == 0 ? " qty--zero" : string.Empty)">@row.OnHand.ToQuantityText()</span> <span class="qty__uom">@row.Uom</span></td>
                             <td class="data-table__num data-table__muted">@row.Reserved.ToQuantityText()</td>
                             <td class="data-table__num">@row.Available.ToQuantityText() <span class="qty__uom">@row.Uom</span></td>

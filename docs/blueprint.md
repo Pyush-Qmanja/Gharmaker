@@ -91,14 +91,16 @@ Order status is derived where it can be. Do not invent a stored
 
 ## Key calculations
 
-Available to promise, for a SKU and a customer pincode:
+Available to promise, for a SKU and a customer pincode. Orders are never split
+across warehouses (decision #2), so it is the best single place, not a sum:
 
 ```
-ATP = SUM over serviceable warehouses of (on_hand - reserved - blocked)
+ATP = MAX over serviceable warehouses of (on_hand - reserved - blocked)
 ```
 
-minus a configurable safety buffer per SKU. Delivery window is the slowest lead
-time among the warehouses actually needed to satisfy the quantity.
+minus a configurable safety buffer per SKU. A whole order ships from the one
+serviceable warehouse that holds every line — the fastest, then the fullest —
+and its delivery date is that warehouse's lead time.
 
 Site progress, weighted by task budget:
 

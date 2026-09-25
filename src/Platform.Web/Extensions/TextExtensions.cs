@@ -49,6 +49,22 @@ public static partial class TextExtensions
         };
     }
 
+    /// <summary>
+    /// Two letters standing in for a brand's logo: "Asian Paints" → "AP", "Ambuja" → "AM".
+    /// </summary>
+    /// <param name="name">Brand name.</param>
+    /// <returns>Two capitals, or "?" for a blank name.</returns>
+    public static string Monogram(this string? name)
+    {
+        string[] words = (name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return words.Length switch
+        {
+            0 => "?",
+            1 => words[0][..Math.Min(2, words[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(words[0][..1], words[1][..1]).ToUpperInvariant(),
+        };
+    }
+
     /// <summary>Matches an upper-case letter that starts a new word.</summary>
     /// <returns>The compiled regex.</returns>
     [GeneratedRegex("(?<=[a-z0-9])([A-Z])")]

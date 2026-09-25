@@ -1,0 +1,92 @@
+@* Store front page: hero with search and PIN code, shop by category, popular products and brands, and how ordering works. *@
+@model ShopHomeViewModel
+@{
+    ViewData["Title"] = "Building materials delivered to your site";
+}
+
+<section class="shop-hero">
+    <div class="shop-hero__text">
+        <h1 class="shop-hero__title">Building materials, delivered to your site</h1>
+        <p class="shop-hero__lead">Cement, steel, blocks, tiles and more from genuine brands — with clear prices, GST invoices and a delivery date before you order.</p>
+        <form class="shop-hero__search" asp-controller="Products" asp-action="Index" method="get" role="search">
+            <icon name="@Icons.Search" class="shop-search__icon" />
+            <input type="search" name="search" class="shop-search__input" placeholder="What do you need? e.g. OPC 53 cement" aria-label="Search products" />
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+    <div class="shop-hero__card">
+        <p class="shop-hero__card-title"><icon name="@Icons.MapPin" /> Where should we deliver?</p>
+        <p class="shop-hero__card-text">Enter your site's PIN code to see what's in stock near you and when it can arrive.</p>
+        <form asp-controller="Home" asp-action="Pincode" method="post" class="shop-pin__row">
+            <input type="hidden" name="returnUrl" value="@Url.Action("Index")" />
+            <input name="pincode" class="form-control" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" value="@Model.Pincode"
+                   placeholder="PIN code, e.g. 411001" aria-label="Delivery PIN code" required />
+            <button type="submit" class="btn btn-primary">Check</button>
+        </form>
+        @if (Model.Pincode is not null)
+        {
+            <p class="shop-hero__card-note"><icon name="@Icons.CheckCircle" class="icon--sm" /> Showing availability for <strong>@Model.Pincode</strong></p>
+        }
+    </div>
+</section>
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="shop-section">
+        <div class="shop-section__head">
+            <h2 class="shop-section__title">Shop by category</h2>
+            <a asp-controller="Products" asp-action="Index" class="link-action">All products <icon name="@Icons.ArrowRight" class="icon--sm" /></a>
+        </div>
+        <div class="category-grid">
+            @foreach (var category in Model.Categories)
+            {
+                <a class="category-tile" asp-controller="Products" asp-action="Index" asp-route-categoryId="@category.Id">
+                    <span class="category-tile__icon"><icon name="@Icons.Package" /></span>
+                    <span class="category-tile__name">@category.Name</span>
+                    @if (category.Children.Count > 0)
+                    {
+                        <span class="category-tile__sub">@string.Join(", ", category.Children.Take(3).Select(c => c.Name))</span>
+                    }
+                </a>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.Featured.Count > 0)
+{
+    <section class="shop-section">
+        <div class="shop-section__head">
+            <h2 class="shop-section__title">Popular products</h2>
+            <a asp-controller="Products" asp-action="Index" class="link-action">See everything <icon name="@Icons.ArrowRight" class="icon--sm" /></a>
+        </div>
+        <div class="product-grid">
+            @foreach (var product in Model.Featured)
+            {
+                <partial name="_ProductCard" model="product" />
+            }
+        </div>
+    </section>
+}
+
+@if (Model.Brands.Count > 0)
+{
+    <section class="shop-section">
+        <h2 class="shop-section__title">Brands we stock</h2>
+        <div class="brand-strip">
+            @foreach (var brand in Model.Brands)
+            {
+                <a class="brand-chip" asp-controller="Products" asp-action="Index" asp-route-brandId="@brand.Id">@brand.Name</a>
+            }
+        </div>
+    </section>
+}
+
+<section class="shop-section">
+    <h2 class="shop-section__title">How ordering works</h2>
+    <ol class="steps">
+        <li class="steps__item"><span class="steps__num">1</span><span class="steps__title">Enter your PIN code</span><span class="steps__text">See what we can deliver to your site and by when.</span></li>
+        <li class="steps__item"><span class="steps__num">2</span><span class="steps__title">Add to cart</span><span class="steps__text">Order in any unit — bags, tonnes, pieces. Bulk rates apply automatically.</span></li>
+        <li class="steps__item"><span class="steps__num">3</span><span class="steps__title">Place your order</span><span class="steps__text">Your stock is held at once. We confirm by phone before delivery.</span></li>
+    </ol>
+</section>

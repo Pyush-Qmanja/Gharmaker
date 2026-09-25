@@ -1,0 +1,63 @@
+@* Checkout: delivery address, contact and GSTIN, then the order summary with GST and the delivery date, and Place order. *@
+@model CheckoutViewModel
+@{
+    ViewData["Title"] = "Checkout";
+    var cart = Model.Cart;
+}
+
+<div class="shop-page-head">
+    <nav class="shop-crumbs" aria-label="Breadcrumb">
+        <a asp-controller="Cart" asp-action="Index">Cart</a>
+        <icon name="@Icons.ChevronRight" class="icon--sm" />
+        <span>Checkout</span>
+    </nav>
+    <h1 class="shop-page-head__title">Checkout</h1>
+</div>
+
+<form asp-action="Index" method="post" novalidate class="checkout-layout">
+    <input type="hidden" asp-for="Form.ClientId" />
+    <div class="checkout-form">
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+        <section class="card checkout-step">
+            <h2 class="checkout-step__title"><span class="steps__num">1</span> Delivery address</h2>
+            <p class="checkout-step__help">Where the truck should come. The PIN code decides availability, and the state decides GST.</p>
+            <partial name="_AddressFields" for="Form.Address" />
+        </section>
+
+        <section class="card checkout-step">
+            <h2 class="checkout-step__title"><span class="steps__num">2</span> Contact</h2>
+            <div class="form-grid">
+                <phone-field asp-for="Form.Phone" label="Mobile number" hint="We call this number to confirm the order and delivery slot." />
+                <form-field asp-for="Form.Gstin" label="GSTIN (optional)" hint="For a business (B2B) invoice." />
+            </div>
+            <form-field asp-for="Form.SaveAddress" label="Save this address and number for next time" />
+        </section>
+
+        <section class="card checkout-step">
+            <h2 class="checkout-step__title"><span class="steps__num">3</span> Payment</h2>
+            <p class="checkout-step__help">Nothing to pay now. Your stock is held as soon as you place the order; we confirm it with you by phone, and you pay in cash when it is delivered.</p>
+        </section>
+    </div>
+
+    <aside class="card order-summary" aria-label="Order summary">
+        <h2 class="order-summary__title">Your order</h2>
+        <ul class="order-summary__lines">
+            @foreach (var line in cart.Lines)
+            {
+                <li>
+                    <span>@line.Name <span class="order-summary__qty">× @line.Quantity.ToQuantityText() @line.Uom</span></span>
+                    <span>@line.TaxableAmount.ToRupees()</span>
+                </li>
+            }
+        </ul>
+        <partial name="_Totals" model='new TotalsViewModel(cart.Totals, cart.IsInterState, "Total payable")' />
+        <p class="order-summary__note">Final GST follows the state of your delivery address.</p>
+        @if (cart.Delivery is { } delivery)
+        {
+            <p class="order-summary__delivery"><icon name="@Icons.Calendar" /> Delivery by <strong>@delivery.ToWindowText()</strong></p>
+        }
+        <button type="submit" class="btn btn-primary btn-lg order-summary__cta"><icon name="@Icons.Check" /> Place order</button>
+        <p class="order-summary__note">By placing the order you agree that we hold the stock for you until we confirm it with you.</p>
+    </aside>
+</form>

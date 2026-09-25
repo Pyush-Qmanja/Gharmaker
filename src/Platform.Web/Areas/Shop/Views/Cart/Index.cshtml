@@ -1,0 +1,120 @@
+@* The cart: each line with its price at this quantity, GST and what stops it being ordered; the order summary with delivery date and checkout. *@
+@using System.Globalization
+@model ShopCartDto
+@{
+    ViewData["Title"] = "Your cart";
+}
+
+<div class="shop-page-head">
+    <h1 class="shop-page-head__title">Your cart</h1>
+    <p class="shop-page-head__meta">@Model.Lines.Count.Counted("item") · prices exclude GST until the summary</p>
+</div>
+
+@if (Model.Lines.Count == 0)
+{
+    <div class="card empty-state">
+        <span class="empty-state__icon"><icon name="@Icons.Cart" /></span>
+        <h2 class="empty-state__title">Your cart is empty</h2>
+        <p class="empty-state__text">Find what your site needs and add it here.</p>
+        <div class="empty-state__actions"><a asp-controller="Products" asp-action="Index" class="btn btn-primary">Browse products</a></div>
+    </div>
+}
+else
+{
+    <div class="cart-layout">
+        <section class="cart-lines" aria-label="Items">
+            @foreach (var line in Model.Lines)
+            {
+                <article class="cart-line @(line.Problem is null ? string.Empty : "cart-line--problem")">
+                    <div class="cart-line__main">
+                        <a class="cart-line__name" asp-controller="Products" asp-action="Details" asp-route-id="@line.ProductId">@line.Name</a>
+                        <span class="code-tag">@line.SkuCode</span>
+                        @if (line.UnitPrice is { } unitPrice)
+                        {
+                            <span class="cart-line__unit">@unitPrice.ToUnitPrice() per @line.Uom · GST @line.TaxRatePercent?.ToPercent()</span>
+                        }
+                    </div>
+
+                    <form asp-action="Update" asp-route-skuId="@line.SkuId" method="post" class="cart-line__qty">
+                        <label class="visually-hidden" for="q-@line.SkuId">Quantity</label>
+                        <input id="q-@line.SkuId" type="number" name="Quantity" min="0" step="any" class="form-control"
+                               value="@line.Quantity.ToString(CultureInfo.InvariantCulture)" />
+                        <label class="visually-hidden" for="u-@line.SkuId">Unit</label>
+                        <select id="u-@line.SkuId" name="Uom" class="form-select" data-auto-submit>
+                            @foreach (var unit in line.Units)
+                            {
+                                <option value="@unit" selected="@(unit == line.Uom)">@unit</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-secondary">Update</button>
+                    </form>
+
+                    <div class="cart-line__amount">
+                        @if (line.UnitPrice is not null)
+                        {
+                            <strong>@line.TaxableAmount.ToRupees()</strong>
+                            <span class="cart-line__gst">+ @((line.CgstAmount + line.SgstAmount + line.IgstAmount + line.CessAmount).ToRupees()) GST</span>
+                        }
+                    </div>
+
+                    <form asp-action="Remove" asp-route-skuId="@line.SkuId" method="post" class="cart-line__remove">
+                        <button type="submit" class="icon-btn icon-btn--danger" title="Remove" aria-label="Remove @line.Name"><icon name="@Icons.Trash" /></button>
+                    </form>
+
+                    @if (line.Problem is { } problem)
+                    {
+                        <p class="cart-line__problem"><icon name="@Icons.AlertCircle" class="icon--sm" /> @problem</p>
+                    }
+                </article>
+            }
+        </section>
+
+        <aside class="card order-summary" aria-label="Order summary">
+            <h2 class="order-summary__title">Order summary</h2>
+            <div class="order-summary__pin">
+                <icon name="@Icons.MapPin" />
+                @if (Model.Pincode is { } pin)
+                {
+                    <span>Delivering to <strong>@pin</strong></span>
+                }
+                else
+                {
+                    <span>No delivery PIN code yet</span>
+                }
+                <form asp-controller="Home" asp-action="Pincode" method="post" class="shop-pin__row">
+                    <input type="hidden" name="returnUrl" value="@Url.Action("Index")" />
+                    <input name="pincode" class="form-control" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" value="@Model.Pincode"
+                           placeholder="PIN code" aria-label="Delivery PIN code" required />
+                    <button type="submit" class="btn btn-sm btn-secondary">@(Model.Pincode is null ? "Set" : "Change")</button>
+                </form>
+            </div>
+
+            <partial name="_Totals" model='new TotalsViewModel(Model.Totals, Model.IsInterState, "Total payable")' />
+            <p class="order-summary__note">GST shown for delivery @(Model.IsInterState ? "to another state (IGST)" : "within our state (CGST + SGST)"); it is confirmed from your delivery address at checkout.</p>
+
+            @if (Model.Delivery is { } delivery)
+            {
+                <p class="order-summary__delivery"><icon name="@Icons.Calendar" /> Delivery by <strong>@delivery.ToWindowText()</strong></p>
+            }
+
+            @foreach (var problem in Model.Problems)
+            {
+                <p class="order-summary__problem"><icon name="@Icons.AlertCircle" class="icon--sm" /> @problem</p>
+            }
+
+            @if (Model.CanCheckout)
+            {
+                <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary btn-lg order-summary__cta">Proceed to checkout <icon name="@Icons.ArrowRight" /></a>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary btn-lg order-summary__cta" disabled>Proceed to checkout</button>
+                @if (Model.Lines.Any(l => l.Problem is not null))
+                {
+                    <p class="order-summary__note">Change or remove the items marked above to continue.</p>
+                }
+            }
+            <a asp-controller="Products" asp-action="Index" class="link-action order-summary__more">Continue shopping</a>
+        </aside>
+    </div>
+}

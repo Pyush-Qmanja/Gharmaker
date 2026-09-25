@@ -1,0 +1,17 @@
+@* Availability for the visitor's PIN code, as one badge. Model is the status. *@
+@model ShopStockStatus
+@switch (Model)
+{
+    case ShopStockStatus.InStock:
+        <span class="stock-badge stock-badge--in">In stock</span>
+        break;
+    case ShopStockStatus.OutOfStock:
+        <span class="stock-badge stock-badge--out">Out of stock</span>
+        break;
+    case ShopStockStatus.NotDeliverable:
+        <span class="stock-badge stock-badge--none">Not delivered to your PIN code</span>
+        break;
+    default:
+        <span class="stock-badge stock-badge--check">Check delivery</span>
+        break;
+}

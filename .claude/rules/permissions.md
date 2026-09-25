@@ -38,9 +38,27 @@ Every authorisation decision is two questions, always both:
   a change would add — through a role, a role scope or a feature access row — must
   be held by the editor in that place. Giving the Administrator role needs every
   capability, everywhere.
+- **Role hierarchy** (`AccessHierarchy`, `RoleTree`): every role has a `ParentId`
+  (null = directly under the top); the built-in Administrator role (`IsSystem`, never
+  identified by name) is the root, always holds every capability, and cannot be
+  edited, renamed or deactivated. Administrators manage everything. Anyone else may
+  create, change or deactivate only roles **strictly below** a role they hold, attach
+  new roles only at or below their own, and add or remove only capabilities they hold.
+  For users: only people whose every role is below theirs **and** whose direct access
+  they hold themselves; never their own roles or access (profile only); roles given or
+  taken must be below theirs. At least one active administrator must always remain.
+  These rules sit on top of "only give what you hold", never instead of it.
 - Stock features are warehouse-scoped: `stock` (view / adjust + opening + ledger check),
   `receipts`, `transfers`. Sending a transfer needs manage at the source, receiving it
   manage at the destination; the ledger check needs stock-adjust everywhere.
+- Phase 3 features: `delivery` (warehouse-scoped PIN codes), `pricing` (price lists,
+  prices, GST rates), `customers`, `orders` (manage = confirm or cancel) and `settings` (business details).
+- Two kinds of caller. Staff tokens carry `actor=staff`; storefront tokens carry
+  `actor=customer`. The API's default policy (`AuthPolicies.StaffDefault`) refuses a
+  customer token on every staff endpoint, and `PermissionService` gives a customer no
+  capability; storefront endpoints that need a customer say `[CustomerOnly]`. In the web
+  app the store has its own cookie (path `/shop`) and every `/shop` request runs as the
+  customer or as nobody (`ShopAuth.UseShopIdentity`), never as a staff user.
 - The UI hides what the user cannot use (`IUserAccess`, `Navigation.Items`), but
   that is cosmetic; the API is the enforcement point.
 
@@ -84,6 +102,24 @@ opacity is maintained.
 Check against current scope on each request, not the scope captured in the token
 at login. Revoking a scope must not wait for a token to expire.
 
+Signed-in users are never "stuck" with old access:
+
+- Access changes (role, feature access, places, role deactivated) apply on the
+  caller's next request — `IPermissionService` reads the user and roles per request
+  through the request-scoped `ICallerAccount`. Never cache capabilities across
+  requests; if a cache is ever added (e.g. Redis) it must be invalidated on every
+  user or role write.
+- Ending a session is immediate: `SessionGuard` (API, after authentication) answers
+  401 "Your session has ended" when the user is inactive or the token was issued at
+  or before `User.SessionsEndedAt`. That field is set on deactivation and by "sign out
+  everywhere" (`POST api/users/{id}/sessions/end`, or `api/auth/sessions/end` for
+  oneself). A restored user's old tokens stay dead.
+- The web app checks `/api/auth/me` once per staff page (`StaffSession`): an ended
+  session signs the browser out and sends it to sign-in with a notice; a renamed user's
+  cookie is re-issued with the new name.
+- Customers: a blocked customer is refused by the storefront customer context and the
+  store signs them out ("Your session has ended").
+
 ## The controls that protect the business
 
 These are requirements, not suggestions. Each needs a test.
@@ -96,6 +132,25 @@ These are requirements, not suggestions. Each needs a test.
 - A payout run is created by one person and approved by another.
 - Attendance older than the configured window cannot be marked, only adjusted
   with a reason.
+
+## Abuse limits and browser security
+
+- Rate limits (`Api/Security/RateLimiting.cs`, section `RateLimiting`): every caller
+  (signed-in user, else client IP) gets separate read and write budgets per minute, so
+  no client can run up Firestore reads or writes. Sign-in (staff and store) is 10 a minute
+  per IP, store registration 5 per 15 minutes per IP, checkout 10 a minute per customer.
+  Refused calls get 429 with `Retry-After`. Put `[EnableRateLimiting(RateLimitPolicies.X)]`
+  on any new endpoint that signs in, creates accounts or costs money.
+- The web app forwards each visitor's IP to the API (`ForwardedForHandler`). Both apps
+  trust `X-Forwarded-For` only from loopback and the proxies listed in
+  `RateLimiting:TrustedProxies` (API) and `Security:TrustedProxies` (web). **In production
+  list the web servers and load balancer there**, or every visitor shares one budget.
+- Registration never says whether an email is in use (customer or staff): one generic
+  422 message for every taken email.
+- Security headers on every response: a strict Content-Security-Policy (only this site;
+  possible because the project allows no CDN, inline script or inline style), no
+  framing, nosniff, referrer and permissions policies, no Server banner; API responses
+  are `no-store`. HSTS outside Development.
 
 ## Audit
 

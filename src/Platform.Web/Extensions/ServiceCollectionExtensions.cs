@@ -7,10 +7,14 @@ using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
 using Platform.Shared.Dtos.Identity;
 using Platform.Shared.Dtos.Inventory;
+using Platform.Shared.Dtos.Pricing;
 using Platform.Shared.Validation.Common;
+using Platform.Web.Areas.Shop;
 using Platform.Web.Options;
+using Platform.Web.Security;
 using Platform.Web.Services.Api;
 using Platform.Web.Services.Auth;
+using Platform.Web.TagHelpers;
 
 namespace Platform.Web.Extensions;
 
@@ -30,8 +34,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddControllersWithViews(options =>
         {
-            options.Filters.Add(new AuthorizeFilter());
+            // Staff screens need a staff sign-in; the store (area Shop) is open to visitors.
+            options.Conventions.Add(new StaffAuthorizationConvention());
             options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+
+            // Phone fields post a calling code and a number; this joins them first.
+            options.ValueProviderFactories.Insert(0, new PhoneValueProviderFactory());
         });
         return services;
     }
@@ -49,6 +57,17 @@ public static class ServiceCollectionExtensions
             {
                 options.LoginPath = "/Account/Login";
                 options.LogoutPath = "/Account/Logout";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.SlidingExpiration = false;
+            })
+            .AddCookie(ShopAuth.Scheme, options =>
+            {
+                // Store customers have their own cookie, sent only to /shop pages.
+                options.Cookie.Name = ".Platform.Shop";
+                options.Cookie.Path = ShopAuth.PathPrefix;
+                options.LoginPath = ShopAuth.PathPrefix + "/account/login";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.Cookie.SameSite = SameSiteMode.Lax;
@@ -74,10 +93,13 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpContextAccessor();
         services.AddTransient<BearerTokenHandler>();
+        services.AddTransient<ForwardedForHandler>();
+        services.AddPlatformForwardedHeaders(configuration);
         services
             .AddHttpClient<IApiClient, ApiClient>((sp, client) =>
                 client.BaseAddress = new Uri(sp.GetRequiredService<IOptions<ApiOptions>>().Value.BaseUrl))
-            .AddHttpMessageHandler<BearerTokenHandler>();
+            .AddHttpMessageHandler<BearerTokenHandler>()
+            .AddHttpMessageHandler<ForwardedForHandler>();
         return services;
     }
 
@@ -99,6 +121,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStockApiClient, StockApiClient>();
         services.AddScoped<IAuditApiClient, AuditApiClient>();
         services.AddScoped<IUserAccess, UserAccess>();
+        services.AddCrudApiClient<PriceListDto, CreatePriceListRequest, UpdatePriceListRequest>(ApiRoutes.PriceLists);
+        services.AddScoped<IPricingApiClient, PricingApiClient>();
+        services.AddScoped<IDeliveryAreaApiClient, DeliveryAreaApiClient>();
+        services.AddScoped<ISalesApiClient, SalesApiClient>();
+        services.AddScoped<IShopApiClient, ShopApiClient>();
+        services.AddMemoryCache();
 
         return services;
     }

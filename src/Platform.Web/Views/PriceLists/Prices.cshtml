@@ -1,0 +1,124 @@
+@* A price list's prices: products page by page, each SKU with the price in force now and any price set to start later. *@
+@using Platform.Shared.Dtos.Pricing
+@model PriceGridViewModel
+@{
+    var list = Model.List;
+    ViewData["Title"] = $"{list.Name} prices";
+    var products = (IReadOnlyList<PriceGridProductDto>)Model.Products.Items;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Price lists</a>
+            <icon name="@Icons.ChevronRight" />
+            <span class="code-tag">@list.Code</span>
+        </nav>
+        <h1 class="page-header__title">@list.Name</h1>
+        <p class="page-header__subtitle">Prices exclude GST. A change never overwrites a price: it starts a new one from now or a date you choose, and orders keep the price they were placed at.</p>
+    </div>
+    @if (Model.CanManage)
+    {
+        <div class="page-header__actions">
+            <a asp-action="Edit" asp-route-id="@list.Id" class="btn btn-secondary"><icon name="@Icons.Pencil" /> Edit list</a>
+        </div>
+    }
+</div>
+
+@if (!list.IsActive)
+{
+    <div class="notice notice--warning"><icon name="@Icons.AlertCircle" /><p>This list is deactivated, so its prices are not used. Restore it from Edit list.</p></div>
+}
+
+<section class="card data-card">
+    <div class="data-card__toolbar">
+        <partial name="_SearchBar" model="Model.Products" />
+        <span class="data-card__count">@Model.Products.TotalCount.Counted("product")</span>
+    </div>
+
+    @if (Model.Products.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Search" /></span>
+            <h2 class="empty-state__title">No products found</h2>
+            <p class="empty-state__text">Try another word — a brand, a size or a SKU code.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table price-grid">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Variant</th>
+                        <th>Price now</th>
+                        <th>Next change</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                @foreach (var product in products)
+                {
+                    <tbody>
+                        <tr class="price-grid__product">
+                            <th colspan="5" scope="rowgroup">
+                                <span class="price-grid__name">@product.Name</span>
+                                <span class="data-table__muted">@product.BrandName · HSN @product.HsnCode</span>
+                                @if (product.TaxRatePercent is { } rate)
+                                {
+                                    <span class="chip">GST @rate.ToPercent()</span>
+                                }
+                                else
+                                {
+                                    <a asp-controller="TaxRates" asp-action="Create" asp-route-hsnCode="@product.HsnCode" class="chip chip--warning"
+                                       title="Without a GST rate this product cannot be sold">No GST rate — set one</a>
+                                }
+                            </th>
+                        </tr>
+                        @foreach (var sku in product.Skus)
+                        {
+                            <tr>
+                                <td><span class="code-tag">@sku.Code</span></td>
+                                <td>
+                                    @sku.VariantLabel
+                                    @if (!sku.IsActive)
+                                    {
+                                        <partial name="_StatusBadge" model="false" />
+                                    }
+                                </td>
+                                <td>
+                                    @if (sku.Current is { } current)
+                                    {
+                                        <partial name="_PriceSummary" model="current" />
+                                    }
+                                    else
+                                    {
+                                        <span class="chip chip--empty">Not priced</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (sku.Upcoming is { } upcoming)
+                                    {
+                                        <span class="data-table__muted" title="@upcoming.ValidFrom.ToIstString()">From @upcoming.ValidFrom.ToIstDateString()</span>
+                                        <partial name="_PriceSummary" model="upcoming" />
+                                    }
+                                    else
+                                    {
+                                        <span class="data-table__muted">—</span>
+                                    }
+                                </td>
+                                <td class="data-table__actions">
+                                    <a asp-action="SetPrice" asp-route-id="@list.Id" asp-route-productId="@product.ProductId" asp-route-skuId="@sku.SkuId"
+                                       class="btn btn-sm @(sku.Current is null && Model.CanManage ? "btn-primary" : "btn-secondary")">
+                                        @(!Model.CanManage ? "History" : sku.Current is null ? "Set price" : "Change")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model.Products" />
+    }
+</section>

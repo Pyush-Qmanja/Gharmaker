@@ -1,0 +1,36 @@
+@* One product tile: brand, name, category and sizes, the starting price (excl. GST) and availability for the visitor's PIN code. *@
+@model ShopProductCardDto
+@{
+    var variants = Model.Variants.Take(3).ToList();
+    int more = Model.Variants.Count - variants.Count;
+}
+<article class="product-card">
+    <a class="product-card__media" asp-area="Shop" asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id" tabindex="-1" aria-hidden="true">
+        <span class="product-card__monogram">@Model.BrandName.Monogram()</span>
+        <span class="product-card__category">@Model.CategoryName</span>
+    </a>
+    <div class="product-card__body">
+        <span class="product-card__brand">@Model.BrandName</span>
+        <h3 class="product-card__name">
+            <a asp-area="Shop" asp-controller="Products" asp-action="Details" asp-route-id="@Model.Id">@Model.Name</a>
+        </h3>
+        @if (variants.Count > 0)
+        {
+            <p class="product-card__variants">@string.Join(" · ", variants)@(more > 0 ? $" · +{more} more" : string.Empty)</p>
+        }
+        <div class="product-card__foot">
+            @if (Model.FromPrice is { } from)
+            {
+                <span class="product-card__price">
+                    <span class="product-card__from">From</span>
+                    @from.UnitPrice.ToUnitPrice()<span class="product-card__unit">/@from.Uom</span>
+                </span>
+            }
+            else
+            {
+                <span class="product-card__price product-card__price--none">Price on request</span>
+            }
+            <partial name="_StockBadge" model="Model.Status" />
+        </div>
+    </div>
+</article>

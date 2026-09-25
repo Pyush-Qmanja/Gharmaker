@@ -57,7 +57,7 @@ else
                         @foreach (var action in Model.Actions)
                         {
                             <li>
-                                <a class="action-list__item" asp-controller="@action.Controller" asp-action="@action.Action">
+                                <a class="action-list__item" asp-area="@(action.Area ?? string.Empty)" asp-controller="@action.Controller" asp-action="@action.Action">
                                     <span class="icon-tile icon-tile--sm icon-tile--@action.Icon"><icon name="@action.Icon" /></span>
                                     <span class="action-list__text">
                                         <span class="action-list__title">@action.Title</span>

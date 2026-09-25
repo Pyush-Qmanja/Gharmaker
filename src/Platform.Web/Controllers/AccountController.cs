@@ -2,6 +2,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.Shared.Dtos.Auth;
+using Platform.Web.Common;
+using Platform.Web.Security;
 using Platform.Web.Services.Auth;
 
 namespace Platform.Web.Controllers;
@@ -29,12 +31,20 @@ public sealed class AccountController : PlatformControllerBase
     /// Shows the sign-in form.
     /// </summary>
     /// <param name="returnUrl">Local page to return to after sign-in.</param>
+    /// <param name="notice">Why the user is here (session ended, signed out everywhere), shown as a notice.</param>
     /// <returns>The sign-in page.</returns>
     [HttpGet]
     [AllowAnonymous]
-    public IActionResult Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null, string? notice = null)
     {
+        // Arriving because the API ended the session: drop the dead cookie too.
+        if (notice == StaffSession.EndedNotice && User.Identity?.IsAuthenticated == true)
+        {
+            await _accountService.SignOutAsync();
+        }
+
         ViewData["ReturnUrl"] = returnUrl;
+        ViewData[ViewDataKeys.Notice] = StaffSession.MessageFor(notice);
         return View(new LoginRequest());
     }
 
@@ -75,5 +85,17 @@ public sealed class AccountController : PlatformControllerBase
     {
         await _accountService.SignOutAsync();
         return RedirectToAction(nameof(Login));
+    }
+
+    /// <summary>
+    /// Signs the user out on every device (lost phone, shared computer), this one included.
+    /// </summary>
+    /// <param name="cancellationToken">Aborted when the client disconnects.</param>
+    /// <returns>Redirect to the sign-in page with a confirmation.</returns>
+    [HttpPost]
+    public async Task<IActionResult> LogoutEverywhere(CancellationToken cancellationToken)
+    {
+        await _accountService.SignOutEverywhereAsync(cancellationToken);
+        return RedirectToAction(nameof(Login), new { notice = StaffSession.EverywhereNotice });
     }
 }

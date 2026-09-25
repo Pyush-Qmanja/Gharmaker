@@ -1,0 +1,62 @@
+@* The role hierarchy: every role under the one it reports to. People manage only roles (and the people holding them) below their own. *@
+@model RoleChart
+@{
+    ViewData["Title"] = "Role hierarchy";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Role hierarchy</h1>
+        <p class="page-header__subtitle">
+            Who can manage whom. A role, and everyone holding it, can be changed only by people holding a role above it.
+            The Administrator role is at the top and manages everything.
+        </p>
+    </div>
+    <div class="page-header__actions">
+        <a asp-action="Index" class="btn btn-secondary"><icon name="@Icons.List" /> All roles</a>
+        <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New role</a>
+    </div>
+</div>
+
+<div class="card">
+    <ol class="role-tree">
+        @foreach (var row in Model.Rows)
+        {
+            <li class="role-tree__item role-tree__item--depth-@Math.Min(row.Depth, 6)">
+                <div class="role-tree__head">
+                    <span class="icon-tile icon-tile--sm icon-tile--shield"><icon name="@Icons.Shield" /></span>
+                    @if (row.CanManage)
+                    {
+                        <a asp-action="Edit" asp-route-id="@row.Role.Id" class="role-tree__name">@row.Role.Name</a>
+                    }
+                    else
+                    {
+                        <span class="role-tree__name">@row.Role.Name</span>
+                    }
+                    @if (row.Role.IsSystem)
+                    {
+                        <span class="chip">Built-in</span>
+                    }
+                    @if (row.IsHeld)
+                    {
+                        <span class="chip chip--primary">Your role</span>
+                    }
+                    @if (!row.Role.IsActive)
+                    {
+                        <partial name="_StatusBadge" model="false" />
+                    }
+                </div>
+                <div class="role-tree__access">
+                    @if (row.Role.IsSystem)
+                    {
+                        <span class="chip">@RoleChart.EveryFeature</span>
+                    }
+                    else
+                    {
+                        <partial name="_Chips" model="AccessSummary.Describe(row.Role.Capabilities)" />
+                    }
+                </div>
+            </li>
+        }
+    </ol>
+</div>

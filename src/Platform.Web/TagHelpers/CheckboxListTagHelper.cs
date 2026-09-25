@@ -135,6 +135,11 @@ public sealed class CheckboxListTagHelper : TagHelper
             input.Attributes["checked"] = "checked";
         }
 
+        if (item.Disabled)
+        {
+            input.Attributes["disabled"] = "disabled";
+        }
+
         var label = new TagBuilder("label");
         label.AddCssClass("checkbox-list__label");
         label.Attributes["for"] = id;
@@ -144,6 +149,17 @@ public sealed class CheckboxListTagHelper : TagHelper
         row.AddCssClass("checkbox-list__option");
         row.InnerHtml.AppendHtml(input);
         row.InnerHtml.AppendHtml(label);
+
+        // A disabled box is not posted, so a ticked one also sends its value hidden: it stays as it is.
+        if (item.Disabled && isChecked)
+        {
+            var hidden = new TagBuilder("input") { TagRenderMode = TagRenderMode.SelfClosing };
+            hidden.Attributes["type"] = "hidden";
+            hidden.Attributes["name"] = name;
+            hidden.Attributes["value"] = item.Value;
+            row.InnerHtml.AppendHtml(hidden);
+        }
+
         return row;
     }
 

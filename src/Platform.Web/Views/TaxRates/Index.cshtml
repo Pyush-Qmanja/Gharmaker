@@ -1,0 +1,145 @@
+@* GST rates: HSN codes still without a rate (their products cannot be sold), then the rates in force — or one HSN code's history. *@
+@using Platform.Shared.Dtos.Pricing
+@model TaxRatesViewModel
+@{
+    ViewData["Title"] = Model.HsnCode is null ? "GST rates" : $"HSN {Model.HsnCode}";
+    var rates = (IReadOnlyList<TaxRateDto>)Model.Rates.Items;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        @if (Model.HsnCode is not null)
+        {
+            <nav class="page-header__eyebrow" aria-label="Back">
+                <a asp-action="Index">GST rates</a>
+                <icon name="@Icons.ChevronRight" />
+                <span>HSN @Model.HsnCode</span>
+            </nav>
+        }
+        <h1 class="page-header__title">@ViewData["Title"]</h1>
+        <p class="page-header__subtitle">
+            @(Model.HsnCode is null
+                ? "A product takes the rate of the longest HSN code that starts its own (8, then 6, then 4 digits). A new rate never overwrites the old one: orders keep the rate they were placed at."
+                : "Every rate this HSN code has had, newest first.")
+        </p>
+    </div>
+    @if (Model.CanManage)
+    {
+        <div class="page-header__actions">
+            <a asp-action="Create" asp-route-hsnCode="@Model.HsnCode" class="btn btn-primary"><icon name="@Icons.Plus" /> @(Model.HsnCode is null ? "Add GST rate" : "Change rate")</a>
+        </div>
+    }
+</div>
+
+@if (Model.Missing.Count > 0)
+{
+    <section class="card attention">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title"><icon name="@Icons.AlertCircle" class="icon--sm" /> Products that cannot be sold yet</h2>
+                <p class="card__subtitle">These HSN codes have no GST rate, so their products show as "contact us" on the store.</p>
+            </div>
+        </div>
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead><tr><th>HSN code</th><th>Products</th><th>For example</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    @foreach (var missing in Model.Missing)
+                    {
+                        <tr>
+                            <td><span class="code-tag">@missing.HsnCode</span></td>
+                            <td>@missing.ProductCount</td>
+                            <td class="data-table__muted">@string.Join(", ", missing.ExampleProducts)</td>
+                            <td class="data-table__actions">
+                                @if (Model.CanManage)
+                                {
+                                    <a asp-action="Create" asp-route-hsnCode="@missing.HsnCode" class="btn btn-sm btn-primary">Set rate</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+<section class="card data-card">
+    @if (Model.HsnCode is null)
+    {
+        <div class="data-card__toolbar">
+            <form asp-action="Index" method="get" class="search-field" role="search">
+                <icon name="@Icons.Search" class="search-field__icon" />
+                <input type="search" name="search" value="@Model.Rates.Search" class="form-control search-field__input" inputmode="numeric"
+                       placeholder="HSN code starts with…" aria-label="Search by HSN code" />
+            </form>
+            <span class="data-card__count">@Model.Rates.TotalCount.Counted("HSN code")</span>
+        </div>
+    }
+
+    @if (Model.Rates.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Percent" /></span>
+            <h2 class="empty-state__title">No GST rates yet</h2>
+            <p class="empty-state__text">Add the rate for each HSN code you sell. Products without one cannot be ordered.</p>
+            @if (Model.CanManage)
+            {
+                <div class="empty-state__actions"><a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> Add GST rate</a></div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>HSN code</th>
+                        <th class="data-table__num">GST</th>
+                        <th class="data-table__num">Cess</th>
+                        <th>From</th>
+                        <th class="data-table__num">Products</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rate in rates)
+                    {
+                        <tr>
+                            <td><span class="code-tag">@rate.HsnCode</span></td>
+                            <td class="data-table__num"><strong>@rate.RatePercent.ToPercent()</strong></td>
+                            <td class="data-table__num data-table__muted">@(rate.CessPercent == 0 ? "—" : rate.CessPercent.ToPercent())</td>
+                            <td class="data-table__muted" title="@rate.ValidFrom.ToIstString()">@rate.ValidFrom.ToIstDateString()</td>
+                            <td class="data-table__num">@rate.ProductCount</td>
+                            <td class="data-table__muted">@(rate.Remarks ?? "—")</td>
+                            <td>
+                                @if (rate.IsCurrent)
+                                {
+                                    <span class="status-badge status-badge--active">In force</span>
+                                }
+                                else if (rate.ValidFrom > DateTime.UtcNow)
+                                {
+                                    <span class="status-badge status-badge--new">Upcoming</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-badge--inactive">Replaced</span>
+                                }
+                            </td>
+                            <td class="data-table__actions">
+                                @if (Model.HsnCode is null)
+                                {
+                                    <a asp-action="Index" asp-route-hsnCode="@rate.HsnCode" class="link-action">History <icon name="@Icons.ArrowRight" class="icon--sm" /></a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model.Rates" />
+    }
+</section>

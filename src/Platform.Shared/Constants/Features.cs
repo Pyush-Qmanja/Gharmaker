@@ -28,6 +28,21 @@ public static class Features
     /// <summary>Transfers between warehouses (limited by warehouse scope).</summary>
     public const string Transfers = "transfers";
 
+    /// <summary>PIN codes each warehouse delivers to, and how fast (warehouse-scoped).</summary>
+    public const string Delivery = "delivery";
+
+    /// <summary>Price lists, prices and GST rates.</summary>
+    public const string Pricing = "pricing";
+
+    /// <summary>Customer accounts of the online store.</summary>
+    public const string Customers = "customers";
+
+    /// <summary>Orders placed on the online store.</summary>
+    public const string Orders = "orders";
+
+    /// <summary>Business details printed on tax documents.</summary>
+    public const string Settings = "settings";
+
     /// <summary>Users, their roles and access.</summary>
     public const string Users = "users";
 
@@ -52,12 +67,22 @@ public static class Features
             Capabilities.ReceiptsView, Capabilities.ReceiptsManage, ScopeType.Warehouse),
         new FeatureInfo(Transfers, "Transfers", "Inventory", "Stock moved between warehouses. Manage: send and receive.",
             Capabilities.TransfersView, Capabilities.TransfersManage, ScopeType.Warehouse),
+        new FeatureInfo(Delivery, "Delivery areas", "Inventory", "PIN codes each warehouse delivers to, and in how many days.",
+            Capabilities.DeliveryView, Capabilities.DeliveryManage, ScopeType.Warehouse),
+        new FeatureInfo(Pricing, "Pricing and GST", "Sales", "Price lists, quantity slabs and GST rates. Manage: set prices and rates.",
+            Capabilities.PricingView, Capabilities.PricingManage, ScopeType: null),
+        new FeatureInfo(Customers, "Customers", "Sales", "Online store accounts. Manage: change price tier, block or restore.",
+            Capabilities.CustomersView, Capabilities.CustomersManage, ScopeType: null),
+        new FeatureInfo(Orders, "Orders", "Sales", "Orders placed on the online store. Manage: confirm or cancel an order.",
+            Capabilities.OrdersView, Capabilities.OrdersManage, ScopeType: null),
         new FeatureInfo(Users, "Users", "Administration", "People who sign in, their roles and access.",
             Capabilities.UsersView, Capabilities.UsersManage, ScopeType: null),
         new FeatureInfo(Roles, "Roles", "Administration", "Named sets of access to give to users.",
             Capabilities.RolesView, Capabilities.RolesManage, ScopeType: null),
         new FeatureInfo(Audit, "Audit log", "Administration", "Who changed what, when and from where.",
             Capabilities.AuditView, ManageCapability: null, ScopeType: null),
+        new FeatureInfo(Settings, "Business settings", "Administration", "Legal name, GSTIN and registered address used for tax.",
+            Capabilities.SettingsView, Capabilities.SettingsManage, ScopeType: null),
     };
 
     /// <summary>Lookup by code.</summary>

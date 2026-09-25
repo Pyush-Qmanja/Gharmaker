@@ -10,6 +10,21 @@ public static class ViewDataKeys
     /// <summary>Roles with what each grants (<c>IReadOnlyList&lt;RoleDto&gt;</c>).</summary>
     public const string Roles = "Roles";
 
+    /// <summary>The role hierarchy as the signed-in user sees it (<c>RoleChart</c>).</summary>
+    public const string RoleChart = "RoleChart";
+
+    /// <summary>One-line notice for the sign-in page (<c>string</c>).</summary>
+    public const string Notice = "Notice";
+
+    /// <summary>Extra buttons for a list page header (<c>IReadOnlyList&lt;HeaderLink&gt;</c>).</summary>
+    public const string HeaderLinks = "HeaderLinks";
+
+    /// <summary>"Reports to" choices for the role form (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
+    public const string ParentOptions = "ParentOptions";
+
+    /// <summary>True when the role being edited is the built-in Administrator role (<c>bool</c>).</summary>
+    public const string IsSystemRole = "IsSystemRole";
+
     /// <summary>Active roles as checkbox options (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
     public const string RoleOptions = "RoleOptions";
 
@@ -30,6 +45,9 @@ public static class ViewDataKeys
 
     /// <summary>Whether the user may create a record on this screen (<c>bool</c>).</summary>
     public const string CanCreate = "CanCreate";
+
+    /// <summary>Warehouses whose stock the user may see (<c>IReadOnlySet&lt;Guid&gt;</c>).</summary>
+    public const string StockWarehouseIds = "StockWarehouseIds";
 
     /// <summary>Warehouses for a filter (<c>IReadOnlyList&lt;SelectListItem&gt;</c>).</summary>
     public const string WarehouseOptions = "WarehouseOptions";

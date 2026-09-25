@@ -27,6 +27,12 @@ using Platform.Api.Services.Catalog;
 using Platform.Api.Services.Catalog.Import;
 using Platform.Api.Services.Identity;
 using Platform.Api.Services.Inventory;
+using Platform.Api.Services.Pricing;
+using Platform.Api.Services.Sales;
+using Platform.Api.Services.Storefront;
+using Platform.Api.Mapping.Pricing;
+using Platform.Shared.Dtos.Pricing;
+using Platform.Shared.Entities.Pricing;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
 using Platform.Shared.Dtos.Identity;
@@ -180,8 +186,10 @@ public static class ServiceCollectionExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(AuthPolicies.Configure);
+        services.AddScoped<ICallerAccount, CallerAccount>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IAccessHierarchy, AccessHierarchy>();
         services.AddScoped<IAuthorizationHandler, CapabilityAuthorizationHandler>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddHttpClient<IIdentityProvider, FirebaseIdentityProvider>();
@@ -194,8 +202,9 @@ public static class ServiceCollectionExtensions
     /// are picked up automatically from <c>Platform.Shared</c>.
     /// </summary>
     /// <param name="services">Service collection.</param>
+    /// <param name="configuration">Reads the <c>Storefront</c> section.</param>
     /// <returns>The service collection, for chaining.</returns>
-    public static IServiceCollection AddPlatformModules(this IServiceCollection services)
+    public static IServiceCollection AddPlatformModules(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddValidatorsFromAssemblyContaining<PagedRequestValidator>();
 
@@ -208,6 +217,7 @@ public static class ServiceCollectionExtensions
         services.AddCrudModule<Warehouse, WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest, WarehouseMapper, WarehouseService>();
         services.AddCrudModule<Role, RoleDto, CreateRoleRequest, UpdateRoleRequest, RoleMapper, RoleService>();
         services.AddCrudModule<User, UserDto, CreateUserRequest, UpdateUserRequest, UserMapper, UserService>();
+        services.AddScoped<IUserSessionService>(sp => (UserService)sp.GetRequiredService<ICrudService<UserDto, CreateUserRequest, UpdateUserRequest>>());
         services.AddScoped<IStockLineResolver, StockLineResolver>();
         services.AddScoped<IStockPoster, StockPoster>();
         services.AddScoped<IStockService, StockService>();
@@ -215,6 +225,31 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStockReconcileService, StockReconcileService>();
         services.AddScoped<IOpeningStockImportService, OpeningStockImportService>();
         services.AddScoped<IAuditService, AuditService>();
+
+        // Phase 3: pricing and GST, delivery areas, customers and orders, the storefront.
+        services.AddOptions<StorefrontOptions>()
+            .Bind(configuration.GetSection(StorefrontOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddCrudModule<PriceList, PriceListDto, CreatePriceListRequest, UpdatePriceListRequest, PriceListMapper, PriceListService>();
+        services.AddScoped<ITaxRateProvider, TaxRateProvider>();
+        services.AddScoped<ITaxRateService, TaxRateService>();
+        services.AddScoped<IPriceResolver, PriceResolver>();
+        services.AddScoped<IPriceService, PriceService>();
+        services.AddScoped<IDeliveryAreaService, DeliveryAreaService>();
+        services.AddScoped<IAvailabilityService, AvailabilityService>();
+        services.AddScoped<IBusinessSettingsService, BusinessSettingsService>();
+        services.AddScoped<IOrderCloser, OrderCloser>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<ICustomerService, CustomerService>();
+        services.AddSingleton<IStorefrontOrganisation, StorefrontOrganisation>();
+        services.AddScoped<ICustomerContext, CustomerContext>();
+        services.AddScoped<IShopPricer, ShopPricer>();
+        services.AddScoped<IShopCatalogService, ShopCatalogService>();
+        services.AddScoped<IShopCartService, ShopCartService>();
+        services.AddScoped<IShopOrderService, ShopOrderService>();
+        services.AddScoped<IShopAccountService, ShopAccountService>();
+        services.AddHostedService<HoldExpiryWorker>();
 
         EnsureCrudControllersDeclareCapabilities();
 

@@ -14,6 +14,12 @@ public interface ICurrentUser
 
     /// <summary>Signed-in user's organisation, or null for anonymous requests.</summary>
     Guid? OrgId { get; }
+
+    /// <summary>
+    /// True when the caller is a storefront customer; <see cref="UserId"/> is then
+    /// their customer id and they hold no staff capability.
+    /// </summary>
+    bool IsCustomer { get; }
 }
 
 /// <summary>
@@ -38,6 +44,10 @@ public sealed class HttpCurrentUser : ICurrentUser
 
     /// <inheritdoc />
     public Guid? OrgId => SystemIdentity.Current?.OrgId ?? ReadGuid(ClaimNames.OrgId);
+
+    /// <inheritdoc />
+    public bool IsCustomer => SystemIdentity.Current is null
+        && _httpContextAccessor.HttpContext?.User.FindFirst(ClaimNames.Actor)?.Value == Actors.Customer;
 
     /// <summary>
     /// Reads a claim of the current principal and parses it as a <see cref="Guid"/>.

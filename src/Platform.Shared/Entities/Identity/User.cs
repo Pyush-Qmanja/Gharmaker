@@ -40,6 +40,12 @@ public class User : BaseEntity, IOrgScoped, ISoftDeletable
     /// </summary>
     public List<FeatureAccess> Access { get; set; } = new();
 
+    /// <summary>
+    /// Sign-ins made before this instant are ended: set on deactivation and by
+    /// "Sign out everywhere". Access changes need no sign-out; they apply per request.
+    /// </summary>
+    public DateTime? SessionsEndedAt { get; set; }
+
     /// <inheritdoc />
     public bool IsActive { get; set; } = true;
 }

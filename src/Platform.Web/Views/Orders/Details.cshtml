@@ -1,0 +1,189 @@
+@* One order for staff: customer and delivery facts, lines with GST, totals, where its stock is held (internal), and confirm or cancel. *@
+@using Platform.Shared.Entities.Inventory
+@using Platform.Shared.Entities.Sales
+@model OrderDetailsViewModel
+@{
+    var order = Model.Order;
+    ViewData["Title"] = order.ReferenceNo;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Orders</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@order.ReferenceNo</span>
+        </nav>
+        <h1 class="page-header__title">@order.ReferenceNo</h1>
+        <div class="page-header__meta">
+            <span class="status-badge @order.Status.ToBadge()">@order.Status.ToLabel()</span>
+            <span class="chip">Placed @order.CreatedAt.ToIstString()</span>
+            <span class="chip">@(order.IsInterState ? "IGST (other state)" : "CGST + SGST (same state)")</span>
+        </div>
+    </div>
+</div>
+
+@if (order.Status == OrderStatus.Placed)
+{
+    <div class="notice notice--warning">
+        <icon name="@Icons.Calendar" />
+        <p>Stock is held for this order until <strong>@order.HoldExpiresAt.ToIstString()</strong>. If it is not confirmed by then, the order expires and the stock is freed.</p>
+    </div>
+}
+else if (order.Status == OrderStatus.Confirmed)
+{
+    <div class="notice notice--success">
+        <icon name="@Icons.CheckCircle" />
+        <p>Confirmed @order.ConfirmedAt.ToIstString(). Its stock stays held for it, without expiry, until it is dispatched.</p>
+    </div>
+}
+else if (order.Remarks is not null)
+{
+    <div class="notice"><icon name="@Icons.Info" /><p>@order.Status.ToLabel() @order.ClosedAt.ToIstString(): @order.Remarks</p></div>
+}
+
+<section class="card">
+    <div class="card__body">
+        <dl class="facts">
+            <div class="facts__item"><dt>Customer</dt><dd><a asp-controller="Customers" asp-action="Edit" asp-route-id="@order.CustomerId">@order.CustomerName</a></dd></div>
+            <div class="facts__item"><dt>Phone</dt><dd>@(order.Phone ?? "—")</dd></div>
+            <div class="facts__item"><dt>Buyer GSTIN</dt><dd>@(order.CustomerGstin ?? "—")</dd></div>
+            <div class="facts__item"><dt>Delivery</dt><dd>@SalesTextExtensions.ToWindowText(order.EarliestDeliveryOn, order.LatestDeliveryOn)</dd></div>
+            <div class="facts__item facts__item--wide">
+                <dt>Deliver to</dt>
+                <dd>@order.Address.Line1@(order.Address.Line2 is null ? "" : $", {order.Address.Line2}"), @order.Address.City, @order.Address.State @order.Address.Pincode</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.Package" class="icon--sm" /> Items</h2>
+        <span class="data-card__count">@order.Lines.Count.Counted("item")</span>
+    </div>
+    <div class="data-card__scroll">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>HSN</th>
+                    <th class="data-table__num">Quantity</th>
+                    <th class="data-table__num">Unit price</th>
+                    <th class="data-table__num">Taxable</th>
+                    <th class="data-table__num">GST</th>
+                    <th class="data-table__num">Tax</th>
+                    <th class="data-table__num">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in order.Lines)
+                {
+                    <tr>
+                        <td>
+                            <span class="identity__text">
+                                <span class="identity__primary">@line.Name</span>
+                                <span class="identity__secondary"><span class="code-tag">@line.SkuCode</span></span>
+                            </span>
+                        </td>
+                        <td class="data-table__muted">@line.HsnCode</td>
+                        <td class="data-table__num">
+                            <span class="qty">@line.Quantity.ToQuantityText()</span> <span class="qty__uom">@line.Uom</span>
+                            @if (!string.Equals(line.Uom, line.BaseUom, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="data-table__muted qty__base">= @line.BaseQuantity.ToQuantityText() @line.BaseUom</span>
+                            }
+                        </td>
+                        <td class="data-table__num">@line.UnitPrice.ToUnitPrice()</td>
+                        <td class="data-table__num">@line.TaxableAmount.ToRupees()</td>
+                        <td class="data-table__num data-table__muted">@line.TaxRatePercent.ToPercent()</td>
+                        <td class="data-table__num">@((line.CgstAmount + line.SgstAmount + line.IgstAmount + line.CessAmount).ToRupees())</td>
+                        <td class="data-table__num"><strong>@line.TotalAmount.ToRupees()</strong></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="totals">
+        <dl class="totals__list">
+            <div class="totals__row"><dt>Taxable value</dt><dd>@order.Totals.TaxableAmount.ToRupees()</dd></div>
+            @if (order.IsInterState)
+            {
+                <div class="totals__row"><dt>IGST</dt><dd>@order.Totals.IgstAmount.ToRupees()</dd></div>
+            }
+            else
+            {
+                <div class="totals__row"><dt>CGST</dt><dd>@order.Totals.CgstAmount.ToRupees()</dd></div>
+                <div class="totals__row"><dt>SGST</dt><dd>@order.Totals.SgstAmount.ToRupees()</dd></div>
+            }
+            @if (order.Totals.CessAmount > 0)
+            {
+                <div class="totals__row"><dt>Cess</dt><dd>@order.Totals.CessAmount.ToRupees()</dd></div>
+            }
+            <div class="totals__row totals__row--grand"><dt>Total</dt><dd>@order.Totals.TotalAmount.ToRupees()</dd></div>
+        </dl>
+    </div>
+</section>
+
+<section class="card data-card">
+    <div class="card__header">
+        <div>
+            <h2 class="card__title"><icon name="@Icons.Warehouse" class="icon--sm" /> Stock held</h2>
+            <p class="card__subtitle">Internal only — the customer never sees which warehouse. The whole order ships from this one warehouse.</p>
+        </div>
+    </div>
+    <div class="data-card__scroll">
+        <table class="table data-table">
+            <thead><tr><th>Warehouse</th><th>SKU</th><th class="data-table__num">Held</th><th>Status</th><th>Held until</th></tr></thead>
+            <tbody>
+                @foreach (var hold in order.Holds)
+                {
+                    <tr>
+                        <td><a asp-controller="Stock" asp-action="Index" asp-route-warehouseId="@hold.WarehouseId"><span class="code-tag">@hold.WarehouseCode</span></a></td>
+                        <td><span class="code-tag">@hold.SkuCode</span></td>
+                        <td class="data-table__num"><span class="qty">@hold.Quantity.ToQuantityText()</span> <span class="qty__uom">@hold.Uom</span></td>
+                        <td>
+                            <span class="status-badge @hold.Status.ToBadge()">@hold.Status.ToLabel()</span>
+                        </td>
+                        <td class="data-table__muted">@(hold.Status == StockHoldStatus.Confirmed ? "Dispatch" : hold.ExpiresAt.ToIstString())</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if (Model.CanManage && order.Status == OrderStatus.Placed)
+{
+    <section class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title"><icon name="@Icons.CheckCircle" class="icon--sm" /> Confirm this order</h2>
+                <p class="card__subtitle">After calling @(order.Phone ?? "the customer") to agree the items, the delivery day and cash on delivery. The stock then stays held until dispatch, and the customer sees "Confirmed".</p>
+            </div>
+        </div>
+        <div class="card__body">
+            <form asp-action="Confirm" asp-route-id="@order.Id" method="post" data-confirm="Confirm @order.ReferenceNo? Do this only after speaking to the customer.">
+                <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Confirm order</button>
+            </form>
+        </div>
+    </section>
+}
+
+@if (Model.CanManage && order.Status is OrderStatus.Placed or OrderStatus.Confirmed)
+{
+    <section class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title"><icon name="@Icons.Ban" class="icon--sm" /> Cancel this order</h2>
+                <p class="card__subtitle">The customer sees it as cancelled at once, and the held stock is freed. A confirmed order can be cancelled until it is dispatched.</p>
+            </div>
+        </div>
+        <div class="card__body">
+            <form asp-action="Cancel" asp-route-id="@order.Id" method="post" class="inline-actions" data-confirm="Cancel @order.ReferenceNo and free its stock?">
+                <input type="text" name="Remarks" class="form-control" placeholder="Reason (kept on the order)" aria-label="Reason" maxlength="500" />
+                <button type="submit" class="btn btn-danger"><icon name="@Icons.Ban" /> Cancel order</button>
+            </form>
+        </div>
+    </section>
+}

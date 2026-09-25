@@ -53,6 +53,15 @@ choosing the C# name decides all of them.
 | Destination warehouse | `ToWarehouseId` | `to_warehouse_id` | `Guid?` | `DestinationId`, `TargetWarehouse` |
 | Audited record | `Entity` + `EntityId`, `Action` (`AuditAction`), `Label`, `Changes` (`Field`, `Before`, `After`), `Ip`, `Device` | `entity`, `entity_id` ... | see `AuditEntry` | `Table`, `RecordId`, `Diff`, `UserAgent` |
 | Phone | `Phone` | `phone` | `string` (E.164) | `Mobile`, `PhoneNumber`, `ContactNo` |
+| GST registration number | `Gstin` | `gstin` | `string` (15 chars) | `GstNo`, `GSTNumber`, `TaxId` |
+| Registered legal name | `LegalName` | `legal_name` | `string` | `CompanyLegalName`, `RegisteredName` |
+| GST / cess rate | `RatePercent`, `CessPercent` (on an order line `TaxRatePercent`) | `rate_percent` ... | `decimal` | `Gst`, `TaxPct`, `Rate` (for a percent) |
+| Tax amounts | `TaxableAmount`, `CgstAmount`, `SgstAmount`, `IgstAmount`, `CessAmount`, `TotalAmount` | `taxable_amount` ... | `decimal` | `NetAmount`, `GstAmt`, `GrandTotal` |
+| Quantity slab | `Slabs` of `MinQuantity` + `UnitPrice` | `slabs`, `min_quantity` | list | `Tiers`, `Breaks`, `FromQty` |
+| Delivery days | `LeadTimeDays` | `lead_time_days` | `int` | `Tat`, `DeliveryDays`, `Sla` |
+| Delivery window | `EarliestDeliveryOn` / `LatestDeliveryOn` (store DTO `EarliestOn` / `LatestOn`) | `earliest_delivery_on` ... | `DateOnly` | `EtaFrom`, `DeliveryDate` |
+| Customer's price tier | `TierPriceListId` | `tier_price_list_id` | `Guid?` | `PriceGroupId`, `Tier` |
+| End of a stock hold | `ExpiresAt` (hold), `HoldExpiresAt` (order) | `expires_at`, `hold_expires_at` | `DateTime` | `ValidTill`, `HoldUntil` |
 | Postal address | `Address` (`Line1`, `Line2`, `City`, `State`, `Pincode`) | `address.line1` ... `address.pincode` | embedded `Address` / `AddressDto` | `Street`, `Zip`, `PostCode`, `PinCode`, flat address columns |
 | Coordinates | `Lat` / `Lng` | `lat` / `lng` | `double?` (WGS 84; not money, so `double` is fine) | `Latitude`/`Longitude`, `GeoLat`, `Coords` |
 | Responsible person | `OwnerUserId` (or `<Role>UserId`, e.g. `ManagerUserId`) | `owner_user_id` | `Guid?` | `Owner` (for an id), `ResponsibleId`, `InchargeId` |

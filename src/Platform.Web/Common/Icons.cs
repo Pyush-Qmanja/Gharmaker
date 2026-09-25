@@ -126,4 +126,49 @@ public static class Icons
 
     /// <summary>Receiving a transfer.</summary>
     public const string PackageCheck = "package-check";
+
+    /// <summary>Shopping cart.</summary>
+    public const string Cart = "shopping-cart";
+
+    /// <summary>Order or invoice.</summary>
+    public const string Receipt = "receipt";
+
+    /// <summary>Tax rate.</summary>
+    public const string Percent = "percent";
+
+    /// <summary>Price, money.</summary>
+    public const string Rupee = "indian-rupee";
+
+    /// <summary>The online store.</summary>
+    public const string Store = "store";
+
+    /// <summary>Settings.</summary>
+    public const string Settings = "settings";
+
+    /// <summary>Business or company.</summary>
+    public const string Building = "building";
+
+    /// <summary>One person.</summary>
+    public const string User = "user";
+
+    /// <summary>Phone number.</summary>
+    public const string Phone = "phone";
+
+    /// <summary>Date or delivery window.</summary>
+    public const string Calendar = "calendar";
+
+    /// <summary>Remove.</summary>
+    public const string Trash = "trash";
+
+    /// <summary>Opens elsewhere.</summary>
+    public const string External = "external";
+
+    /// <summary>Trust, guarantee.</summary>
+    public const string ShieldCheck = "shield-check";
+
+    /// <summary>Less.</summary>
+    public const string Minus = "minus";
+
+    /// <summary>Sign in.</summary>
+    public const string LogIn = "log-in";
 }

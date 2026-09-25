@@ -64,11 +64,22 @@ because a hold is not a movement. Only dispatch writes `SALE_DISPATCH`.
 Getting this backwards makes the system's count disagree with the physical
 count, which breaks the availability promise the whole storefront rests on.
 
+How it is built: checkout (`ShopCartService.CheckoutAsync`) plans the quantity over
+the warehouses serving the PIN code (`AllocationPlanner`, fastest first), and in one
+transaction raises `StockBalance.Reserved` and writes one `StockHold` per warehouse
+and SKU (`stock_holds`, status `Active`, with `ExpiresAt`). Holds are the trail that
+justifies `Reserved`, as ledger entries justify `OnHand`. Cancel and expiry
+(`OrderCloser`, `HoldExpiryWorker`) release them in one transaction. `StockPoster` refuses
+any outward movement that would take on-hand below what is held for orders.
+
 ## Concurrency
 
 Reserve against the specific stock lot inside a transaction, not against a
 SKU-level counter. Lot-level locking gives independent contention domains and
 prevents two customers buying the same last pallet.
+
+Until batches exist (decision S2) the lot is one warehouse's balance of one SKU:
+checkout reads and updates those balance documents inside its transaction.
 
 ## Payout runs
 

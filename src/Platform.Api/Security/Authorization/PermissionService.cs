@@ -1,4 +1,3 @@
-using Platform.Api.Common;
 using Platform.Api.Repositories;
 using Platform.Shared.Constants;
 using Platform.Shared.Entities.Identity;
@@ -76,21 +75,18 @@ public sealed class PermissionService : IPermissionService
     /// <summary>The scope list given to organisation-wide features.</summary>
     private static readonly ScopeGrant[] Everywhere = { new() { ScopeType = ScopeType.Global } };
 
-    private readonly ICurrentUser _currentUser;
-    private readonly IRepository<User> _users;
+    private readonly ICallerAccount _caller;
     private readonly IRepository<Role> _roles;
     private IReadOnlyDictionary<string, List<ScopeGrant>>? _grants;
 
     /// <summary>
     /// Creates the service.
     /// </summary>
-    /// <param name="currentUser">Caller identity from the token.</param>
-    /// <param name="users">User data access (org-scoped).</param>
+    /// <param name="caller">The calling staff user, loaded once per request.</param>
     /// <param name="roles">Role data access (org-scoped).</param>
-    public PermissionService(ICurrentUser currentUser, IRepository<User> users, IRepository<Role> roles)
+    public PermissionService(ICallerAccount caller, IRepository<Role> roles)
     {
-        _currentUser = currentUser;
-        _users = users;
+        _caller = caller;
         _roles = roles;
     }
 
@@ -147,9 +143,7 @@ public sealed class PermissionService : IPermissionService
             return _grants;
         }
 
-        User? user = _currentUser.UserId is { } userId
-            ? await _users.GetByIdAsync(userId, cancellationToken)
-            : null;
+        User? user = await _caller.GetAsync(cancellationToken);
 
         if (user is null || !user.IsActive)
         {
@@ -159,7 +153,12 @@ public sealed class PermissionService : IPermissionService
         var grants = new Dictionary<string, List<ScopeGrant>>(StringComparer.Ordinal);
 
         IReadOnlyList<Role> roles = await _roles.GetByIdsAsync(user.RoleIds, cancellationToken);
-        foreach (string capability in roles.Where(r => r.IsActive).SelectMany(r => r.Capabilities).Distinct(StringComparer.Ordinal))
+        // The built-in top role always carries every capability, including ones added after it was saved.
+        IEnumerable<string> roleCapabilities = roles
+            .Where(r => r.IsActive)
+            .SelectMany(r => r.IsSystem ? Capabilities.All.Select(c => c.Code) : r.Capabilities)
+            .Distinct(StringComparer.Ordinal);
+        foreach (string capability in roleCapabilities)
         {
             Grant(grants, capability, user.Scopes);
         }

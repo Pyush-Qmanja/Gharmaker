@@ -1,0 +1,100 @@
+@* One of the customer's orders: a thank-you right after checkout, status, delivery window, address, items with GST, totals and cancel. *@
+@model ShopOrderViewModel
+@{
+    var order = Model.Order;
+    ViewData["Title"] = $"Order {order.ReferenceNo}";
+}
+
+@if (Model.JustPlaced)
+{
+    <section class="order-placed">
+        <span class="order-placed__icon"><icon name="@Icons.CheckCircle" /></span>
+        <div>
+            <h1 class="order-placed__title">Thank you — your order is placed</h1>
+            <p class="order-placed__text">Order <strong>@order.ReferenceNo</strong>. Your items are held for you; we will call <strong>@order.Phone</strong> to confirm the delivery slot and payment.</p>
+        </div>
+    </section>
+}
+
+<div class="shop-page-head">
+    <nav class="shop-crumbs" aria-label="Breadcrumb">
+        <a asp-action="Index">My orders</a>
+        <icon name="@Icons.ChevronRight" class="icon--sm" />
+        <span>@order.ReferenceNo</span>
+    </nav>
+    <h1 class="shop-page-head__title">Order @order.ReferenceNo</h1>
+    <p class="shop-page-head__meta">
+        <span class="status-badge @order.Status.ToBadge()">@order.Status.ToLabel()</span>
+        Placed @order.PlacedAt.ToIstString()
+    </p>
+</div>
+
+<div class="cart-layout">
+    <div class="order-detail">
+        <section class="card">
+            <div class="card__body">
+                <dl class="facts">
+                    <div class="facts__item"><dt>Delivery</dt><dd>@(order.Status is ShopOrderStatus.Placed or ShopOrderStatus.Confirmed ? order.Delivery.ToWindowText() : "—")</dd></div>
+                    <div class="facts__item"><dt>Contact</dt><dd>@(order.Phone ?? "—")</dd></div>
+                    <div class="facts__item"><dt>GSTIN on invoice</dt><dd>@(order.Gstin ?? "—")</dd></div>
+                    <div class="facts__item facts__item--wide">
+                        <dt>Deliver to</dt>
+                        <dd>@order.Address.Line1@(order.Address.Line2 is null ? "" : $", {order.Address.Line2}"), @order.Address.City, @order.Address.State @order.Address.Pincode</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="card data-card">
+            <div class="card__header"><h2 class="card__title"><icon name="@Icons.Package" class="icon--sm" /> Items</h2></div>
+            <div class="data-card__scroll">
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th class="data-table__num">Quantity</th>
+                            <th class="data-table__num">Price</th>
+                            <th class="data-table__num">GST</th>
+                            <th class="data-table__num">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in order.Lines)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="identity__text">
+                                        <span class="identity__primary">@line.Name</span>
+                                        <span class="identity__secondary">HSN @line.HsnCode · @line.SkuCode</span>
+                                    </span>
+                                </td>
+                                <td class="data-table__num">@line.Quantity.ToQuantityText() @line.Uom</td>
+                                <td class="data-table__num">@line.UnitPrice.ToUnitPrice()</td>
+                                <td class="data-table__num">@line.TaxRatePercent.ToPercent()</td>
+                                <td class="data-table__num"><strong>@line.TotalAmount.ToRupees()</strong></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <aside class="card order-summary" aria-label="Order total">
+        <h2 class="order-summary__title">Total</h2>
+        <partial name="_Totals" model='new TotalsViewModel(order.Totals, order.IsInterState, order.Status is ShopOrderStatus.Placed or ShopOrderStatus.Confirmed ? "To pay" : "Order total")' />
+        @if (order.CanCancel)
+        {
+            <form asp-action="Cancel" asp-route-id="@order.Id" method="post" class="order-summary__cancel" data-confirm="Cancel order @order.ReferenceNo?">
+                <label class="form-field__label" for="cancel-reason">Changed your mind?</label>
+                <input id="cancel-reason" type="text" name="Remarks" class="form-control" placeholder="Reason (optional)" maxlength="500" />
+                <button type="submit" class="btn btn-secondary"><icon name="@Icons.Ban" /> Cancel order</button>
+            </form>
+        }
+        else if (order.Status == ShopOrderStatus.Confirmed)
+        {
+            <p class="order-summary__note">Your order is confirmed. You pay in cash when it is delivered. To change or cancel it, please call us.</p>
+        }
+        <a asp-controller="Products" asp-action="Index" class="link-action order-summary__more">Continue shopping</a>
+    </aside>
+</div>

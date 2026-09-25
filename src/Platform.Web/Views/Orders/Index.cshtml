@@ -1,0 +1,48 @@
+@* Store orders for staff: status tabs, order-number search and the list, newest first. *@
+@using Platform.Shared.Dtos.Sales
+@using Platform.Shared.Entities.Sales
+@model OrdersViewModel
+@{
+    ViewData["Title"] = "Orders";
+    var orders = (IReadOnlyList<OrderSummaryDto>)Model.Orders.Items;
+    var tabs = new (OrderStatus? Status, string Label)[] { (OrderStatus.Placed, "Awaiting confirmation"), (OrderStatus.Confirmed, "Confirmed"), (null, "All"), (OrderStatus.Cancelled, "Cancelled"), (OrderStatus.Expired, "Expired") };
+    string? customerId = Model.Orders.RouteValues.GetValueOrDefault("customerId");
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Orders</h1>
+        <p class="page-header__subtitle">Orders placed on the store hold their stock until confirmed or cancelled. Unconfirmed orders expire and their stock is freed automatically.</p>
+    </div>
+</div>
+
+<section class="card data-card">
+    <nav class="tabs" aria-label="Order status">
+        @foreach (var (status, label) in tabs)
+        {
+            <a asp-action="Index" asp-route-status="@status" asp-route-customerId="@customerId"
+               class="tabs__item @(status == Model.Status ? "tabs__item--active" : string.Empty)"
+               aria-current="@(status == Model.Status ? "page" : null)">@label</a>
+        }
+    </nav>
+    <div class="data-card__toolbar">
+        <partial name="_SearchBar" model="Model.Orders" />
+        <span class="data-card__count">@Model.Orders.TotalCount.Counted("order")</span>
+    </div>
+
+    @if (Model.Orders.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Receipt" /></span>
+            <h2 class="empty-state__title">No orders here</h2>
+            <p class="empty-state__text">Orders appear as soon as customers check out on the store.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <partial name="_Table" model="orders" />
+        </div>
+        <partial name="_Pagination" model="Model.Orders" />
+    }
+</section>

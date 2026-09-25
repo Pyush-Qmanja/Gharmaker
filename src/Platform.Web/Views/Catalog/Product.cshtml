@@ -1,4 +1,4 @@
-@* Product page: category path, variants with their units, and a unit converter (P7) that runs on the server. *@
+@* Product page: category path, variants with their units and stock, where it is stocked, and a unit converter (P7) that runs on the server. *@
 @using System.Globalization
 @model ProductPageViewModel
 @{
@@ -6,6 +6,7 @@
     ViewData["Title"] = product.Name;
     var allUnits = product.Skus.SelectMany(s => s.Units.Select(u => u.Uom)).Distinct().ToList();
     string Number(decimal value) => Platform.Shared.Common.Quantity.Normalise(value).ToString(CultureInfo.InvariantCulture);
+    var stockRows = Model.StockRows.ToList();
 }
 
 <div class="page-header">
@@ -28,19 +29,28 @@
     </div>
 </div>
 
+<div class="notice">
+    <icon name="@Icons.Info" />
+    <p><strong>Internal catalogue.</strong> Only your staff see this page. Stock below is what your warehouses hold right now; a product is listed here whether or not it is in stock.</p>
+</div>
+
 <section class="card data-card">
     <div class="card__header">
         <h2 class="card__title"><icon name="@Icons.Package" class="icon--sm" /> Variants</h2>
     </div>
     <div class="data-card__scroll">
-        <table class="table data-table">
+        <table class="table data-table data-table--wide">
             <thead>
                 <tr>
                     <th>SKU code</th>
                     <th>Variant</th>
-                    <th>Stocked in</th>
+                    <th>Base unit</th>
                     <th>Its own conversions</th>
                     <th>Can be expressed in</th>
+                    @if (Model.Stock is not null)
+                    {
+                        <th class="data-table__num">On hand</th>
+                    }
                     <th>Status</th>
                 </tr>
             </thead>
@@ -62,6 +72,15 @@
                             }
                         </td>
                         <td><partial name="_Chips" model="sku.Units.Select(u => u.Uom).ToList()" /></td>
+                        @if (Model.Stock is not null)
+                        {
+                            decimal onHand = Model.Stock.TryGetValue(sku.Id, out var skuStock) ? skuStock.TotalOnHand : 0;
+                            <td class="data-table__num">
+                                <a asp-controller="Stock" asp-action="Sku" asp-route-id="@sku.Id" title="Stock and movements of @sku.Code">
+                                    <span class="qty@(onHand == 0 ? " qty--zero" : string.Empty)">@onHand.ToQuantityText()</span> <span class="qty__uom">@sku.BaseUom</span>
+                                </a>
+                            </td>
+                        }
                         <td><partial name="_StatusBadge" model="sku.IsActive" /></td>
                     </tr>
                 }
@@ -69,6 +88,69 @@
         </table>
     </div>
 </section>
+
+@if (Model.Stock is not null)
+{
+    <section class="card data-card" aria-labelledby="stock-title">
+        <div class="card__header">
+            <div>
+                <h2 id="stock-title" class="card__title"><icon name="@Icons.Warehouse" class="icon--sm" /> Where it is stocked</h2>
+                <p class="card__subtitle">Every variant in every warehouse you can see, in its base unit.</p>
+            </div>
+        </div>
+        @if (stockRows.Count == 0)
+        {
+            <div class="empty-state">
+                <span class="empty-state__icon"><icon name="@Icons.Inbox" /></span>
+                <h2 class="empty-state__title">No stock in any warehouse yet</h2>
+                <p class="empty-state__text">Stock appears here once goods are received, transferred in, or loaded as opening stock.</p>
+                @if (Model.CanReceive || Model.CanLoadOpening)
+                {
+                    <div class="empty-state__actions">
+                        @if (Model.CanReceive)
+                        {
+                            <a asp-controller="Receipts" asp-action="Create" class="btn btn-primary"><icon name="@Icons.Truck" /> Receive goods</a>
+                        }
+                        @if (Model.CanLoadOpening)
+                        {
+                            <a asp-controller="Stock" asp-action="Opening" class="btn btn-secondary"><icon name="@Icons.Upload" /> Load opening stock</a>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="data-card__scroll">
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th>Warehouse</th>
+                            <th>SKU</th>
+                            <th class="data-table__num">On hand</th>
+                            <th class="data-table__num">Reserved</th>
+                            <th class="data-table__num">Available</th>
+                            <th>Last movement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in stockRows)
+                        {
+                            <tr>
+                                <td><a asp-controller="Stock" asp-action="Index" asp-route-warehouseId="@row.WarehouseId"><span class="code-tag">@row.WarehouseCode</span></a></td>
+                                <td><a asp-controller="Stock" asp-action="Sku" asp-route-id="@row.SkuId"><span class="code-tag">@row.SkuCode</span></a></td>
+                                <td class="data-table__num"><span class="qty@(row.OnHand == 0 ? " qty--zero" : string.Empty)">@row.OnHand.ToQuantityText()</span> <span class="qty__uom">@row.Uom</span></td>
+                                <td class="data-table__num data-table__muted">@row.Reserved.ToQuantityText()</td>
+                                <td class="data-table__num">@row.Available.ToQuantityText() <span class="qty__uom">@row.Uom</span></td>
+                                <td class="data-table__muted" title="@row.LastMovedAt.ToIstString()">@(row.LastMovedAt is { } at ? at.ToIstDateString() : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
 
 @if (product.Skus.Count > 0)
 {

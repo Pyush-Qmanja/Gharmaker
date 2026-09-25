@@ -15,17 +15,33 @@ using Platform.Shared.Entities.Inventory;
 namespace Platform.Api.Services.Identity;
 
 /// <summary>
+/// Ends a user's open sessions (sign out everywhere).
+/// </summary>
+public interface IUserSessionService
+{
+    /// <summary>
+    /// Ends every session the user has open now; they can sign in again at once.
+    /// </summary>
+    /// <param name="id">User id.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>A task that completes once saved.</returns>
+    Task EndSessionsAsync(Guid id, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// CRUD for users. Keeps two records in step: the Firebase Authentication
 /// account (credentials, sign-in enabled) and the platform user in Firestore
 /// (profile, organisation, roles, scopes).
 /// </summary>
-public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, UpdateUserRequest>
+public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, UpdateUserRequest>, IUserSessionService
 {
     private readonly IRepository<Role> _roles;
     private readonly IIdentityProvider _identityProvider;
     private readonly ICurrentUser _currentUser;
     private readonly IPermissionService _permissions;
     private readonly IRepository<Warehouse> _warehouses;
+    private readonly IAccessHierarchy _hierarchy;
+    private readonly TimeProvider _clock;
 
     /// <summary>
     /// Creates the service.
@@ -38,6 +54,8 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     /// <param name="currentUser">Caller, to stop self-deactivation.</param>
     /// <param name="permissions">Caller's access, to stop granting access they do not hold.</param>
     /// <param name="warehouses">Warehouse data access, to validate warehouse scopes.</param>
+    /// <param name="hierarchy">Role hierarchy rules: who may manage whom.</param>
+    /// <param name="clock">Current time, for ending sessions.</param>
     public UserService(
         IRepository<User> repository,
         IUnitOfWork unitOfWork,
@@ -46,7 +64,9 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
         IIdentityProvider identityProvider,
         ICurrentUser currentUser,
         IPermissionService permissions,
-        IRepository<Warehouse> warehouses)
+        IRepository<Warehouse> warehouses,
+        IAccessHierarchy hierarchy,
+        TimeProvider clock)
         : base(repository, unitOfWork, mapper)
     {
         _roles = roles;
@@ -54,6 +74,8 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
         _currentUser = currentUser;
         _permissions = permissions;
         _warehouses = warehouses;
+        _hierarchy = hierarchy;
+        _clock = clock;
     }
 
     /// <summary>
@@ -66,6 +88,7 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     public override async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
         await EnsureRolesUsableAsync(request.RoleIds, cancellationToken);
+        await _hierarchy.EnsureCanGiveRolesAsync(request.RoleIds, cancellationToken);
         await EnsureAccessChangesAllowedAsync(request, new User(), cancellationToken);
 
         User entity = Mapper.ToEntity(request);
@@ -87,7 +110,9 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
 
     /// <summary>
     /// Updates profile, roles, scopes and status; a status change is mirrored
-    /// to the Firebase account so a deactivated user cannot sign in.
+    /// to the Firebase account so a deactivated user cannot sign in, and ends
+    /// their open sessions at once. Someone other than an administrator may
+    /// change only people below them in the hierarchy, and not their own access.
     /// </summary>
     /// <param name="id">User id.</param>
     /// <param name="request">Validated update request.</param>
@@ -103,10 +128,21 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
             EnsureNotSelf(id);
         }
 
+        await EnsureCanChangeAsync(entity, request, cancellationToken);
         await EnsureRolesUsableAsync(request.RoleIds.Except(entity.RoleIds), cancellationToken);
+        await _hierarchy.EnsureCanGiveRolesAsync(RoleChanges(entity.RoleIds, request.RoleIds), cancellationToken);
         await EnsureAccessChangesAllowedAsync(request, entity, cancellationToken);
+        await _hierarchy.EnsureAdministratorRemainsAsync(
+            entity,
+            request.IsActive && await _hierarchy.IncludesAdministratorAsync(request.RoleIds, cancellationToken),
+            cancellationToken);
 
         Mapper.Apply(request, entity);
+        if (wasActive && !entity.IsActive)
+        {
+            entity.SessionsEndedAt = Now;
+        }
+
         Repository.Update(entity);
         await UnitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -119,7 +155,9 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     }
 
     /// <summary>
-    /// Deactivates the user and disables their Firebase account.
+    /// Deactivates the user, ends their open sessions and disables their
+    /// Firebase account. Only for someone below the caller in the hierarchy,
+    /// and never the last active administrator.
     /// </summary>
     /// <param name="id">User id.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
@@ -128,9 +166,35 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     {
         EnsureNotSelf(id);
         User entity = await LoadAsync(id, cancellationToken);
+        await EnsureCanManageAsync(entity, cancellationToken);
+        await _hierarchy.EnsureAdministratorRemainsAsync(entity, keepsAdministrator: false, cancellationToken);
 
-        await base.DeleteAsync(id, cancellationToken);
+        entity.IsActive = false;
+        entity.SessionsEndedAt = Now;
+        Repository.Update(entity);
+        await UnitOfWork.SaveChangesAsync(cancellationToken);
         await _identityProvider.SetDisabledAsync(entity.AuthUid, disabled: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Signs a user out on every device now. They can sign in again at once;
+    /// use it after a lost phone, a shared computer or a suspicious sign-in.
+    /// Allowed for oneself, or for someone below the caller in the hierarchy.
+    /// </summary>
+    /// <param name="id">User id.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>A task that completes once saved.</returns>
+    public async Task EndSessionsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        User entity = await LoadAsync(id, cancellationToken);
+        if (!IsSelf(id))
+        {
+            await EnsureCanManageAsync(entity, cancellationToken);
+        }
+
+        entity.SessionsEndedAt = Now;
+        Repository.Update(entity);
+        await UnitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -358,13 +422,106 @@ public sealed class UserService : CrudService<User, UserDto, CreateUserRequest, 
     }
 
     /// <summary>
+    /// Checks who may change this user: an administrator may change anyone; others
+    /// may change only people below them, and on their own record only the profile
+    /// (never their own roles, places or feature access).
+    /// </summary>
+    /// <param name="current">The user as stored.</param>
+    /// <param name="request">Requested fields.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>A task that completes when allowed.</returns>
+    /// <exception cref="ForbiddenException">The change is not the caller's to make.</exception>
+    private async Task EnsureCanChangeAsync(User current, IUserFields request, CancellationToken cancellationToken)
+    {
+        if (!IsSelf(current.Id))
+        {
+            await EnsureCanManageAsync(current, cancellationToken);
+            return;
+        }
+
+        if (await _hierarchy.IsAdministratorAsync(cancellationToken))
+        {
+            return;
+        }
+
+        UserDto before = Mapper.ToDto(current);
+        bool accessChanged =
+            !request.RoleIds.ToHashSet().SetEquals(before.RoleIds)
+            || !request.Scopes.Select(s => s.ToString()).ToHashSet().SetEquals(before.Scopes.Select(s => s.ToString()))
+            || !Describe(UserFieldsNormaliser.Normalise(request.Access)).SetEquals(Describe(UserFieldsNormaliser.Normalise(before.Access)));
+        if (accessChanged)
+        {
+            throw new ForbiddenException("You cannot change your own roles or access. Ask someone above you.");
+        }
+    }
+
+    /// <summary>
+    /// Checks the caller may manage an existing user: every role they hold is
+    /// below the caller's, and the caller holds every feature given to them
+    /// directly, so nobody can edit or deactivate a peer or a superior.
+    /// </summary>
+    /// <param name="target">User as stored.</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>A task that completes when allowed.</returns>
+    /// <exception cref="ForbiddenException">The user is not below the caller.</exception>
+    private async Task EnsureCanManageAsync(User target, CancellationToken cancellationToken)
+    {
+        await _hierarchy.EnsureCanManageUserAsync(target, cancellationToken);
+        if (await _hierarchy.IsAdministratorAsync(cancellationToken))
+        {
+            return;
+        }
+
+        HashSet<AccessGrant> grants = ExpandAccess(target.Access.Select(a => (a.Feature, a.Level, a.Scopes.Select(s => (s.ScopeType, s.ScopeId)))));
+        foreach (AccessGrant grant in grants)
+        {
+            if (!await CallerHoldsAsync(grant, cancellationToken))
+            {
+                throw new ForbiddenException(AccessHierarchy.UserNotBelowMessage);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Roles given or taken away by an update.
+    /// </summary>
+    /// <param name="before">Roles held now.</param>
+    /// <param name="after">Roles requested.</param>
+    /// <returns>The roles that change hands.</returns>
+    private static IEnumerable<Guid> RoleChanges(IEnumerable<Guid> before, IEnumerable<Guid> after)
+    {
+        var old = before.ToHashSet();
+        var wanted = after.ToHashSet();
+        return wanted.Except(old).Concat(old.Except(wanted));
+    }
+
+    /// <summary>
+    /// Flattens feature access rows into comparable text, one entry per feature, level and place.
+    /// </summary>
+    /// <param name="rows">Feature access rows.</param>
+    /// <returns>The entries.</returns>
+    private static HashSet<string> Describe(IEnumerable<FeatureAccessDto> rows) =>
+        rows.SelectMany(a => a.Scopes.Select(s => s.ToString()).DefaultIfEmpty(string.Empty).Select(s => $"{a.Feature}|{a.Level}|{s}"))
+            .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether a user id is the caller's own.
+    /// </summary>
+    /// <param name="id">User id.</param>
+    /// <returns>True for the caller.</returns>
+    private bool IsSelf(Guid id) => _currentUser.UserId == id;
+
+    /// <summary>Current UTC time.</summary>
+    private DateTime Now => _clock.GetUtcNow().UtcDateTime;
+
+    /// <summary>
     /// Stops a user from deactivating themselves and locking the organisation out.
     /// </summary>
     /// <param name="id">User being deactivated.</param>
     /// <exception cref="BusinessRuleException">The caller is deactivating themselves.</exception>
     private void EnsureNotSelf(Guid id)
     {
-        if (_currentUser.UserId == id)
+        if (IsSelf(id))
         {
             throw new BusinessRuleException("You cannot deactivate your own account.");
         }

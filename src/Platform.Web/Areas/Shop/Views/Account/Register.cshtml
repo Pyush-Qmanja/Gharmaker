@@ -1,0 +1,23 @@
+@* Create a store account: name, email, password, and optionally mobile and company. *@
+@model ShopRegisterRequest
+@{
+    ViewData["Title"] = "Create an account";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="auth-card card">
+    <h1 class="auth-card__title">Create an account</h1>
+    <p class="auth-card__lead">Order for your home or your sites. Contractors: add your company to get a business invoice.</p>
+    <form asp-action="Register" asp-route-returnUrl="@returnUrl" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+        <form-field asp-for="Name" label="Full name" />
+        <form-field asp-for="Email" />
+        <form-field asp-for="Password" hint="At least 8 characters." />
+        <div class="form-grid">
+            <phone-field asp-for="Phone" label="Mobile (optional)" />
+            <form-field asp-for="CompanyName" label="Company (optional)" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg auth-card__submit">Create account</button>
+    </form>
+    <p class="auth-card__alt">Already have an account? <a asp-action="Login" asp-route-returnUrl="@returnUrl">Sign in</a></p>
+</div>

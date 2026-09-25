@@ -1,0 +1,50 @@
+@* Price list rows for the shared CrudIndex page, each with a link to its prices. *@
+@using Platform.Shared.Dtos.Pricing
+@using Platform.Shared.Entities.Pricing
+@model IReadOnlyList<PriceListDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Price list</th>
+            <th>Applies to</th>
+            <th>Status</th>
+            <th>Prices</th>
+            <th>Last updated</th>
+            <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var list in Model)
+        {
+            <tr>
+                <td>
+                    <div class="identity">
+                        <span class="icon-tile icon-tile--sm icon-tile--indian-rupee"><icon name="@Icons.Rupee" /></span>
+                        <span class="identity__text">
+                            <a asp-action="Prices" asp-route-id="@list.Id" class="identity__primary">@list.Name</a>
+                            <span class="identity__secondary"><span class="code-tag">@list.Code</span></span>
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    @switch (list.Type)
+                    {
+                        case PriceListType.Retail:
+                            <span class="chip chip--primary">Everyone (retail)</span>
+                            break;
+                        case PriceListType.Tier:
+                            <span class="chip">Customers on this tier</span>
+                            break;
+                        default:
+                            <span class="chip">Contract · @(list.CustomerName ?? "customer")</span>
+                            break;
+                    }
+                </td>
+                <td><partial name="_StatusBadge" model="list.IsActive" /></td>
+                <td><a asp-action="Prices" asp-route-id="@list.Id" class="link-action">Open prices <icon name="@Icons.ArrowRight" class="icon--sm" /></a></td>
+                <td class="data-table__muted" title="@((list.UpdatedAt ?? list.CreatedAt).ToIstString())">@((list.UpdatedAt ?? list.CreatedAt).ToIstDateString())</td>
+                <partial name="_RowActions" model="list.Id" />
+            </tr>
+        }
+    </tbody>
+</table>

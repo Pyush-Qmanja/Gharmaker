@@ -1,0 +1,151 @@
+@* Product page: every variant with its price (excl. GST, bulk rates), GST rate, availability and delivery date for the visitor's PIN code, and add-to-cart in any unit. *@
+@using System.Globalization
+@model ShopProductViewModel
+@{
+    var product = Model.Product;
+    ViewData["Title"] = product.Name;
+    string here = Context.Request.Path.ToString();
+}
+
+<nav class="shop-crumbs" aria-label="Breadcrumb">
+    <a asp-controller="Home" asp-action="Index">Home</a>
+    @foreach (var crumb in product.Breadcrumb)
+    {
+        <icon name="@Icons.ChevronRight" class="icon--sm" />
+        <a asp-controller="Products" asp-action="Index" asp-route-categoryId="@crumb.Id">@crumb.Name</a>
+    }
+    <icon name="@Icons.ChevronRight" class="icon--sm" />
+    <span>@product.Name</span>
+</nav>
+
+<div class="product-page">
+    <div class="product-page__media">
+        <div class="product-page__visual">
+            <span class="product-card__monogram product-card__monogram--lg">@product.BrandName.Monogram()</span>
+        </div>
+        <ul class="product-page__promises">
+            <li><icon name="@Icons.ShieldCheck" /> Genuine @product.BrandName product</li>
+            <li><icon name="@Icons.Receipt" /> GST invoice · HSN @product.HsnCode</li>
+            <li><icon name="@Icons.Truck" /> Delivered to your site</li>
+        </ul>
+    </div>
+
+    <div class="product-page__info">
+        <p class="product-page__brand">@product.BrandName</p>
+        <h1 class="product-page__title">@product.Name</h1>
+
+        <div class="delivery-box @(Model.Pincode is null ? "delivery-box--ask" : Model.IsPincodeUnserved ? "delivery-box--none" : string.Empty)">
+            <icon name="@Icons.MapPin" />
+            @if (Model.Pincode is null)
+            {
+                <div class="delivery-box__text">
+                    <strong>Where should we deliver?</strong>
+                    <span>Enter your PIN code to see stock and delivery dates.</span>
+                </div>
+            }
+            else if (Model.IsPincodeUnserved)
+            {
+                <div class="delivery-box__text">
+                    <strong>We don't deliver to PIN code @Model.Pincode yet</strong>
+                    <span>Try your site's PIN code or a nearby one.</span>
+                </div>
+            }
+            else
+            {
+                <div class="delivery-box__text">
+                    <strong>Delivering to @Model.Pincode</strong>
+                    <span>Availability and dates below are for this PIN code.</span>
+                </div>
+            }
+            <form asp-controller="Home" asp-action="Pincode" method="post" class="shop-pin__row delivery-box__form">
+                <input type="hidden" name="returnUrl" value="@here" />
+                <input name="pincode" class="form-control" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}" value="@Model.Pincode"
+                       placeholder="PIN code" aria-label="Delivery PIN code" required />
+                <button type="submit" class="btn btn-secondary">@(Model.Pincode is null ? "Check" : "Change")</button>
+            </form>
+        </div>
+
+        <h2 class="product-page__subtitle">Choose a size</h2>
+        <div class="variant-list">
+            @foreach (var variant in product.Variants)
+            {
+                var price = variant.Price;
+                var status = variant.Availability.Status;
+                bool canAdd = price is not null && status is ShopStockStatus.InStock or ShopStockStatus.CheckPincode;
+                <article class="variant">
+                    <div class="variant__head">
+                        <div>
+                            <h3 class="variant__name">@variant.VariantLabel</h3>
+                            <span class="code-tag">@variant.Code</span>
+                        </div>
+                        <partial name="_StockBadge" model="status" />
+                    </div>
+
+                    @if (price is not null)
+                    {
+                        <div class="variant__price">
+                            <span class="variant__amount">@price.Slabs[0].UnitPrice.ToUnitPrice()</span>
+                            <span class="variant__unit">per @price.Uom · excl. @price.TaxRatePercent.ToPercent() GST</span>
+                        </div>
+                        @if (price.Slabs.Count > 1)
+                        {
+                            <ul class="variant__slabs" aria-label="Bulk prices">
+                                @foreach (var slab in price.Slabs.Skip(1))
+                                {
+                                    <li><strong>@slab.UnitPrice.ToUnitPrice()</strong> per @price.Uom when you buy @slab.MinQuantity.ToQuantityText()+ @price.Uom</li>
+                                }
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <p class="variant__price variant__price--none">Price on request — call us for a quote.</p>
+                    }
+
+                    <p class="variant__stock">
+                        @if (variant.Availability.Quantity is { } available && status == ShopStockStatus.InStock)
+                        {
+                            <span><icon name="@Icons.Layers" class="icon--sm" /> @available.ToQuantityText() @variant.Availability.Uom available</span>
+                        }
+                        @if (variant.Delivery is { } delivery)
+                        {
+                            <span><icon name="@Icons.Calendar" class="icon--sm" /> Delivery by <strong>@delivery.ToWindowText()</strong></span>
+                        }
+                        @if (status == ShopStockStatus.NotDeliverable)
+                        {
+                            <span>We don't deliver to @Model.Pincode yet.</span>
+                        }
+                        else if (status == ShopStockStatus.OutOfStock)
+                        {
+                            <span>None available for @Model.Pincode right now.</span>
+                        }
+                    </p>
+
+                    @if (canAdd)
+                    {
+                        <form asp-controller="Cart" asp-action="Add" method="post" class="variant__add">
+                            <input type="hidden" name="SkuId" value="@variant.SkuId" />
+                            <input type="hidden" name="returnUrl" value="@here" />
+                            <label class="visually-hidden" for="qty-@variant.SkuId">Quantity</label>
+                            <input id="qty-@variant.SkuId" type="number" name="Quantity" min="0" step="any" value="1" class="form-control variant__qty" required />
+                            <label class="visually-hidden" for="uom-@variant.SkuId">Unit</label>
+                            <select id="uom-@variant.SkuId" name="Uom" class="form-select variant__uom">
+                                @foreach (var unit in variant.Units)
+                                {
+                                    <option value="@unit" selected="@(unit == price!.Uom)">@unit</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-primary"><icon name="@Icons.Cart" /> Add to cart</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary variant__disabled" disabled>
+                            @(price is null ? "Not sold online" : status == ShopStockStatus.OutOfStock ? "Out of stock" : "Not delivered here")
+                        </button>
+                    }
+                </article>
+            }
+        </div>
+    </div>
+</div>

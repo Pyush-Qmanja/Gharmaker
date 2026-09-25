@@ -5,6 +5,7 @@ using Platform.Api.Services.Catalog.Import;
 using Platform.Shared.Constants;
 using Platform.Shared.Entities.Catalog;
 using Platform.Shared.Entities.Identity;
+using Platform.Shared.Entities.Pricing;
 using Platform.Shared.Units;
 
 namespace Platform.Api.Firestore;
@@ -26,6 +27,12 @@ public static class DevelopmentSeeder
 
     /// <summary>Display name of the seeded admin user.</summary>
     private const string AdminUserName = "Administrator";
+
+    /// <summary>Name of the seeded retail price list.</summary>
+    private const string RetailListName = "Retail";
+
+    /// <summary>Code of the seeded retail price list.</summary>
+    private const string RetailListCode = "RETAIL";
 
     /// <summary>
     /// Pre-Firebase-Auth field that held a password hash; removed when found.
@@ -71,6 +78,7 @@ public static class DevelopmentSeeder
         }
 
         await EnsureStandardUomsAsync(context, admin.OrgId, now);
+        await EnsureRetailPriceListAsync(context, admin.OrgId, now);
         await LoadStarterCatalogueAsync(scope.ServiceProvider, context, admin);
     }
 
@@ -103,6 +111,31 @@ public static class DevelopmentSeeder
         {
             await batch.CommitAsync();
         }
+    }
+
+    /// <summary>
+    /// Creates the retail price list if the organisation has none. Every store
+    /// needs exactly one: customers without a tier or contract buy from it.
+    /// Prices and GST rates are not seeded — they are the business's to set.
+    /// </summary>
+    /// <param name="context">Firestore access.</param>
+    /// <param name="orgId">Organisation to seed.</param>
+    /// <param name="now">Creation time.</param>
+    /// <returns>A task that completes when the list exists.</returns>
+    private static async Task EnsureRetailPriceListAsync(IFirestoreContext context, Guid orgId, DateTime now)
+    {
+        QuerySnapshot retail = await context.Collection<PriceList>()
+            .WhereEqualTo(FirestoreNaming.Field(nameof(PriceList.OrgId)), DocumentConverter.ToFirestoreValue(orgId))
+            .WhereEqualTo(FirestoreNaming.Field(nameof(PriceList.Type)), DocumentConverter.ToFirestoreValue(PriceListType.Retail))
+            .Limit(1)
+            .GetSnapshotAsync();
+        if (retail.Count > 0)
+        {
+            return;
+        }
+
+        var list = new PriceList { OrgId = orgId, Name = RetailListName, Code = RetailListCode, Type = PriceListType.Retail, CreatedAt = now };
+        await context.Collection<PriceList>().Document(list.Id.ToString()).CreateAsync(DocumentConverter.ToDocument(list));
     }
 
     /// <summary>
@@ -172,8 +205,10 @@ public static class DevelopmentSeeder
     }
 
     /// <summary>
-    /// Finds the organisation's administrator role, creating it if missing and
-    /// topping it up with any capability added since it was created.
+    /// Finds the organisation's administrator role (the system top role, or on
+    /// older data the role with the administrator name), creating it if missing,
+    /// and keeps it marked as the system role, active, at the top of the
+    /// hierarchy, and holding every capability.
     /// </summary>
     /// <param name="context">Database entry point.</param>
     /// <param name="orgId">Organisation id.</param>
@@ -181,11 +216,13 @@ public static class DevelopmentSeeder
     /// <returns>The role.</returns>
     private static async Task<Role> EnsureAdminRoleAsync(IFirestoreContext context, Guid orgId, DateTime now)
     {
-        QuerySnapshot found = await context.Collection<Role>()
-            .WhereEqualTo(FirestoreNaming.Field(nameof(Role.OrgId)), DocumentConverter.ToFirestoreValue(orgId))
-            .WhereEqualTo(FirestoreNaming.Field(nameof(Role.Name)), AdminRoleName)
-            .Limit(1)
-            .GetSnapshotAsync();
+        Query roles = context.Collection<Role>()
+            .WhereEqualTo(FirestoreNaming.Field(nameof(Role.OrgId)), DocumentConverter.ToFirestoreValue(orgId));
+        QuerySnapshot found = await roles.WhereEqualTo(FirestoreNaming.Field(nameof(Role.IsSystem)), true).Limit(1).GetSnapshotAsync();
+        if (found.Count == 0)
+        {
+            found = await roles.WhereEqualTo(FirestoreNaming.Field(nameof(Role.Name)), AdminRoleName).Limit(1).GetSnapshotAsync();
+        }
 
         if (found.Count == 0)
         {
@@ -196,12 +233,14 @@ public static class DevelopmentSeeder
 
         Role role = DocumentConverter.FromDocument<Role>(found.Documents[0]);
         List<string> all = Capabilities.All.Select(c => c.Code).ToList();
-        if (!all.All(role.Capabilities.Contains) || !role.IsActive)
+        if (!all.All(role.Capabilities.Contains) || !role.IsActive || !role.IsSystem || role.ParentId is not null)
         {
             await found.Documents[0].Reference.UpdateAsync(new Dictionary<string, object?>
             {
                 [FirestoreNaming.Field(nameof(Role.Capabilities))] = DocumentConverter.ToFirestoreValue(all),
                 [FirestoreNaming.Field(nameof(Role.IsActive))] = true,
+                [FirestoreNaming.Field(nameof(Role.IsSystem))] = true,
+                [FirestoreNaming.Field(nameof(Role.ParentId))] = null,
                 [FirestoreNaming.Field(nameof(Role.UpdatedAt))] = DocumentConverter.ToFirestoreValue(now),
             });
         }
@@ -253,6 +292,7 @@ public static class DevelopmentSeeder
     {
         OrgId = orgId,
         Name = AdminRoleName,
+        IsSystem = true,
         Capabilities = Capabilities.All.Select(c => c.Code).ToList(),
         CreatedAt = now,
     };

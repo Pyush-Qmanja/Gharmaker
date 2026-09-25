@@ -1,0 +1,96 @@
+@* Product listing: category menu and brand filter on the left, product tiles on the right, with paging. *@
+@model ShopListingViewModel
+@{
+    ViewData["Title"] = Model.Heading;
+    var products = (IReadOnlyList<ShopProductCardDto>)Model.Products.Items;
+}
+
+<div class="shop-page-head">
+    <nav class="shop-crumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <icon name="@Icons.ChevronRight" class="icon--sm" />
+        <span>@Model.Heading</span>
+    </nav>
+    <h1 class="shop-page-head__title">@Model.Heading</h1>
+    <p class="shop-page-head__meta">
+        @Model.Products.TotalCount.Counted("product")
+        @if (Model.Pincode is not null && !Model.IsPincodeUnserved)
+        {
+            <span> · stock and delivery shown for PIN code <strong>@Model.Pincode</strong></span>
+        }
+        else if (Model.Pincode is null)
+        {
+            <span> · enter your PIN code to see what can be delivered</span>
+        }
+    </p>
+</div>
+
+@if (Model.IsPincodeUnserved)
+{
+    <div class="delivery-box delivery-box--none">
+        <icon name="@Icons.MapPin" />
+        <div class="delivery-box__text">
+            <strong>We don't deliver to PIN code @Model.Pincode yet</strong>
+            <span>You can still browse prices. Try your site's PIN code or a nearby one.</span>
+        </div>
+        <form asp-controller="Home" asp-action="Pincode" method="post" class="shop-pin__row delivery-box__form">
+            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+            <input name="pincode" class="form-control" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}"
+                   placeholder="PIN code" aria-label="Delivery PIN code" required />
+            <button type="submit" class="btn btn-secondary">Change</button>
+        </form>
+    </div>
+}
+
+<div class="shop-listing">
+    <aside class="shop-filters" aria-label="Filters">
+        <div class="shop-filters__group">
+            <p class="shop-filters__title">Categories</p>
+            <a asp-action="Index" asp-route-brandId="@Model.BrandId" class="shop-filters__link @(Model.CategoryId is null ? "shop-filters__link--active" : string.Empty)">All categories</a>
+            @foreach (var category in Model.Categories)
+            {
+                <a asp-action="Index" asp-route-categoryId="@category.Id" asp-route-brandId="@Model.BrandId"
+                   class="shop-filters__link @(category.Id == Model.CategoryId ? "shop-filters__link--active" : string.Empty)">@category.Name</a>
+                @foreach (var child in Model.IsOpen(category) ? category.Children : new List<ShopCategoryDto>())
+                {
+                    <a asp-action="Index" asp-route-categoryId="@child.Id" asp-route-brandId="@Model.BrandId"
+                       class="shop-filters__link shop-filters__link--child @(child.Id == Model.CategoryId ? "shop-filters__link--active" : string.Empty)">@child.Name</a>
+                }
+            }
+        </div>
+        <div class="shop-filters__group">
+            <p class="shop-filters__title">Brands</p>
+            <a asp-action="Index" asp-route-categoryId="@Model.CategoryId" class="shop-filters__link @(Model.BrandId is null ? "shop-filters__link--active" : string.Empty)">All brands</a>
+            @foreach (var brand in Model.Brands)
+            {
+                <a asp-action="Index" asp-route-categoryId="@Model.CategoryId" asp-route-brandId="@brand.Id"
+                   class="shop-filters__link @(brand.Id == Model.BrandId ? "shop-filters__link--active" : string.Empty)">@brand.Name</a>
+            }
+        </div>
+    </aside>
+
+    <section class="shop-listing__results" aria-label="Products">
+        @if (products.Count == 0)
+        {
+            <div class="card empty-state">
+                <span class="empty-state__icon"><icon name="@Icons.Search" /></span>
+                <h2 class="empty-state__title">Nothing found</h2>
+                <p class="empty-state__text">Try fewer or different words, or browse a category.</p>
+                <div class="empty-state__actions"><a asp-action="Index" class="btn btn-secondary">See all products</a></div>
+            </div>
+        }
+        else
+        {
+            <div class="product-grid">
+                @foreach (var product in products)
+                {
+                    <partial name="_ProductCard" model="product" />
+                }
+            </div>
+            @if (Model.Products.TotalPages > 1)
+            {
+                <div class="card shop-pager"><partial name="_Pagination" model="Model.Products" /></div>
+            }
+        }
+    </section>
+</div>

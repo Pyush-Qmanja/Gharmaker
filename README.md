@@ -4,6 +4,9 @@ Two halves on one platform: materials supply (warehouse-wise stock, brand-wise
 catalogue, customer storefront) and construction site operations (level-wise
 logins, teams, tasks, attendance, wages, wallets).
 
+**How to use it:** the SOP in [`docs/sop/`](docs/sop/README.md) covers every screen,
+step by step, with real-life scenarios.
+
 ## Run it locally
 
 Prerequisites: .NET 8 SDK and a Firebase project with a Firestore database and
@@ -82,6 +85,16 @@ src/
 - Catalogue: brands, units with conversions, categories and products, Excel import.
 - Warehouses and stock: goods receipts, two-step transfers, adjustments, opening stock
   import, reversals, movement history, and a ledger check that proves every balance.
+- Stock where people look for it: on each product page (per variant and per warehouse)
+  and from each warehouse ("View stock").
+- Selling: price lists (retail, tier, contract) with quantity slabs and dated prices,
+  GST rates by HSN code, delivery areas (PIN codes per warehouse), customers and orders.
+- The online store at `/shop`: browse and search, availability and delivery date for
+  your PIN code, cart in any unit, GST shown as it will be invoiced, checkout that holds
+  stock, my orders and cancel. Customers never see which warehouse serves them.
+
+Tests: `dotnet test` runs the unit tests (GST, slabs, allocation, dates) and the
+storefront opacity tests.
 
 ## Using this repo with Claude Code
 
@@ -102,6 +115,7 @@ docs/
   decisions-pending.md       open questions — close before Phase 0 ends
   adr/0001-database.md       PostgreSQL decision (superseded)
   adr/0002-firestore.md       Firestore only — how conventions map, accepted costs
+  sop/                       user manual: every screen, scenarios, troubleshooting
 firebase.json, firestore.rules, firestore.indexes.json
 ```
 

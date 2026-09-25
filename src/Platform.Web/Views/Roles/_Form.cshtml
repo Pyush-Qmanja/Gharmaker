@@ -1,11 +1,28 @@
-@* Role form sections for the shared CrudForm page: name, then the feature access grid built from the shared feature catalogue. *@
+@* Role form sections for the shared CrudForm page: name and place in the hierarchy, then the feature access grid built from the shared feature catalogue. *@
+@using Microsoft.AspNetCore.Mvc.Rendering
 @using Platform.Shared.Dtos.Identity
 @model IRoleFields
+@{
+    var parentOptions = ViewData[ViewDataKeys.ParentOptions] as IReadOnlyList<SelectListItem> ?? Array.Empty<SelectListItem>();
+    bool isSystem = ViewData[ViewDataKeys.IsSystemRole] is true;
+}
 
-<form-panel title="Role" description="A short name people will recognise, e.g. Store keeper or Site supervisor.">
+@if (isSystem)
+{
+    <p class="notice notice--warning" role="status">
+        This is the built-in Administrator role: the top of the hierarchy. It always has every feature and cannot be changed or deactivated.
+    </p>
+}
+
+<form-panel title="Role" description="A short name people will recognise, e.g. Store keeper or Site supervisor, and the role it reports to. Only roles above it can change it or give it to people.">
     <form-field asp-for="Name" label="Role name" />
+    @if (!isSystem)
+    {
+        <form-field asp-for="ParentId" label="Reports to" items="parentOptions"
+                    hint="People holding this role, or a role above it, can manage it. You can place it under your own roles or roles below them." />
+    }
 </form-panel>
 
-<form-panel title="Feature access" stacked="true" description="What anyone holding this role can do. Manage includes View. Where it applies is chosen per user, when the role is given.">
+<form-panel title="Feature access" stacked="true" description="What anyone holding this role can do. Manage includes View. Where it applies is chosen per user, when the role is given. You can only give features you hold yourself.">
     <partial name="_AccessGrid" model="AccessGridModel.ForRole(Model)" />
 </form-panel>

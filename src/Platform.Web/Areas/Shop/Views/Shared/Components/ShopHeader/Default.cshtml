@@ -1,0 +1,87 @@
+@* Store header: brand, product search, delivery PIN code picker, account menu, cart with its count, and the category menu. *@
+@model ShopHeaderViewModel
+@{
+    string here = Context.Request.Path + Context.Request.QueryString;
+}
+<header class="shop-header">
+    <div class="shop-container shop-header__bar">
+        <a class="shop-brand" asp-area="Shop" asp-controller="Home" asp-action="Index" aria-label="@Branding.StoreName home">
+            <span class="brand-mark"><icon name="@Icons.Logo" /></span>
+            <span class="shop-brand__text">
+                <span class="shop-brand__name">@Branding.ProductName</span>
+                <span class="shop-brand__tag">Store</span>
+            </span>
+        </a>
+
+        <form class="shop-search" asp-area="Shop" asp-controller="Products" asp-action="Index" method="get" role="search">
+            <icon name="@Icons.Search" class="shop-search__icon" />
+            <input type="search" name="search" value="@Model.Search" class="shop-search__input" placeholder="Search cement, TMT bars, blocks, tiles…" aria-label="Search products" />
+            <button type="submit" class="btn btn-primary shop-search__button">Search</button>
+        </form>
+
+        <div class="shop-header__actions">
+            <details class="shop-pin" data-close-outside>
+                <summary class="shop-pin__toggle">
+                    <icon name="@Icons.MapPin" />
+                    <span class="shop-pin__text">
+                        <span class="shop-pin__label">Deliver to</span>
+                        <strong class="shop-pin__value">@(Model.Pincode ?? "Enter PIN code")</strong>
+                    </span>
+                </summary>
+                <form class="shop-pin__panel" asp-area="Shop" asp-controller="Home" asp-action="Pincode" method="post">
+                    <input type="hidden" name="returnUrl" value="@here" />
+                    <label class="form-field__label" for="header-pincode">Delivery PIN code</label>
+                    <p class="shop-pin__help">We show what can be delivered there, and when.</p>
+                    <div class="shop-pin__row">
+                        <input id="header-pincode" name="pincode" class="form-control" inputmode="numeric" maxlength="6" pattern="[1-9][0-9]{5}"
+                               value="@Model.Pincode" placeholder="e.g. 411001" required />
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                </form>
+            </details>
+
+            @if (Model.CustomerName is { } name)
+            {
+                <details class="shop-account" data-close-outside>
+                    <summary class="shop-account__toggle">
+                        <span class="avatar">@name.Initials()</span>
+                        <span class="shop-account__name">@name</span>
+                        <icon name="@Icons.ChevronDown" class="icon--sm" />
+                    </summary>
+                    <div class="shop-account__menu">
+                        <a asp-area="Shop" asp-controller="Orders" asp-action="Index"><icon name="@Icons.Receipt" /> My orders</a>
+                        <a asp-area="Shop" asp-controller="Account" asp-action="Profile"><icon name="@Icons.User" /> My details</a>
+                        <form asp-area="Shop" asp-controller="Account" asp-action="Logout" method="post">
+                            <button type="submit"><icon name="@Icons.LogOut" /> Sign out</button>
+                        </form>
+                    </div>
+                </details>
+            }
+            else
+            {
+                <a class="shop-header__link" asp-area="Shop" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@here">
+                    <icon name="@Icons.User" /> <span>Sign in</span>
+                </a>
+            }
+
+            <a class="shop-cart" asp-area="Shop" asp-controller="Cart" asp-action="Index" aria-label="Cart, @Model.CartCount.Counted("item")">
+                <icon name="@Icons.Cart" />
+                <span class="shop-cart__label">Cart</span>
+                @if (Model.CartCount > 0)
+                {
+                    <span class="shop-cart__count">@Model.CartCount</span>
+                }
+            </a>
+        </div>
+    </div>
+
+    <nav class="shop-nav" aria-label="Categories">
+        <div class="shop-container shop-nav__inner">
+            <a asp-area="Shop" asp-controller="Products" asp-action="Index" class="shop-nav__link">All products</a>
+            @foreach (var category in Model.Categories)
+            {
+                <a asp-area="Shop" asp-controller="Products" asp-action="Index" asp-route-categoryId="@category.Id" class="shop-nav__link">@category.Name</a>
+            }
+        </div>
+    </nav>
+</header>

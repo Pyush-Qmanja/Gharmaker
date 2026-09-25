@@ -109,8 +109,11 @@ a.identity__primary:hover {
 }
 
 /* ---------- Page header ---------- */
+/* Title on the left, actions on the right; the actions drop below the title
+   rather than squeezing it when there are many of them. */
 .page-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--space-4);
@@ -118,6 +121,7 @@ a.identity__primary:hover {
 }
 
 .page-header__text {
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -168,6 +172,7 @@ a.identity__primary:hover {
 .page-header__actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: var(--space-2);
 }
 
@@ -611,7 +616,16 @@ a.data-table__primary:hover {
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 0 var(--space-5);
+    gap: var(--space-4) var(--space-5);
+}
+
+/* The grid's own gap spaces its fields; only the grid itself keeps a margin below. */
+.form-grid > .form-field {
+    margin-bottom: 0;
+}
+
+.form-grid:not(:last-child) {
+    margin-bottom: var(--space-4);
 }
 
 .form-field {
@@ -1265,6 +1279,34 @@ a.data-table__primary:hover {
     color: var(--color-tile-violet);
 }
 
+.icon-tile--receipt,
+.icon-tile--shopping-cart {
+    background: var(--color-tile-green-bg);
+    color: var(--color-tile-green);
+}
+
+.icon-tile--user,
+.icon-tile--store {
+    background: var(--color-tile-blue-bg);
+    color: var(--color-tile-blue);
+}
+
+.icon-tile--indian-rupee,
+.icon-tile--percent {
+    background: var(--color-tile-rose-bg);
+    color: var(--color-tile-rose);
+}
+
+.icon-tile--map-pin {
+    background: var(--color-tile-teal-bg);
+    color: var(--color-tile-teal);
+}
+
+.icon-tile--building {
+    background: var(--color-tile-violet-bg);
+    color: var(--color-tile-violet);
+}
+
 /* ---------- Small screens ---------- */
 @media (max-width: 992px) {
     .form-panel {
@@ -1278,6 +1320,10 @@ a.data-table__primary:hover {
     .page-header {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .page-header__actions {
+        justify-content: flex-start;
     }
 
     .page-header__title {
@@ -1338,4 +1384,298 @@ a.data-table__primary:hover {
 
 .notice {
     margin-bottom: var(--space-5);
+}
+
+/* ---------- Inline "go there" link in a table cell ---------- */
+.link-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.link-action .icon {
+    transition: transform var(--transition-fast);
+}
+
+.link-action:hover .icon {
+    transform: translateX(2px);
+}
+
+/* ---------- Wide tables ---------- */
+/* A table with many columns keeps a readable width and scrolls sideways inside
+   its card on small screens, instead of squeezing every cell into a tall column. */
+.data-table--wide {
+    min-width: 960px;
+}
+
+/* ---------- Brand mark (logo tile; admin sidebar and store header) ---------- */
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--color-accent), var(--color-tile-amber));
+    color: var(--color-sidebar);
+}
+
+.brand-mark .icon {
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
+    stroke-width: 2.25;
+}
+
+/* ---------- Facts (label / value pairs on detail pages) ---------- */
+.facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-4) var(--space-6);
+    margin: 0;
+}
+
+.facts__item--wide {
+    grid-column: 1 / -1;
+}
+
+.facts dt {
+    margin-bottom: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.facts dd {
+    margin: 0;
+    color: var(--color-text);
+}
+
+/* ---------- Tabs (status filters on a list card) ---------- */
+.tabs {
+    display: flex;
+    gap: var(--space-1);
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+}
+
+.tabs__item {
+    margin-bottom: -1px;
+    padding: var(--space-3) var(--space-3);
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.tabs__item:hover {
+    color: var(--color-text);
+}
+
+.tabs__item--active,
+.tabs__item--active:hover {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* ---------- Prices: a price in words, the price grid, the slab editor ---------- */
+.price-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0);
+}
+
+.price-summary__main {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.price-summary__slab {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.price-grid__product th {
+    padding-top: var(--space-4);
+    background: var(--color-surface-muted);
+    font-weight: var(--font-weight-regular);
+}
+
+.price-grid__product th > * + * {
+    margin-left: var(--space-2);
+}
+
+.price-grid__name {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+}
+
+.slab-editor {
+    width: 100%;
+    max-width: 560px;
+    margin-top: var(--space-4);
+    border-collapse: separate;
+    border-spacing: 0 var(--space-2);
+}
+
+.slab-editor th {
+    padding-right: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-align: left;
+}
+
+.slab-editor td {
+    padding-right: var(--space-3);
+}
+
+.slab-editor__fixed {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-height);
+    color: var(--color-text-muted);
+}
+
+.chip--warning {
+    background: var(--color-warning-bg);
+    border-color: var(--color-warning-border);
+    color: var(--color-warning);
+}
+
+a.chip--warning:hover {
+    color: var(--color-warning);
+    text-decoration: underline;
+}
+
+/* A card that needs attention before anything else on the page. */
+.card.attention {
+    border-color: var(--color-warning-border);
+    box-shadow: inset 4px 0 0 var(--color-accent);
+}
+
+/* ---------- Totals (taxable value, GST, amount payable) ---------- */
+.totals {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--color-border);
+}
+
+.totals__list {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+    max-width: 360px;
+    margin: 0;
+}
+
+.totals__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.totals__row dt {
+    font-weight: var(--font-weight-regular);
+}
+
+.totals__row dd {
+    margin: 0;
+}
+
+.totals__row--grand {
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.totals__row--grand dt {
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ---------- Small helpers ---------- */
+.inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.inline-actions .form-control {
+    flex: 1 1 280px;
+}
+
+.form-control--mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+}
+
+.form-fieldset {
+    display: contents;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.qty__base {
+    display: block;
+    font-size: var(--font-size-xs);
+}
+
+.btn-lg {
+    min-height: var(--control-height-lg);
+    padding: 0 var(--space-6);
+    font-size: var(--font-size-md);
+}
+
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: var(--space-4);
+    z-index: var(--z-toast);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+}
+
+.skip-link:focus {
+    top: var(--space-2);
+    color: var(--color-primary-contrast);
+}
+
+/* ---------- Phone number: calling code + number ---------- */
+.phone-input {
+    display: flex;
+}
+
+.phone-input__code {
+    flex: 0 0 auto;
+    width: 150px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: var(--color-surface-muted);
+}
+
+.phone-input__number {
+    flex: 1;
+    min-width: 0;
+    margin-left: -1px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.phone-input__code:focus,
+.phone-input__number:focus {
+    position: relative;
+    z-index: 1;
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Catalog;
 using Platform.Shared.Dtos.Common;
+using Platform.Shared.Dtos.Inventory;
 using Platform.Web.Extensions;
 using Platform.Web.Models;
 using Platform.Web.Services.Api;
@@ -22,21 +23,25 @@ public sealed class CatalogController : PlatformControllerBase
     private readonly ICatalogApiClient _catalog;
     private readonly ICrudApiClient<BrandDto, CreateBrandRequest, UpdateBrandRequest> _brands;
     private readonly IUserAccess _access;
+    private readonly IStockApiClient _stock;
 
     /// <summary>
     /// Creates the controller.
     /// </summary>
     /// <param name="catalog">Catalogue API client.</param>
     /// <param name="brands">Brand API client, for the brand filter.</param>
-    /// <param name="access">Current user's capabilities, to show the Import button.</param>
+    /// <param name="access">Current user's capabilities, to show the Import button and stock.</param>
+    /// <param name="stock">Stock API client, for stock on the product page.</param>
     public CatalogController(
         ICatalogApiClient catalog,
         ICrudApiClient<BrandDto, CreateBrandRequest, UpdateBrandRequest> brands,
-        IUserAccess access)
+        IUserAccess access,
+        IStockApiClient stock)
     {
         _catalog = catalog;
         _brands = brands;
         _access = access;
+        _stock = stock;
     }
 
     /// <summary>
@@ -131,7 +136,41 @@ public sealed class CatalogController : PlatformControllerBase
             ConvertTo = to,
             Conversion = conversion,
             ConversionError = conversionError,
+            Stock = await LoadStockAsync(product.Value, cancellationToken),
+            CanReceive = await _access.CanAsync(Capabilities.ReceiptsManage),
+            CanLoadOpening = await _access.CanAsync(Capabilities.StockAdjust),
         });
+    }
+
+    /// <summary>
+    /// Loads each variant's stock in the warehouses the user can see.
+    /// </summary>
+    /// <param name="product">The product whose variants to look up.</param>
+    /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
+    /// <returns>Stock by SKU id, or null when the user may not see stock.</returns>
+    private async Task<IReadOnlyDictionary<Guid, SkuStockDto>?> LoadStockAsync(ProductDetailDto product, CancellationToken cancellationToken)
+    {
+        if (!await _access.CanAsync(Capabilities.StockView))
+        {
+            return null;
+        }
+
+        var stock = new Dictionary<Guid, SkuStockDto>();
+        foreach (var sku in product.Skus)
+        {
+            var result = await _stock.GetSkuStockAsync(sku.Id, cancellationToken);
+            if (result.IsForbidden)
+            {
+                return null;
+            }
+
+            if (result.Value is { } value)
+            {
+                stock[sku.Id] = value;
+            }
+        }
+
+        return stock;
     }
 
     /// <summary>

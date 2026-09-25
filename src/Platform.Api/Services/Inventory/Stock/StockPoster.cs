@@ -121,12 +121,10 @@ public sealed class StockPoster : IStockPoster
             StockDocument document = posting.Document;
 
             // All reads first: the number counter, then every balance touched.
-            string? series = null;
-            DocumentCounter? counter = null;
             if (posting.IsNew)
             {
-                series = $"{posting.Series}-{now.Year.ToString(CultureInfo.InvariantCulture)}";
-                counter = await session.GetAsync<DocumentCounter>(DocumentCounter.IdFor(orgId, series));
+                document.ReferenceNo = await DocumentNumbers.NextAsync(
+                    session, orgId, $"{posting.Series}-{now.Year.ToString(CultureInfo.InvariantCulture)}");
             }
 
             IReadOnlyDictionary<Guid, StockBalance> stored = await session.GetManyAsync<StockBalance>(
@@ -134,18 +132,6 @@ public sealed class StockPoster : IStockPoster
 
             if (posting.IsNew)
             {
-                if (counter is null)
-                {
-                    counter = new DocumentCounter { Id = DocumentCounter.IdFor(orgId, series!), Code = series!, LastValue = 1 };
-                    session.Add(counter);
-                }
-                else
-                {
-                    counter.LastValue++;
-                    session.Update(counter);
-                }
-
-                document.ReferenceNo = $"{series}-{counter.LastValue.ToString("D6", CultureInfo.InvariantCulture)}";
                 session.Add(document);
             }
             else
@@ -174,7 +160,15 @@ public sealed class StockPoster : IStockPoster
 
                 decimal before = balance.OnHand;
                 balance.OnHand = Quantity.Normalise(before + movement.SignedQuantity);
-                if (balance.OnHand < 0)
+
+                // Stock held for customer orders (P4) is promised: an outward move may
+                // use only what is free, and never takes on-hand below zero.
+                if (movement.SignedQuantity < 0 && balance.OnHand < balance.Reserved)
+                {
+                    string held = balance.Reserved > 0 ? $", {Show(balance.Reserved)} held for orders" : string.Empty;
+                    shortages.Add($"{movement.Line.SkuCode} in {movement.WarehouseCode}: {Show(before)} {balance.Uom} on hand{held}, {Show(-movement.SignedQuantity)} needed");
+                }
+                else if (balance.OnHand < 0)
                 {
                     shortages.Add($"{movement.Line.SkuCode} in {movement.WarehouseCode}: {Show(before)} {balance.Uom} on hand, {Show(-movement.SignedQuantity)} needed");
                 }

@@ -14,6 +14,9 @@ public sealed class StockIndexViewModel
     /// <summary>Chosen warehouse.</summary>
     public Guid? WarehouseId { get; init; }
 
+    /// <summary>Warehouses whose stock the user may see, to name the chosen one.</summary>
+    public IReadOnlyList<StockWarehouseDto> Warehouses { get; init; } = Array.Empty<StockWarehouseDto>();
+
     /// <summary>True to hide rows with nothing on hand.</summary>
     public bool InStockOnly { get; init; }
 

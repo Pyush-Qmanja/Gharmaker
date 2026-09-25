@@ -1,10 +1,14 @@
-@* Role rows for the shared CrudIndex page. *@
+@* Role rows for the shared CrudIndex page: where each role sits in the hierarchy, what it grants, and actions only where the signed-in user may use them. *@
 @using Platform.Shared.Dtos.Identity
 @model IReadOnlyList<RoleDto>
+@{
+    var chart = ViewData[ViewDataKeys.RoleChart] as RoleChart;
+}
 <table class="table data-table">
     <thead>
         <tr>
             <th>Role</th>
+            <th>Reports to</th>
             <th>Feature access</th>
             <th>Status</th>
             <th>Last updated</th>
@@ -19,12 +23,33 @@
                     <div class="identity">
                         <span class="icon-tile icon-tile--sm icon-tile--shield"><icon name="@Icons.Shield" /></span>
                         <a asp-action="Edit" asp-route-id="@role.Id" class="identity__primary">@role.Name</a>
+                        @if (role.IsSystem)
+                        {
+                            <span class="chip">Built-in</span>
+                        }
                     </div>
                 </td>
-                <td><partial name="_Chips" model="AccessSummary.Describe(role.Capabilities)" /></td>
+                <td class="data-table__muted">@(chart?.ParentName(role) ?? "—")</td>
+                <td>
+                    @if (role.IsSystem)
+                    {
+                        <span class="chip">@RoleChart.EveryFeature</span>
+                    }
+                    else
+                    {
+                        <partial name="_Chips" model="AccessSummary.Describe(role.Capabilities)" />
+                    }
+                </td>
                 <td><partial name="_StatusBadge" model="role.IsActive" /></td>
                 <td class="data-table__muted" title="@((role.UpdatedAt ?? role.CreatedAt).ToIstString())">@((role.UpdatedAt ?? role.CreatedAt).ToIstDateString())</td>
-                <partial name="_RowActions" model="role.Id" />
+                @if (chart?.CanManage(role.Id) != false)
+                {
+                    <partial name="_RowActions" model="role.Id" />
+                }
+                else
+                {
+                    <td class="data-table__actions"></td>
+                }
             </tr>
         }
     </tbody>

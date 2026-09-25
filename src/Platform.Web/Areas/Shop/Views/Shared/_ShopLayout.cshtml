@@ -1,0 +1,61 @@
+@* Store shell for customers: trust strip, header (search, PIN code, account, cart), category menu, page and footer. Styles live in wwwroot/css/shop.css; no inline CSS or JS. *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="@Branding.StoreTagline" />
+    <title>@ViewData["Title"] · @Branding.StoreName</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/variables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/shop.css" asp-append-version="true" />
+</head>
+<body class="shop">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="shop-strip">
+        <div class="shop-container shop-strip__inner">
+            <span class="shop-strip__item"><icon name="@Icons.ShieldCheck" class="icon--sm" /> Genuine brands, direct from our warehouses</span>
+            <span class="shop-strip__item"><icon name="@Icons.Receipt" class="icon--sm" /> GST invoice on every order</span>
+            <span class="shop-strip__item"><icon name="@Icons.Truck" class="icon--sm" /> Delivered to your site</span>
+        </div>
+    </div>
+
+    <vc:shop-header />
+
+    <main id="main" class="shop-main">
+        <div class="shop-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="shop-footer">
+        <div class="shop-container shop-footer__grid">
+            <div>
+                <p class="shop-footer__brand">@Branding.StoreName</p>
+                <p class="shop-footer__text">@Branding.StoreTagline</p>
+            </div>
+            <div>
+                <p class="shop-footer__title">Shop</p>
+                <a asp-area="Shop" asp-controller="Products" asp-action="Index">All products</a>
+                <a asp-area="Shop" asp-controller="Cart" asp-action="Index">Cart</a>
+                <a asp-area="Shop" asp-controller="Orders" asp-action="Index">My orders</a>
+            </div>
+            <div>
+                <p class="shop-footer__title">How it works</p>
+                <span>Prices are shown without GST; GST is added at checkout.</span>
+                <span>Enter your PIN code to see what we can deliver and when.</span>
+                <span>We confirm every order with you before delivery.</span>
+            </div>
+        </div>
+        <div class="shop-container shop-footer__legal">
+            <span>© @DateTime.UtcNow.Year @Branding.StoreName</span>
+            <a asp-area="" asp-controller="Account" asp-action="Login">Staff sign-in</a>
+        </div>
+    </footer>
+
+    <partial name="_Alerts" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

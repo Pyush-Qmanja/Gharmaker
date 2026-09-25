@@ -29,6 +29,9 @@ public sealed class HomeController : PlatformControllerBase
         new QuickAction("Invite a user", "Create a sign-in and choose what they can do.", Icons.Users, "Users", "Create", Capabilities.UsersManage),
         new QuickAction("Create a role", "Bundle feature access to give to many people.", Icons.Shield, "Roles", "Create", Capabilities.RolesManage),
         new QuickAction("Add a brand", "Add a manufacturer's brand to the catalogue.", Icons.Tag, "Brands", "Create", Capabilities.BrandsManage),
+        new QuickAction("Set prices", "Price products in a list, with quantity slabs.", Icons.Rupee, "PriceLists", "Index", Capabilities.PricingManage),
+        new QuickAction("Add delivery PIN codes", "Choose where each warehouse delivers.", Icons.MapPin, "DeliveryAreas", "Add", Capabilities.DeliveryManage),
+        new QuickAction("Open the online store", "See the store as your customers do.", Icons.Store, "Home", "Index", Capabilities.CatalogView, Area: "Shop"),
     };
 
     private readonly IApiClient _api;
@@ -102,8 +105,13 @@ public sealed class HomeController : PlatformControllerBase
     /// <param name="route">Paged API list.</param>
     /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
     /// <returns>The total the user can see, or null when the call fails.</returns>
-    private async Task<int?> CountAsync(string route, CancellationToken cancellationToken)
+    private async Task<int?> CountAsync(string? route, CancellationToken cancellationToken)
     {
+        if (route is null)
+        {
+            return null;
+        }
+
         string separator = route.Contains('?') ? "&" : "?";
         var result = await _api.GetAsync<PagedResult<JsonElement>>($"{route}{separator}page=1&pageSize=1", cancellationToken);
         return result.IsSuccess ? result.Value?.TotalCount : null;

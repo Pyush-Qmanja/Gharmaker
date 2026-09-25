@@ -37,4 +37,5 @@ public sealed record DashboardModule(NavigationItem Item, int? Count);
 /// <param name="Controller">MVC controller.</param>
 /// <param name="Action">MVC action.</param>
 /// <param name="Capability">Capability needed to see it.</param>
-public sealed record QuickAction(string Title, string Description, string Icon, string Controller, string Action, string Capability);
+/// <param name="Area">MVC area, e.g. Shop for the online store; null for the admin app.</param>
+public sealed record QuickAction(string Title, string Description, string Icon, string Controller, string Action, string Capability, string? Area = null);

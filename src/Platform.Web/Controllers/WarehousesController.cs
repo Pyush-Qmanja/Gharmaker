@@ -11,11 +11,12 @@ namespace Platform.Web.Controllers;
 /// <summary>
 /// Warehouse screens. Everything is inherited from <see cref="CrudController{TDto,TCreate,TUpdate}"/>;
 /// the API limits the list to the user's scope. This class only loads the
-/// users offered as "responsible person".
+/// users offered as "responsible person" and which warehouses' stock the user may open.
 /// </summary>
 public sealed class WarehousesController : CrudController<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest>
 {
     private readonly ICrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest> _users;
+    private readonly IStockApiClient _stock;
 
     /// <summary>
     /// Creates the controller.
@@ -24,14 +25,17 @@ public sealed class WarehousesController : CrudController<WarehouseDto, CreateWa
     /// <param name="createValidator">Shared create validator.</param>
     /// <param name="updateValidator">Shared update validator.</param>
     /// <param name="users">User API client, for the responsible-person drop-down.</param>
+    /// <param name="stock">Stock API client, for the "View stock" link on each row.</param>
     public WarehousesController(
         ICrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest> api,
         IValidator<CreateWarehouseRequest> createValidator,
         IValidator<UpdateWarehouseRequest> updateValidator,
-        ICrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest> users)
+        ICrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest> users,
+        IStockApiClient stock)
         : base(api, createValidator, updateValidator)
     {
         _users = users;
+        _stock = stock;
     }
 
     /// <inheritdoc />
@@ -61,7 +65,8 @@ public sealed class WarehousesController : CrudController<WarehouseDto, CreateWa
     };
 
     /// <summary>
-    /// Loads active users for the responsible-person drop-down and a name map for the table.
+    /// Loads active users for the responsible-person drop-down, a name map for the table,
+    /// and the warehouses whose stock the user may open.
     /// </summary>
     /// <param name="cancellationToken">Aborted when the browser disconnects.</param>
     /// <returns>A task that completes when ViewData is ready.</returns>
@@ -74,5 +79,11 @@ public sealed class WarehousesController : CrudController<WarehouseDto, CreateWa
             .OrderBy(u => u.Name)
             .Select(u => new SelectListItem(u.Name, u.Id.ToString()))
             .ToList();
+
+        var stockWarehouses = await _stock.GetWarehousesAsync(cancellationToken);
+        ViewData[ViewDataKeys.StockWarehouseIds] = (stockWarehouses.Value ?? new List<StockWarehouseDto>())
+            .Where(w => w.CanView)
+            .Select(w => w.Id)
+            .ToHashSet();
     }
 }

@@ -11,4 +11,10 @@ public static class Branding
 
     /// <summary>Short line under the name in the sidebar.</summary>
     public const string Tagline = "Materials · Sites · Workforce";
+
+    /// <summary>Name of the online store customers see.</summary>
+    public const string StoreName = "Construction Platform Store";
+
+    /// <summary>One line under the store's name.</summary>
+    public const string StoreTagline = "Cement, steel and building materials, delivered to your site.";
 }

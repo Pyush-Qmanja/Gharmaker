@@ -1,0 +1,18 @@
+@* Customer sign-in for the store, with a link to create an account. *@
+@model Platform.Shared.Dtos.Auth.LoginRequest
+@{
+    ViewData["Title"] = "Sign in";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="auth-card card">
+    <h1 class="auth-card__title">Sign in</h1>
+    <p class="auth-card__lead">Sign in to add to your cart, check out and see your orders.</p>
+    <form asp-action="Login" asp-route-returnUrl="@returnUrl" method="post" novalidate>
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+        <form-field asp-for="Email" />
+        <form-field asp-for="Password" />
+        <button type="submit" class="btn btn-primary btn-lg auth-card__submit"><icon name="@Icons.LogIn" /> Sign in</button>
+    </form>
+    <p class="auth-card__alt">New here? <a asp-action="Register" asp-route-returnUrl="@returnUrl">Create an account</a> — it takes a minute.</p>
+</div>

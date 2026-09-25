@@ -1,0 +1,70 @@
+@* One customer: account facts, editable details, price tier and status, and their latest orders. *@
+@model CustomerEditViewModel
+@{
+    var customer = Model.Customer;
+    ViewData["Title"] = customer.Name;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">Customers</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@customer.Email</span>
+        </nav>
+        <h1 class="page-header__title">@customer.Name</h1>
+        <div class="page-header__meta">
+            <partial name="_StatusBadge" model="customer.IsActive" />
+            <span class="chip">@customer.Email</span>
+            <span class="chip">Joined @customer.CreatedAt.ToIstDateString()</span>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Edit" asp-route-id="@customer.Id" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <form-panel title="Details" description="Contact and business details. The email is their sign-in and cannot be changed here.">
+        <div class="form-grid">
+            <form-field asp-for="Form.Name" label="Full name" />
+            <phone-field asp-for="Form.Phone" label="Mobile" />
+            <form-field asp-for="Form.CompanyName" label="Company" />
+            <form-field asp-for="Form.Gstin" label="GSTIN" hint="For B2B tax invoices." />
+        </div>
+    </form-panel>
+
+    <form-panel title="Prices" description="Customers without a tier buy at retail prices. A contract list for this customer, if any, comes first.">
+        <div class="form-grid">
+            <form-field asp-for="Form.TierPriceListId" label="Price tier" items="Model.TierOptions" empty-option="Retail (no tier)" />
+        </div>
+    </form-panel>
+
+    <form-panel title="Status" description="A blocked customer is signed out at once and cannot sign in or order. Their orders stay.">
+        <form-field asp-for="Form.IsActive" label="Can sign in and order" />
+    </form-panel>
+
+    <div class="form-footer">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save changes</button>
+    </div>
+</form>
+
+<section class="card data-card">
+    <div class="card__header">
+        <h2 class="card__title"><icon name="@Icons.Receipt" class="icon--sm" /> Latest orders</h2>
+        <a asp-controller="Orders" asp-action="Index" asp-route-customerId="@customer.Id" class="link-action">All orders <icon name="@Icons.ArrowRight" class="icon--sm" /></a>
+    </div>
+    @if (Model.Orders.Count == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.Receipt" /></span>
+            <h2 class="empty-state__title">No orders yet</h2>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <partial name="~/Views/Orders/_Table.cshtml" model="Model.Orders" />
+        </div>
+    }
+</section>

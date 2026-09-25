@@ -109,7 +109,8 @@
 
     /**
      * Adds a blank row to a line editor (data-lines) by copying its template
-     * row (data-line-template) with the next free index, then focuses it.
+     * row (data-line-template) with the next free index and its line number,
+     * then focuses it.
      * @param {Element} button - The "Add a line" button inside the editor.
      */
     function addLineRow(button) {
@@ -121,7 +122,9 @@
         }
 
         const index = rows.children.length;
-        const html = template.innerHTML.replace(/__index__/g, String(index));
+        const html = template.innerHTML
+            .replace(/__index__/g, String(index))
+            .replace(/__number__/g, String(index + 1));
         rows.insertAdjacentHTML("beforeend", html.trim());
         const first = rows.lastElementChild ? rows.lastElementChild.querySelector("input") : null;
         if (first) {

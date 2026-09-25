@@ -21,8 +21,20 @@ public static class RuleBuilderExtensions
     /// <summary>Six-digit Indian PIN code not starting with 0.</summary>
     private const string PincodePattern = @"^[1-9]\d{5}$";
 
-    /// <summary>E.164 phone number, e.g. <c>+919876543210</c>.</summary>
-    private const string PhonePattern = @"^\+[1-9]\d{7,14}$";
+    /// <summary>HSN code: 4, 6 or 8 digits.</summary>
+    private const string HsnPattern = @"^(\d{4}|\d{6}|\d{8})$";
+
+    /// <summary>GSTIN: state code, PAN, entity number, Z, check character.</summary>
+    private const string GstinPattern = "^[0-3][0-9][A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$";
+
+    /// <summary>India's calling code.</summary>
+    private const string IndiaCode = "+91";
+
+    /// <summary>An Indian mobile: +91 and ten digits starting 6-9.</summary>
+    private static readonly System.Text.RegularExpressions.Regex IndianMobile = new(@"^\+91[6-9]\d{9}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>E.164 phone number, e.g. <c>+971501234567</c>.</summary>
+    private static readonly System.Text.RegularExpressions.Regex Phone = new(@"^\+[1-9]\d{7,14}$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>
     /// Required display name within <see cref="FieldLengths.Name"/>.
@@ -75,14 +87,24 @@ public static class RuleBuilderExtensions
         rule.NotEmpty().MaximumLength(FieldLengths.Email).EmailAddress();
 
     /// <summary>
-    /// Optional phone number in E.164 format.
+    /// Optional phone number in E.164 format. An Indian (+91) number must be a
+    /// 10-digit mobile and gets only that message, not the general one as well.
     /// </summary>
     /// <typeparam name="T">Object being validated.</typeparam>
     /// <param name="rule">Rule builder for the property.</param>
     /// <returns>The rule builder, for chaining.</returns>
     public static IRuleBuilderOptions<T, string?> ValidOptionalPhone<T>(this IRuleBuilder<T, string?> rule) =>
-        rule.Matches(PhonePattern)
-            .WithMessage("'{PropertyName}' must be in international format, e.g. +919876543210.");
+        rule.Must(p => p is null || !IsIndian(p) || IndianMobile.IsMatch(p))
+            .WithMessage("Enter a 10-digit Indian mobile number starting with 6, 7, 8 or 9, e.g. 98765 43210.")
+            .Must(p => p is null || IsIndian(p) || Phone.IsMatch(p))
+            .WithMessage("Enter a valid mobile number with its country code, e.g. +91 98765 43210.");
+
+    /// <summary>
+    /// Whether a phone number carries India's calling code.
+    /// </summary>
+    /// <param name="phone">Phone number.</param>
+    /// <returns>True when it starts with +91.</returns>
+    private static bool IsIndian(string phone) => phone.StartsWith(IndiaCode, StringComparison.Ordinal);
 
     /// <summary>
     /// Required password between <see cref="FieldLengths.PasswordMin"/> and
@@ -180,6 +202,73 @@ public static class RuleBuilderExtensions
         rule.InclusiveBetween(-1_000_000_000m, 1_000_000_000m)
             .PrecisionScale(18, 4, ignoreTrailingZeros: true)
             .WithMessage("'{PropertyName}' can have at most 4 decimal places.");
+
+    /// <summary>
+    /// An HSN code: 4, 6 or 8 digits.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string> ValidHsnCode<T>(this IRuleBuilder<T, string> rule) =>
+        rule.NotEmpty()
+            .Matches(HsnPattern)
+            .WithMessage("'{PropertyName}' must be 4, 6 or 8 digits.");
+
+    /// <summary>
+    /// An optional GSTIN: 15 characters, state code first, e.g. 27AAPFU0939F1ZV.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> ValidOptionalGstin<T>(this IRuleBuilder<T, string?> rule) =>
+        rule.Matches(GstinPattern)
+            .WithMessage("'{PropertyName}' must be a 15-character GSTIN, e.g. 27AAPFU0939F1ZV.");
+
+    /// <summary>
+    /// A required GSTIN.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string> ValidGstin<T>(this IRuleBuilder<T, string> rule) =>
+        rule.NotEmpty()
+            .Matches(GstinPattern)
+            .WithMessage("'{PropertyName}' must be a 15-character GSTIN, e.g. 27AAPFU0939F1ZV.");
+
+    /// <summary>
+    /// A unit price: greater than zero, at most four decimals (P8 keeps it exactly as entered).
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> ValidUnitPrice<T>(this IRuleBuilder<T, decimal> rule) =>
+        rule.GreaterThan(0m)
+            .LessThanOrEqualTo(100_000_000m)
+            .PrecisionScale(18, 4, ignoreTrailingZeros: true)
+            .WithMessage("'{PropertyName}' must be more than 0 with at most 4 decimal places.");
+
+    /// <summary>
+    /// A percentage between 0 and a limit, with at most three decimals.
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <param name="max">Largest allowed value.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> ValidPercent<T>(this IRuleBuilder<T, decimal> rule, decimal max) =>
+        rule.InclusiveBetween(0m, max)
+            .PrecisionScale(7, 3, ignoreTrailingZeros: true)
+            .WithMessage($"'{{PropertyName}}' must be between 0 and {max} with at most 3 decimal places.");
+
+    /// <summary>
+    /// A state name that is one of India's states or union territories (GST needs to recognise it).
+    /// </summary>
+    /// <typeparam name="T">Object being validated.</typeparam>
+    /// <param name="rule">Rule for the property.</param>
+    /// <returns>The rule, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string> ValidIndianState<T>(this IRuleBuilder<T, string> rule) =>
+        rule.NotEmpty()
+            .Must(IndianStates.IsKnown)
+            .WithMessage("'{PropertyName}' must be an Indian state or union territory, e.g. Maharashtra.");
 
     /// <summary>
     /// True when the value is empty (the field is optional) or an absolute http(s) URL.

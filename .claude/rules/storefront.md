@@ -10,6 +10,11 @@ paths:
 Everything under these paths is customer-facing. The customer learns the
 quantity they can buy, the price, the tax and a delivery window. Nothing else.
 
+Orders are never split (decision #2): the quantity offered is what the best-stocked
+single serving warehouse holds, a cart ships from one warehouse that holds every
+line, and a cart that no single warehouse can supply is refused with a message
+that names no warehouse. Plan with `AllocationPlanner.PlanOrder` only.
+
 ## Never appears in a response under these paths
 
 - `warehouseId`, `warehouseCode`, `warehouseName`, warehouse address, lat, lng
@@ -38,6 +43,18 @@ forbidden field, under any role, by serialising every response and scanning it.
 
 **Adding a storefront endpoint means adding it to that suite in the same commit.**
 A new endpoint that is not covered is an incomplete change, not a follow-up.
+
+## How it is built here
+
+- API: `Controllers/Storefront` (base `StorefrontControllerBase`, which runs every action
+  as the store's organisation), services in `Services/Storefront`, and one mapper,
+  `Mapping/Storefront/ShopMapping`, the only code that builds storefront DTOs.
+- Internal planning types (`PricedLine.Plan`, `WarehouseStock`, `AllocationPart`,
+  `ServingWarehouse`) never cross into a DTO.
+- Web: area `Shop` (`/shop`), client `IShopApiClient`; store pages never render a staff DTO.
+- Tests: `tests/Platform.Tests.Opacity` walks every storefront type and endpoint by
+  reflection (and pins the endpoint list); the API and UI suites scan every storefront
+  response and store page for warehouse codes, names and ids.
 
 ## The one legal exception
 

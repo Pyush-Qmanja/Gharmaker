@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Platform.Shared.Constants;
 using Platform.Shared.Entities.Identity;
+using Platform.Shared.Entities.Sales;
 
 namespace Platform.Api.Security;
 
@@ -19,6 +20,14 @@ public interface ITokenService
     /// <param name="user">Authenticated user.</param>
     /// <returns>The token and its UTC expiry.</returns>
     (string Token, DateTime ExpiresAt) CreateAccessToken(User user);
+
+    /// <summary>
+    /// Creates a storefront token for a customer. It carries the customer
+    /// actor claim, so staff endpoints refuse it and customer endpoints accept it.
+    /// </summary>
+    /// <param name="customer">Signed-in customer.</param>
+    /// <returns>The encoded token and its UTC expiry.</returns>
+    (string Token, DateTime ExpiresAt) CreateCustomerToken(Customer customer);
 }
 
 /// <summary>
@@ -55,10 +64,37 @@ public sealed class JwtTokenService : ITokenService
         new(Encoding.UTF8.GetBytes(options.SigningKey));
 
     /// <inheritdoc />
-    public (string Token, DateTime ExpiresAt) CreateAccessToken(User user)
+    public (string Token, DateTime ExpiresAt) CreateAccessToken(User user) =>
+        Create(new[]
+        {
+            new Claim(ClaimNames.UserId, user.Id.ToString()),
+            new Claim(ClaimNames.OrgId, user.OrgId.ToString()),
+            new Claim(ClaimNames.Name, user.Name),
+            new Claim(ClaimNames.Email, user.Email),
+            new Claim(ClaimNames.Actor, Actors.Staff),
+        }, _options.AccessTokenMinutes);
+
+    /// <inheritdoc />
+    public (string Token, DateTime ExpiresAt) CreateCustomerToken(Customer customer) =>
+        Create(new[]
+        {
+            new Claim(ClaimNames.UserId, customer.Id.ToString()),
+            new Claim(ClaimNames.OrgId, customer.OrgId.ToString()),
+            new Claim(ClaimNames.Name, customer.Name),
+            new Claim(ClaimNames.Email, customer.Email),
+            new Claim(ClaimNames.Actor, Actors.Customer),
+        }, _options.CustomerTokenMinutes);
+
+    /// <summary>
+    /// Signs a token with the given claims and lifetime.
+    /// </summary>
+    /// <param name="claims">Claims to carry.</param>
+    /// <param name="minutes">Lifetime in minutes.</param>
+    /// <returns>The encoded token and its UTC expiry.</returns>
+    private (string Token, DateTime ExpiresAt) Create(Claim[] claims, int minutes)
     {
         DateTime now = _timeProvider.GetUtcNow().UtcDateTime;
-        DateTime expiresAt = now.AddMinutes(_options.AccessTokenMinutes);
+        DateTime expiresAt = now.AddMinutes(minutes);
 
         var descriptor = new SecurityTokenDescriptor
         {
@@ -67,13 +103,7 @@ public sealed class JwtTokenService : ITokenService
             IssuedAt = now,
             NotBefore = now,
             Expires = expiresAt,
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimNames.UserId, user.Id.ToString()),
-                new Claim(ClaimNames.OrgId, user.OrgId.ToString()),
-                new Claim(ClaimNames.Name, user.Name),
-                new Claim(ClaimNames.Email, user.Email),
-            }),
+            Subject = new ClaimsIdentity(claims),
             SigningCredentials = new SigningCredentials(CreateSigningKey(_options), SecurityAlgorithms.HmacSha256),
         };
 

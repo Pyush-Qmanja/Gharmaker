@@ -53,6 +53,7 @@ public sealed class StockController : PlatformControllerBase
         {
             WarehouseOptions = WarehouseOptions(warehouses.Where(w => w.CanView), request.WarehouseId),
             WarehouseId = request.WarehouseId,
+            Warehouses = warehouses.Where(w => w.CanView).ToList(),
             InStockOnly = request.InStockOnly,
             Can = StockAbilities.From(warehouses),
             Balances = new ListViewModel<StockBalanceDto>(
@@ -64,7 +65,7 @@ public sealed class StockController : PlatformControllerBase
                     ["warehouseId"] = request.WarehouseId?.ToString(),
                     ["inStockOnly"] = request.InStockOnly ? "true" : null,
                 },
-                itemName: "row"),
+                itemName: "item"),
         });
     }
 

@@ -1,0 +1,19 @@
+@* Taxable value, GST as it will be invoiced (CGST + SGST within the seller's state, IGST across states), cess and the amount payable. *@
+@model TotalsViewModel
+<dl class="totals__list">
+    <div class="totals__row"><dt>Items (excl. GST)</dt><dd>@Model.Totals.TaxableAmount.ToRupees()</dd></div>
+    @if (Model.IsInterState)
+    {
+        <div class="totals__row"><dt>IGST</dt><dd>@Model.Totals.IgstAmount.ToRupees()</dd></div>
+    }
+    else
+    {
+        <div class="totals__row"><dt>CGST</dt><dd>@Model.Totals.CgstAmount.ToRupees()</dd></div>
+        <div class="totals__row"><dt>SGST</dt><dd>@Model.Totals.SgstAmount.ToRupees()</dd></div>
+    }
+    @if (Model.Totals.CessAmount > 0)
+    {
+        <div class="totals__row"><dt>Cess</dt><dd>@Model.Totals.CessAmount.ToRupees()</dd></div>
+    }
+    <div class="totals__row totals__row--grand"><dt>@Model.TotalLabel</dt><dd>@Model.Totals.TotalAmount.ToRupees()</dd></div>
+</dl>

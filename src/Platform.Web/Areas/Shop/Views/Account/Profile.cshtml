@@ -1,0 +1,29 @@
+@* The customer's details: name, mobile, company, GSTIN and default delivery address. *@
+@model UpdateShopProfileRequest
+@{
+    ViewData["Title"] = "My details";
+}
+
+<div class="shop-page-head">
+    <h1 class="shop-page-head__title">My details</h1>
+    <p class="shop-page-head__meta">Signed in as @ViewData["Email"]</p>
+</div>
+
+<form asp-action="Profile" method="post" novalidate class="form-layout profile-form">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <form-panel title="About you" description="Used on your orders and invoices.">
+        <div class="form-grid">
+            <form-field asp-for="Name" label="Full name" />
+            <phone-field asp-for="Phone" label="Mobile" />
+            <form-field asp-for="CompanyName" label="Company" />
+            <form-field asp-for="Gstin" label="GSTIN" hint="For business (B2B) invoices." />
+        </div>
+    </form-panel>
+    <form-panel title="Default delivery address" description="Filled in at checkout for you. Leave it empty to keep none.">
+        <partial name="_AddressFields" for="Address" />
+    </form-panel>
+    <div class="form-footer">
+        <a asp-controller="Orders" asp-action="Index" class="btn btn-secondary">My orders</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save</button>
+    </div>
+</form>

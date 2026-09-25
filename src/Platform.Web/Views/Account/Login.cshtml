@@ -9,6 +9,11 @@
 <h1 class="auth__title">Welcome back</h1>
 <p class="auth__subtitle">Sign in with your work email to continue.</p>
 
+@if (ViewData[ViewDataKeys.Notice] is string notice)
+{
+    <p class="notice" role="status">@notice</p>
+}
+
 <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" novalidate class="auth__form">
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
     <form-field asp-for="Email" type="email" label="Work email" />

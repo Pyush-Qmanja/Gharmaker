@@ -1,0 +1,92 @@
+@* Delivery areas: which PIN codes each warehouse delivers to and in how many days. Filter by warehouse, search by PIN code. *@
+@using Platform.Shared.Dtos.Inventory
+@model DeliveryAreasViewModel
+@{
+    ViewData["Title"] = "Delivery areas";
+    var areas = (IReadOnlyList<DeliveryAreaDto>)Model.Areas.Items;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Delivery areas</h1>
+        <p class="page-header__subtitle">A customer can order what the warehouses serving their PIN code hold. They see one total and a delivery date — never which warehouse.</p>
+    </div>
+    @if (Model.CanManage)
+    {
+        <div class="page-header__actions">
+            <a asp-action="Add" asp-route-warehouseId="@Model.WarehouseId" class="btn btn-primary"><icon name="@Icons.Plus" /> Add PIN codes</a>
+        </div>
+    }
+</div>
+
+<section class="card data-card">
+    <form asp-action="Index" method="get" class="data-card__toolbar" role="search">
+        <div class="search-field">
+            <icon name="@Icons.Search" class="search-field__icon" />
+            <input type="search" name="search" value="@Model.Areas.Search" class="form-control search-field__input"
+                   placeholder="PIN code starts with…" aria-label="Search by PIN code" inputmode="numeric" />
+        </div>
+        <select name="warehouseId" class="form-select filter-select" aria-label="Warehouse" data-auto-submit>
+            <option value="">All warehouses</option>
+            @foreach (var option in Model.WarehouseOptions)
+            {
+                <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+            }
+        </select>
+        <span class="data-card__count">@Model.Areas.TotalCount.Counted("PIN code")</span>
+    </form>
+
+    @if (Model.Areas.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.MapPin" /></span>
+            <h2 class="empty-state__title">@(string.IsNullOrEmpty(Model.Areas.Search) ? "No delivery areas yet" : "No PIN code matches")</h2>
+            <p class="empty-state__text">Until a warehouse serves a PIN code, customers there see products as "not delivered to your PIN code".</p>
+            @if (Model.CanManage)
+            {
+                <div class="empty-state__actions"><a asp-action="Add" asp-route-warehouseId="@Model.WarehouseId" class="btn btn-primary"><icon name="@Icons.Plus" /> Add PIN codes</a></div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>PIN code</th>
+                        <th>Delivered from</th>
+                        <th>Delivery time</th>
+                        <th>Added</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var area in areas)
+                    {
+                        <tr>
+                            <td><span class="cell-with-icon"><icon name="@Icons.MapPin" /> <strong>@area.Pincode</strong></span></td>
+                            <td><span class="code-tag">@area.WarehouseCode</span> <span class="data-table__muted">@area.WarehouseName</span></td>
+                            <td>@(area.LeadTimeDays switch { 0 => "Same day", 1 => "Next day", _ => $"{area.LeadTimeDays} days" })</td>
+                            <td class="data-table__muted" title="@area.CreatedAt.ToIstString()">@area.CreatedAt.ToIstDateString()</td>
+                            <td class="data-table__actions">
+                                @if (Model.CanManage)
+                                {
+                                    <div class="row-actions">
+                                        <a asp-action="Edit" asp-route-id="@area.Id" asp-route-warehouseId="@area.WarehouseId" asp-route-pincode="@area.Pincode"
+                                           class="icon-btn" title="Change delivery time" aria-label="Change delivery time for @area.Pincode"><icon name="@Icons.Pencil" /></a>
+                                        <form asp-action="Delete" asp-route-id="@area.Id" asp-route-warehouseId="@Model.WarehouseId" method="post" class="inline-form"
+                                              data-confirm="Stop delivering to @area.Pincode from @area.WarehouseCode?">
+                                            <button type="submit" class="icon-btn icon-btn--danger" title="Remove" aria-label="Remove @area.Pincode"><icon name="@Icons.Trash" /></button>
+                                        </form>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model.Areas" />
+    }
+</section>

@@ -1,0 +1,88 @@
+@* Online store customers: search by email, see tier and status, open one to change it. *@
+@using Platform.Shared.Dtos.Sales
+@model ListViewModel<CustomerDto>
+@{
+    ViewData["Title"] = "Customers";
+    var customers = (IReadOnlyList<CustomerDto>)Model.Items;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <h1 class="page-header__title">Customers</h1>
+        <p class="page-header__subtitle">Customers open their own accounts on the store. Put contractors on a tier for their prices, or block an account.</p>
+    </div>
+    <div class="page-header__actions">
+        <a asp-area="Shop" asp-controller="Home" asp-action="Index" class="btn btn-secondary" target="_blank" rel="noopener"><icon name="@Icons.Store" /> Open the store</a>
+    </div>
+</div>
+
+<section class="card data-card">
+    <div class="data-card__toolbar">
+        <form asp-action="Index" method="get" class="search-field" role="search">
+            <icon name="@Icons.Search" class="search-field__icon" />
+            <input type="search" name="search" value="@Model.Search" class="form-control search-field__input" placeholder="Email starts with…" aria-label="Search by email" />
+        </form>
+        <span class="data-card__count">@Model.TotalCount.Counted("customer")</span>
+    </div>
+
+    @if (Model.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <span class="empty-state__icon"><icon name="@Icons.User" /></span>
+            <h2 class="empty-state__title">@(string.IsNullOrEmpty(Model.Search) ? "No customers yet" : "No customer matches")</h2>
+            <p class="empty-state__text">Customers appear here when they create an account on the store.</p>
+        </div>
+    }
+    else
+    {
+        <div class="data-card__scroll">
+            <table class="table data-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Company</th>
+                        <th>Phone</th>
+                        <th>Prices</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in customers)
+                    {
+                        <tr>
+                            <td>
+                                <div class="identity">
+                                    <span class="avatar">@customer.Name.Initials()</span>
+                                    <span class="identity__text">
+                                        <a asp-action="Edit" asp-route-id="@customer.Id" class="identity__primary">@customer.Name</a>
+                                        <span class="identity__secondary">@customer.Email</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td>@(customer.CompanyName ?? "—")</td>
+                            <td class="data-table__muted">@(customer.Phone ?? "—")</td>
+                            <td>
+                                @if (customer.TierPriceListName is { } tier)
+                                {
+                                    <span class="chip chip--primary">@tier</span>
+                                }
+                                else
+                                {
+                                    <span class="chip">Retail</span>
+                                }
+                            </td>
+                            <td><partial name="_StatusBadge" model="customer.IsActive" /></td>
+                            <td class="data-table__muted" title="@customer.CreatedAt.ToIstString()">@customer.CreatedAt.ToIstDateString()</td>
+                            <td class="data-table__actions">
+                                <a asp-action="Edit" asp-route-id="@customer.Id" class="icon-btn" title="Open" aria-label="Open @customer.Name"><icon name="@Icons.ChevronRight" /></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="Model" />
+    }
+</section>

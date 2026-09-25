@@ -13,6 +13,8 @@ public sealed class RoleMapper : IEntityMapper<Role, RoleDto, CreateRoleRequest,
     public RoleDto ToDto(Role entity) => new RoleDto
     {
         Name = entity.Name,
+        ParentId = entity.IsSystem ? null : entity.ParentId,
+        IsSystem = entity.IsSystem,
         Capabilities = entity.Capabilities.ToList(),
         IsActive = entity.IsActive,
     }.WithAuditFrom(entity);
@@ -21,6 +23,7 @@ public sealed class RoleMapper : IEntityMapper<Role, RoleDto, CreateRoleRequest,
     public Role ToEntity(CreateRoleRequest request) => new()
     {
         Name = DtoMapping.Clean(request.Name),
+        ParentId = request.ParentId,
         Capabilities = Features.Complete(request.Capabilities),
     };
 
@@ -28,6 +31,7 @@ public sealed class RoleMapper : IEntityMapper<Role, RoleDto, CreateRoleRequest,
     public void Apply(UpdateRoleRequest request, Role entity)
     {
         entity.Name = DtoMapping.Clean(request.Name);
+        entity.ParentId = request.ParentId;
         entity.Capabilities = Features.Complete(request.Capabilities);
         entity.IsActive = request.IsActive;
     }

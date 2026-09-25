@@ -1,0 +1,48 @@
+@* Adds a GST rate for an HSN code, from now or a later date. *@
+@using System.Globalization
+@model TaxRateForm
+@{
+    ViewData["Title"] = "Add GST rate";
+    string? ErrorFor(string key) => ViewData.ModelState.TryGetValue(key, out var entry) ? entry.Errors.FirstOrDefault()?.ErrorMessage : null;
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index">GST rates</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>New rate</span>
+        </nav>
+        <h1 class="page-header__title">Add GST rate</h1>
+        <p class="page-header__subtitle">Enter the total GST rate. Within your state it is split into CGST and SGST; to another state it is charged as IGST.</p>
+    </div>
+</div>
+
+<form asp-action="Create" method="post" novalidate class="form-layout">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <form-panel title="Rate" description="Use the HSN code your products carry, or a shorter one to cover a whole chapter (e.g. 2523 for all cement).">
+        <div class="form-grid">
+            <form-field asp-for="HsnCode" label="HSN code" hint="4, 6 or 8 digits." />
+            <form-field asp-for="RatePercent" label="GST rate (%)" hint="e.g. 18 or 28." />
+            <form-field asp-for="CessPercent" label="Cess (%)" hint="0 when none." />
+        </div>
+    </form-panel>
+
+    <form-panel title="When" description="Leave the start empty to apply it now. Orders already placed keep their rate.">
+        <div class="form-grid">
+            <div class="form-field">
+                <label class="form-field__label" for="ValidFromIst">Starts (India time)</label>
+                <input type="datetime-local" id="ValidFromIst" name="ValidFromIst" class="form-control"
+                       value="@Model.ValidFromIst?.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture)" />
+                <span class="form-field__error">@ErrorFor("ValidFrom")</span>
+            </div>
+            <form-field asp-for="Remarks" label="Source (optional)" hint="e.g. the notification number." />
+        </div>
+    </form-panel>
+
+    <div class="form-footer">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save rate</button>
+    </div>
+</form>

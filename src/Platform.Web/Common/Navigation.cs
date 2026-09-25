@@ -31,12 +31,24 @@ public static class Navigation
             "Stock sent between warehouses, in transit until received.", $"{ApiRoutes.Stock}/documents?type=Transfer"),
         new NavigationItem("Adjustments", "Adjustments", "Inventory", Icons.Clipboard, Capabilities.StockView,
             "Damage, expiry and count corrections, each with a reason.", $"{ApiRoutes.Stock}/documents?type=Adjustment"),
+        new NavigationItem("Delivery areas", "DeliveryAreas", "Inventory", Icons.MapPin, Capabilities.DeliveryView,
+            "PIN codes each warehouse delivers to, and how many days it takes.", ApiRoutes.DeliveryAreas),
+        new NavigationItem("Orders", "Orders", "Sales", Icons.Receipt, Capabilities.OrdersView,
+            "Orders placed on the online store, waiting for confirmation.", $"{ApiRoutes.Orders}?status=Placed"),
+        new NavigationItem("Customers", "Customers", "Sales", Icons.User, Capabilities.CustomersView,
+            "Online store accounts, their price tier and access.", ApiRoutes.Customers),
+        new NavigationItem("Price lists", "PriceLists", "Sales", Icons.Rupee, Capabilities.PricingView,
+            "Retail, tier and contract prices, with quantity slabs.", ApiRoutes.PriceLists),
+        new NavigationItem("GST rates", "TaxRates", "Sales", Icons.Percent, Capabilities.PricingView,
+            "GST by HSN code. A product without a rate cannot be sold.", ApiRoutes.TaxRates),
         new NavigationItem("Users", "Users", "Administration", Icons.Users, Capabilities.UsersView,
             "People who sign in, their roles and feature access.", ApiRoutes.Users),
         new NavigationItem("Roles", "Roles", "Administration", Icons.Shield, Capabilities.RolesView,
             "Standard sets of access to give to users.", ApiRoutes.Roles),
         new NavigationItem("Audit log", "Audit", "Administration", Icons.History, Capabilities.AuditView,
             "Who changed what, when and from where.", ApiRoutes.Audit),
+        new NavigationItem("Business settings", "BusinessSettings", "Administration", Icons.Building, Capabilities.SettingsView,
+            "Legal name, GSTIN and registered address used for GST.", CountRoute: null),
     };
 
     /// <summary>
@@ -57,7 +69,7 @@ public static class Navigation
 /// <param name="Icon">Icon name from <see cref="Icons"/>.</param>
 /// <param name="Capability">Capability needed to see the entry.</param>
 /// <param name="Description">Module text on the dashboard.</param>
-/// <param name="CountRoute">Paged API list whose total is shown on the dashboard.</param>
+/// <param name="CountRoute">Paged API list whose total is shown on the dashboard; null when the screen has nothing to count.</param>
 public sealed record NavigationItem(
     string Title,
     string Controller,
@@ -65,4 +77,4 @@ public sealed record NavigationItem(
     string Icon,
     string Capability,
     string Description,
-    string CountRoute);
+    string? CountRoute);

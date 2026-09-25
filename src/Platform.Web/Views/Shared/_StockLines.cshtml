@@ -7,11 +7,13 @@
     string? ErrorFor(int index, string field) =>
         ViewData.ModelState.TryGetValue($"Lines[{index}].{field}", out var entry) && entry.Errors.Count > 0 ? entry.Errors[0].ErrorMessage : null;
     var listErrors = ViewData.ModelState.TryGetValue("Lines", out var linesEntry) ? linesEntry.Errors.Select(e => e.ErrorMessage).ToList() : new List<string>();
+    var example = Model.SkuOptions.FirstOrDefault();
 }
 <div class="line-editor" data-lines>
     <table class="line-editor__table">
         <thead>
             <tr>
+                <th scope="col" class="line-editor__no">#</th>
                 <th scope="col">SKU code</th>
                 <th scope="col" class="line-editor__qty">Amount</th>
                 <th scope="col" class="line-editor__uom">Unit</th>
@@ -22,16 +24,18 @@
             {
                 var line = Model.Lines[i];
                 <tr>
+                    <td class="line-editor__no">@(i + 1)</td>
                     <td>
-                        <input type="text" name="Lines[@i].SkuCode" value="@line.SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code, line @(i + 1)" />
+                        <input type="text" name="Lines[@i].SkuCode" value="@line.SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code, line @(i + 1)"
+                               placeholder="@(i == 0 && example is not null ? $"Type or pick, e.g. {example.Code}" : null)" />
                         @if (ErrorFor(i, "SkuCode") is { } skuError) { <span class="form-field__error">@skuError</span> }
                     </td>
                     <td>
-                        <input type="number" step="any" name="Lines[@i].Quantity" value="@Amount(line.Quantity, line.SkuCode)" class="form-control" aria-label="Amount, line @(i + 1)" />
+                        <input type="number" step="any" name="Lines[@i].Quantity" value="@Amount(line.Quantity, line.SkuCode)" class="form-control" aria-label="Amount, line @(i + 1)" placeholder="@(i == 0 ? "0" : null)" />
                         @if (ErrorFor(i, "Quantity") is { } qtyError) { <span class="form-field__error">@qtyError</span> }
                     </td>
                     <td>
-                        <input type="text" name="Lines[@i].Uom" value="@line.Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit, line @(i + 1)" />
+                        <input type="text" name="Lines[@i].Uom" value="@line.Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit, line @(i + 1)" placeholder="@(i == 0 && example is not null ? example.BaseUom : null)" />
                         @if (ErrorFor(i, "Uom") is { } uomError) { <span class="form-field__error">@uomError</span> }
                     </td>
                 </tr>
@@ -39,6 +43,7 @@
         </tbody>
         <template data-line-template>
             <tr>
+                <td class="line-editor__no">__number__</td>
                 <td><input type="text" name="Lines[__index__].SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code" /></td>
                 <td><input type="number" step="any" name="Lines[__index__].Quantity" class="form-control" aria-label="Amount" /></td>
                 <td><input type="text" name="Lines[__index__].Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit" /></td>

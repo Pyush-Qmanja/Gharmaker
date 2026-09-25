@@ -1,0 +1,24 @@
+@* Shown instead of a stock or delivery form when the organisation has no active warehouse yet: nothing is wrong with the user's access. *@
+@inject Platform.Web.Services.Auth.IUserAccess Access
+@{
+    ViewData["Title"] = "Add a warehouse first";
+    bool canAdd = await Access.CanAsync(Capabilities.WarehousesManage);
+}
+
+<div class="card">
+    <div class="empty-state">
+        <span class="empty-state__icon"><icon name="@Icons.Warehouse" /></span>
+        <h1 class="empty-state__title">Add a warehouse first</h1>
+        <p class="empty-state__text">
+            Stock is received, moved, adjusted and delivered from a warehouse, and there is no active warehouse yet.
+            @(canAdd ? "Create one, then come back here." : "Ask an administrator to create one.")
+        </p>
+        <div class="empty-state__actions">
+            @if (canAdd)
+            {
+                <a asp-controller="Warehouses" asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> Add a warehouse</a>
+            }
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to dashboard</a>
+        </div>
+    </div>
+</div>

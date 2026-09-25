@@ -1,0 +1,9 @@
+@* Delivery address fields. Rendered with <partial for="Address" /> so the names carry the parent's prefix (Address.Line1...). *@
+@model ShopAddressDto
+<div class="form-grid">
+    <form-field asp-for="Line1" label="House / building, street" />
+    <form-field asp-for="Line2" label="Area, landmark (optional)" />
+    <form-field asp-for="City" label="City / town" />
+    <form-field asp-for="State" label="State" items="SalesOptions.States(Model.State)" empty-option="Choose a state" />
+    <form-field asp-for="Pincode" label="PIN code" />
+</div>

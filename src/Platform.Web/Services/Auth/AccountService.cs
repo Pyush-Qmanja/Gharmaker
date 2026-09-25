@@ -26,6 +26,13 @@ public interface IAccountService
     /// </summary>
     /// <returns>A task that completes once signed out.</returns>
     Task SignOutAsync();
+
+    /// <summary>
+    /// Ends every session of the signed-in user (all devices) and signs this browser out.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task that completes when signed out.</returns>
+    Task SignOutEverywhereAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -81,6 +88,13 @@ public sealed class AccountService : IAccountService
 
     /// <inheritdoc />
     public Task SignOutAsync() => HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+    /// <inheritdoc />
+    public async Task SignOutEverywhereAsync(CancellationToken cancellationToken = default)
+    {
+        await _api.PostAsync<object, object>($"{ApiRoutes.Auth}/{ApiRoutes.EndSessionsSegment}", new object(), cancellationToken);
+        await SignOutAsync();
+    }
 
     /// <summary>Current request; sign-in only ever runs inside one.</summary>
     private HttpContext HttpContext =>

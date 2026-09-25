@@ -14,6 +14,10 @@
         }
     </div>
     <div class="page-header__actions">
+        @foreach (var link in ViewData[ViewDataKeys.HeaderLinks] as IReadOnlyList<HeaderLink> ?? Array.Empty<HeaderLink>())
+        {
+            <a asp-action="@link.Action" class="btn btn-secondary"><icon name="@link.Icon" /> @link.Text</a>
+        }
         <a asp-action="Create" class="btn btn-primary"><icon name="@Icons.Plus" /> New @Model.ItemName</a>
     </div>
 </div>

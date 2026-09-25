@@ -23,4 +23,22 @@ public static class ClaimNames
     /// UI can forward it to the API.
     /// </summary>
     public const string AccessToken = "access_token";
+
+    /// <summary>
+    /// Who the token belongs to: <see cref="Actors.Staff"/> (absent on older
+    /// tokens) or <see cref="Actors.Customer"/>. Staff endpoints never accept a customer token.
+    /// </summary>
+    public const string Actor = "actor";
+}
+
+/// <summary>
+/// Values of the <see cref="ClaimNames.Actor"/> claim.
+/// </summary>
+public static class Actors
+{
+    /// <summary>A platform user (staff) signing in to the admin app.</summary>
+    public const string Staff = "staff";
+
+    /// <summary>A customer of the online store.</summary>
+    public const string Customer = "customer";
 }

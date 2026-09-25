@@ -53,24 +53,6 @@
     font-size: var(--font-size-xs);
 }
 
-.brand-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    flex-shrink: 0;
-    border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--color-accent), var(--color-tile-amber));
-    color: var(--color-sidebar);
-}
-
-.brand-mark .icon {
-    width: var(--icon-size-md);
-    height: var(--icon-size-md);
-    stroke-width: 2.25;
-}
-
 .sidebar__nav {
     flex: 1;
     overflow-y: auto;

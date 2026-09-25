@@ -5,12 +5,13 @@
 @{
     var scopeOptions = ViewData[ViewDataKeys.ScopeOptions] as IReadOnlyList<SelectListItem> ?? Array.Empty<SelectListItem>();
     var roleOptions = ViewData[ViewDataKeys.RoleOptions] as IReadOnlyList<SelectListItem> ?? Array.Empty<SelectListItem>();
+    string? editingId = ViewContext.RouteData.Values["id"] as string;
 }
 
 <form-panel title="Profile" description="Who this person is. Their name appears on records they create or approve.">
     <div class="form-grid">
         <form-field asp-for="Name" label="Full name" />
-        <form-field asp-for="Phone" type="tel" hint="International format, e.g. +919876543210" />
+        <phone-field asp-for="Phone" label="Phone" />
     </div>
     @if (Model is CreateUserRequest create)
     {
@@ -23,6 +24,10 @@
                    empty-text="No active roles yet — create one under Roles, or use feature access below." />
     <checkbox-list asp-for="Scopes" items="scopeOptions" label="Where the roles apply" />
     <p class="form-field__hint">Without a place, roles give nothing that is limited by place (such as warehouses). You can only give places where you manage users yourself.</p>
+    @if (roleOptions.Any(o => o.Disabled))
+    {
+        <p class="form-field__hint">Greyed-out roles are not below yours in the <a asp-controller="Roles" asp-action="Hierarchy">role hierarchy</a>, so you cannot give or remove them.</p>
+    }
 </form-panel>
 
 <form-panel title="Feature access" stacked="true" description="Give single features on top of roles, each with its own places — for example let a store keeper manage only their own warehouse. You can only give access you hold yourself.">
@@ -32,3 +37,11 @@
 <form-panel title="What this user can do" stacked="true" description="Everything the roles and feature access above add up to, as last shown. Save to apply changes.">
     <partial name="_EffectiveAccess" model="Model" />
 </form-panel>
+
+@if (Model is UpdateUserRequest && editingId is not null)
+{
+    <form-panel title="Sessions" description="Changes to roles and access reach this person on their next click; no sign-out is needed. Deactivating them signs them out at once.">
+        <p class="form-field__hint">Lost phone, shared computer or a suspicious sign-in? Sign them out on every device. They can sign in again with their password.</p>
+        <button type="submit" class="btn btn-secondary" formaction="@Url.Action("EndSessions", new { id = editingId })" formnovalidate><icon name="@Icons.LogOut" /> Sign out everywhere</button>
+    </form-panel>
+}

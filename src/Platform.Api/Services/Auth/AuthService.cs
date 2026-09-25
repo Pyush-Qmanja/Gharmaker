@@ -94,6 +94,7 @@ public sealed class AuthService : IAuthService
             Name = user.Name,
             Email = user.Email,
             Capabilities = capabilities.Order(StringComparer.Ordinal).ToList(),
+            RoleIds = user.RoleIds.ToList(),
         };
     }
 

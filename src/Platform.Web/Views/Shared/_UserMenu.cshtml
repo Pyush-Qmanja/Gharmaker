@@ -21,6 +21,9 @@
             <form asp-controller="Account" asp-action="Logout" method="post">
                 <button type="submit" class="user-menu__item"><icon name="@Icons.LogOut" /> Sign out</button>
             </form>
+            <form asp-controller="Account" asp-action="LogoutEverywhere" method="post" data-confirm="Sign out on every device, including this one?">
+                <button type="submit" class="user-menu__item"><icon name="@Icons.LogOut" /> Sign out everywhere</button>
+            </form>
         </div>
     </details>
 }

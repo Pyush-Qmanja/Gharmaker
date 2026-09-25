@@ -1,0 +1,10 @@
+@* One price in words: the base rate per unit, then any quantity slabs ("100+ BAG · ₹380.00"). Model is the price row. *@
+@using Platform.Shared.Dtos.Pricing
+@model SkuPriceDto
+<div class="price-summary">
+    <span class="price-summary__main">@Model.Slabs[0].UnitPrice.ToUnitPrice() <span class="qty__uom">/ @Model.Uom</span></span>
+    @foreach (var slab in Model.Slabs.Skip(1))
+    {
+        <span class="price-summary__slab">@slab.MinQuantity.ToQuantityText()+ @Model.Uom · @slab.UnitPrice.ToUnitPrice()</span>
+    }
+</div>

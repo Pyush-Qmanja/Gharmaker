@@ -21,4 +21,7 @@ public class CurrentUserResponse
 
     /// <summary>Capability codes currently granted through active roles.</summary>
     public List<string> Capabilities { get; set; } = new();
+
+    /// <summary>Roles the user holds, so screens offer only the roles below them.</summary>
+    public List<Guid> RoleIds { get; set; } = new();
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Platform.Shared.Dtos.Catalog;
+using Platform.Shared.Dtos.Inventory;
 
 namespace Platform.Web.Models;
 
@@ -56,6 +57,23 @@ public sealed class ProductPageViewModel
 
     /// <summary>Why the conversion failed, if it did.</summary>
     public string? ConversionError { get; init; }
+
+    /// <summary>
+    /// Stock of each variant in the warehouses the user can see, keyed by SKU id;
+    /// null when the user has no stock access, so the page leaves stock out.
+    /// </summary>
+    public IReadOnlyDictionary<Guid, SkuStockDto>? Stock { get; init; }
+
+    /// <summary>True when the user may post goods receipts somewhere.</summary>
+    public bool CanReceive { get; init; }
+
+    /// <summary>True when the user may load opening stock somewhere.</summary>
+    public bool CanLoadOpening { get; init; }
+
+    /// <summary>Every warehouse row of every variant, for the "where it is" table.</summary>
+    public IEnumerable<StockBalanceDto> StockRows =>
+        Stock?.Values.SelectMany(s => s.Balances).OrderBy(b => b.WarehouseCode).ThenBy(b => b.SkuCode)
+        ?? Enumerable.Empty<StockBalanceDto>();
 }
 
 /// <summary>

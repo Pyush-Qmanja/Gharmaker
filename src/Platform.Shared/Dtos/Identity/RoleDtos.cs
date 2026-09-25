@@ -11,6 +11,12 @@ public class RoleDto : EntityDto
     /// <summary>Display name.</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Role this one reports to; null means directly under the top role.</summary>
+    public Guid? ParentId { get; set; }
+
+    /// <summary>True for the built-in Administrator role, which cannot be changed.</summary>
+    public bool IsSystem { get; set; }
+
     /// <summary>Capability codes the role grants.</summary>
     public List<string> Capabilities { get; set; } = new();
 
@@ -26,6 +32,9 @@ public interface IRoleFields
     /// <summary>Display name.</summary>
     string Name { get; }
 
+    /// <summary>Role this one reports to; null means directly under the top role.</summary>
+    Guid? ParentId { get; }
+
     /// <summary>Capability codes to grant.</summary>
     List<string> Capabilities { get; }
 }
@@ -37,6 +46,9 @@ public class CreateRoleRequest : IRoleFields, INormalisable
 {
     /// <inheritdoc />
     public string Name { get; set; } = string.Empty;
+
+    /// <inheritdoc />
+    public Guid? ParentId { get; set; }
 
     /// <inheritdoc />
     public List<string> Capabilities { get; set; } = new();
@@ -55,6 +67,9 @@ public class UpdateRoleRequest : IRoleFields, IActivatableRequest, INormalisable
 {
     /// <inheritdoc />
     public string Name { get; set; } = string.Empty;
+
+    /// <inheritdoc />
+    public Guid? ParentId { get; set; }
 
     /// <inheritdoc />
     public List<string> Capabilities { get; set; } = new();

@@ -26,4 +26,8 @@ public sealed class JwtOptions
     /// <summary>Lifetime of an access token in minutes.</summary>
     [Range(1, 1440)]
     public int AccessTokenMinutes { get; set; } = 60;
+
+    /// <summary>Lifetime of a storefront customer's token, in minutes (default 12 hours).</summary>
+    [Range(1, 10080)]
+    public int CustomerTokenMinutes { get; set; } = 720;
 }

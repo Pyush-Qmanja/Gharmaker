@@ -1,11 +1,14 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Platform.Shared.Constants;
 using Platform.Shared.Dtos.Identity;
 using Platform.Shared.Dtos.Inventory;
 using Platform.Shared.Entities.Identity;
 using Platform.Web.Common;
 using Platform.Web.Models;
 using Platform.Web.Services.Api;
+using Platform.Web.Services.Auth;
 
 namespace Platform.Web.Controllers;
 
@@ -17,6 +20,8 @@ public sealed class UsersController : CrudController<UserDto, CreateUserRequest,
 {
     private readonly ICrudApiClient<RoleDto, CreateRoleRequest, UpdateRoleRequest> _roles;
     private readonly ICrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest> _warehouses;
+    private readonly IUserAccess _access;
+    private readonly IApiClient _apiClient;
 
     /// <summary>
     /// Creates the controller.
@@ -26,16 +31,54 @@ public sealed class UsersController : CrudController<UserDto, CreateUserRequest,
     /// <param name="updateValidator">Shared update validator.</param>
     /// <param name="roles">Role API client, for role names, options and what each grants.</param>
     /// <param name="warehouses">Warehouse API client, for scope names and options.</param>
+    /// <param name="access">The signed-in user's roles, to offer only roles below them.</param>
+    /// <param name="apiClient">Raw API client, for signing a user out everywhere.</param>
     public UsersController(
         ICrudApiClient<UserDto, CreateUserRequest, UpdateUserRequest> api,
         IValidator<CreateUserRequest> createValidator,
         IValidator<UpdateUserRequest> updateValidator,
         ICrudApiClient<RoleDto, CreateRoleRequest, UpdateRoleRequest> roles,
-        ICrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest> warehouses)
+        ICrudApiClient<WarehouseDto, CreateWarehouseRequest, UpdateWarehouseRequest> warehouses,
+        IUserAccess access,
+        IApiClient apiClient)
         : base(api, createValidator, updateValidator)
     {
         _roles = roles;
         _warehouses = warehouses;
+        _access = access;
+        _apiClient = apiClient;
+    }
+
+    /// <summary>
+    /// Signs a user out on every device at once (lost phone, shared computer,
+    /// someone leaving). Their next click takes them to the sign-in page.
+    /// </summary>
+    /// <param name="id">User id.</param>
+    /// <param name="cancellationToken">Aborted when the client disconnects.</param>
+    /// <returns>Back to the user's page with the outcome.</returns>
+    [HttpPost]
+    public async Task<IActionResult> EndSessions(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _apiClient.PostAsync<object, object>(
+            $"{ApiRoutes.Users}/{id}/{ApiRoutes.EndSessionsSegment}", new object(), cancellationToken);
+        if (result.IsForbidden && !string.IsNullOrEmpty(result.ErrorMessage))
+        {
+            FlashError(result.ErrorMessage);
+        }
+        else if (HandleAccess(result) is { } denied)
+        {
+            return denied;
+        }
+        else if (result.IsSuccess)
+        {
+            FlashSuccess("Signed out on every device. Their next click takes them to the sign-in page.");
+        }
+        else
+        {
+            FlashError(result.ErrorMessage ?? "Could not sign the user out.");
+        }
+
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     /// <inheritdoc />
@@ -72,11 +115,9 @@ public sealed class UsersController : CrudController<UserDto, CreateUserRequest,
 
         ViewData[ViewDataKeys.Roles] = roles;
         ViewData[ViewDataKeys.RoleNames] = roles.ToDictionary(r => r.Id, r => r.Name);
-        ViewData[ViewDataKeys.RoleOptions] = roles
-            .Where(r => r.IsActive)
-            .OrderBy(r => r.Name)
-            .Select(r => new SelectListItem(r.Name, r.Id.ToString()))
-            .ToList();
+        var chart = new RoleChart(roles, await _access.GetRoleIdsAsync());
+        ViewData[ViewDataKeys.RoleChart] = chart;
+        ViewData[ViewDataKeys.RoleOptions] = chart.RoleOptions();
 
         var everywhere = new SelectListGroup { Name = "Everywhere" };
         var warehouseGroup = new SelectListGroup { Name = "Warehouses" };

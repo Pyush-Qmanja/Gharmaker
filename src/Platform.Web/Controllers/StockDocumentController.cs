@@ -233,7 +233,14 @@ public abstract class StockDocumentController<TCreate> : PlatformControllerBase
             return denied;
         }
 
-        List<StockWarehouseDto> allowed = (warehousesResult.Value ?? new List<StockWarehouseDto>()).Where(CanPostIn).ToList();
+        List<StockWarehouseDto> active = warehousesResult.Value ?? new List<StockWarehouseDto>();
+        if (active.Count == 0)
+        {
+            // Nothing to post into yet: that is a setup step, not a lack of access.
+            return View("NoWarehouse");
+        }
+
+        List<StockWarehouseDto> allowed = active.Where(CanPostIn).ToList();
         if (allowed.Count == 0)
         {
             Response.StatusCode = StatusCodes.Status403Forbidden;

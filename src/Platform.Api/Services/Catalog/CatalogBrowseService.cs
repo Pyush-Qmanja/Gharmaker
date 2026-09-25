@@ -34,6 +34,16 @@ public interface ICatalogBrowseService
     Task<PagedResult<ProductListItemDto>> GetProductsAsync(CatalogBrowseRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Finds one page of products (entities) for a category, brand and search,
+    /// ordered by name. The storefront and the price grid build their own rows from it.
+    /// </summary>
+    /// <param name="request">Category, brand, search words and page.</param>
+    /// <param name="activeOnly">True to leave out deactivated products (the storefront).</param>
+    /// <param name="cancellationToken">Cancels the reads.</param>
+    /// <returns>The page of products.</returns>
+    Task<PagedResult<Product>> FindProductsAsync(CatalogBrowseRequest request, bool activeOnly, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns a product with its breadcrumb and SKUs, each SKU with every unit it can be expressed in.
     /// </summary>
     /// <param name="productId">Product id.</param>
@@ -76,6 +86,7 @@ public sealed class CatalogBrowseService : ICatalogBrowseService
     private static readonly string CategoryPathField = FirestoreNaming.Field(nameof(Product.CategoryPath));
     private static readonly string SearchTermsField = FirestoreNaming.Field(nameof(Product.SearchTerms));
     private static readonly string ProductIdField = FirestoreNaming.Field(nameof(Sku.ProductId));
+    private static readonly string IsActiveField = FirestoreNaming.Field(nameof(Product.IsActive));
 
     private readonly IRepository<Category> _categories;
     private readonly IRepository<Product> _products;
@@ -136,7 +147,11 @@ public sealed class CatalogBrowseService : ICatalogBrowseService
     }
 
     /// <inheritdoc />
-    public async Task<PagedResult<ProductListItemDto>> GetProductsAsync(CatalogBrowseRequest request, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProductListItemDto>> GetProductsAsync(CatalogBrowseRequest request, CancellationToken cancellationToken = default) =>
+        await ToListItemsAsync(await FindProductsAsync(request, activeOnly: false, cancellationToken), cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<PagedResult<Product>> FindProductsAsync(CatalogBrowseRequest request, bool activeOnly, CancellationToken cancellationToken = default)
     {
         Query query = _products.Query();
         if (request.BrandId is { } brandId)
@@ -153,6 +168,11 @@ public sealed class CatalogBrowseService : ICatalogBrowseService
                 query = query.WhereArrayContains(CategoryPathField, DocumentConverter.ToFirestoreValue(categoryId));
             }
 
+            if (activeOnly)
+            {
+                query = query.WhereEqualTo(IsActiveField, true);
+            }
+
             page = await _products.GetPagedAsync(query.OrderBy(NameField), request, cancellationToken);
         }
         else
@@ -164,6 +184,7 @@ public sealed class CatalogBrowseService : ICatalogBrowseService
             List<Product> matches = candidates
                 .Where(p => words.Skip(1).All(p.SearchTerms.Contains))
                 .Where(p => request.CategoryId is not { } cat || p.CategoryPath.Contains(cat))
+                .Where(p => !activeOnly || p.IsActive)
                 .ToList();
 
             page = new PagedResult<Product>
@@ -175,7 +196,7 @@ public sealed class CatalogBrowseService : ICatalogBrowseService
             };
         }
 
-        return await ToListItemsAsync(page, cancellationToken);
+        return page;
     }
 
     /// <inheritdoc />

@@ -1,0 +1,32 @@
+@* Order rows for staff lists (orders page and a customer's page). Model is the orders. *@
+@using Platform.Shared.Dtos.Sales
+@model IReadOnlyList<OrderSummaryDto>
+<table class="table data-table">
+    <thead>
+        <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Deliver to</th>
+            <th class="data-table__num">Items</th>
+            <th class="data-table__num">Total</th>
+            <th>Delivery</th>
+            <th>Status</th>
+            <th>Placed</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="identity__primary"><span class="code-tag">@order.ReferenceNo</span></a></td>
+                <td><a asp-controller="Customers" asp-action="Edit" asp-route-id="@order.CustomerId">@order.CustomerName</a></td>
+                <td><span class="cell-with-icon"><icon name="@Icons.MapPin" /> @order.City · @order.Pincode</span></td>
+                <td class="data-table__num">@order.LineCount</td>
+                <td class="data-table__num"><strong>@order.TotalAmount.ToRupees()</strong></td>
+                <td class="data-table__muted">@SalesTextExtensions.ToWindowText(order.EarliestDeliveryOn, order.LatestDeliveryOn)</td>
+                <td><span class="status-badge @order.Status.ToBadge()">@order.Status.ToLabel()</span></td>
+                <td class="data-table__muted" title="@order.CreatedAt.ToIstString()">@order.CreatedAt.ToIstDateString()</td>
+            </tr>
+        }
+    </tbody>
+</table>

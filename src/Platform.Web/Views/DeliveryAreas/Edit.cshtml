@@ -1,0 +1,33 @@
+@* Changes one PIN code's delivery time, or stops delivering there. *@
+@model EditDeliveryAreaViewModel
+@{
+    var area = Model.Area;
+    ViewData["Title"] = $"PIN {area.Pincode}";
+}
+
+<div class="page-header">
+    <div class="page-header__text">
+        <nav class="page-header__eyebrow" aria-label="Back">
+            <a asp-action="Index" asp-route-warehouseId="@area.WarehouseId">Delivery areas</a>
+            <icon name="@Icons.ChevronRight" />
+            <span>@area.Pincode</span>
+        </nav>
+        <h1 class="page-header__title">PIN @area.Pincode</h1>
+        <p class="page-header__subtitle">Delivered from <span class="code-tag">@area.WarehouseCode</span> @area.WarehouseName.</p>
+    </div>
+</div>
+
+<form asp-action="Edit" asp-route-id="@area.Id" method="post" novalidate class="form-layout">
+    <form-panel title="Delivery" description="Customers at this PIN code see the delivery date worked out from this.">
+        <div class="form-grid">
+            <form-field asp-for="Form.LeadTimeDays" label="Delivery time (days)" hint="0 = same day, 1 = next day." />
+        </div>
+    </form-panel>
+    <form-panel title="Status" description="An inactive PIN code is no longer served by this warehouse.">
+        <form-field asp-for="Form.IsActive" label="Delivers to this PIN code" />
+    </form-panel>
+    <div class="form-footer">
+        <a asp-action="Index" asp-route-warehouseId="@area.WarehouseId" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><icon name="@Icons.Check" /> Save</button>
+    </div>
+</form>

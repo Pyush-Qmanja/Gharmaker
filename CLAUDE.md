@@ -119,8 +119,9 @@ Bridge          Site materials --indent--> Orders   (the only crossing)
 
 ## Current phase
 
-Phase 3 — storefront, cart, pricing, tax — is next. Phases 1 and 2 are built and
+Phase 4 — orders, fulfilment, delivery — is next; its plan is `docs/phase-4-plan.md` (one warehouse per order, cash only). Phases 1, 2 and 3 are built and
 their gates proven (see `docs/roadmap.md`); Phase 0's business checklist is still open.
+The store runs at `/shop` in `Platform.Web` (area `Shop`); its API is `api/storefront`.
 Open decisions are in `docs/decisions-pending.md`; do not code around one, ask.
 
 ## Working agreements
@@ -130,3 +131,10 @@ Open decisions are in `docs/decisions-pending.md`; do not code around one, ask.
   before writing code.
 - Prefer a failing test that proves the rule over a comment describing it.
 - If a requirement conflicts with P1–P10, stop and raise it. Do not quietly pick.
+- **The SOP moves with the code.** `docs/sop/` is the user manual for the portal
+  and the store. Any change a user can see — a screen, button, field, message,
+  rule or limit — updates the matching SOP guide in the same commit, adds a
+  scenario to `docs/sop/07-scenarios.md` for a new end-to-end flow, a row to
+  `08-troubleshooting.md` for a new message people may hit, removes the item
+  from `09-known-limits.md` when it is built, and adds a line to the change log
+  in `docs/sop/README.md`. Quote on-screen labels exactly.

@@ -63,6 +63,36 @@ public static class Capabilities
     /// <summary>Read the audit log.</summary>
     public const string AuditView = "audit.view";
 
+    /// <summary>See delivery areas (PIN codes each warehouse serves).</summary>
+    public const string DeliveryView = "delivery.view";
+
+    /// <summary>Add, change and remove delivery areas.</summary>
+    public const string DeliveryManage = "delivery.manage";
+
+    /// <summary>See price lists, prices and GST rates.</summary>
+    public const string PricingView = "pricing.view";
+
+    /// <summary>Create price lists, set prices and GST rates.</summary>
+    public const string PricingManage = "pricing.manage";
+
+    /// <summary>See customer accounts.</summary>
+    public const string CustomersView = "customers.view";
+
+    /// <summary>Change customer accounts (price tier, block).</summary>
+    public const string CustomersManage = "customers.manage";
+
+    /// <summary>See customer orders.</summary>
+    public const string OrdersView = "orders.view";
+
+    /// <summary>Cancel customer orders.</summary>
+    public const string OrdersManage = "orders.manage";
+
+    /// <summary>See the business details used on tax documents.</summary>
+    public const string SettingsView = "settings.view";
+
+    /// <summary>Change the business details used on tax documents.</summary>
+    public const string SettingsManage = "settings.manage";
+
     /// <summary>
     /// Every capability, in display order: each feature in <see cref="Features.All"/>
     /// contributes its view capability and, if it has one, its manage capability.

@@ -78,6 +78,15 @@ Before writing anything, check whether one of these already does it:
 | Record-per-combination id (e.g. balance of SKU in warehouse) | `IdGenerator.FromName(...)` | `Shared/Common` |
 | Audit log (P10) | automatic in `UnitOfWork` for every write; mark caches/trails `INotAudited` | `Api/Firestore/AuditBuilder` |
 | A stock document screen | derive from `StockDocumentController<TCreate>` + one `_Header` partial | `Web/Controllers` |
+| A customer's price for SKUs (contract, then tier, then retail; never 0) | `IPriceResolver` | `Api/Services/Pricing` |
+| GST rate of a product (longest HSN prefix, dated) | `ITaxRateProvider` then `TaxRateTable.Find` | `Api/Services/Pricing` |
+| GST on a line and totals; slab rate; which warehouses supply | `GstCalculator`, `SlabPricing`, `AllocationPlanner` (pure, unit-tested) | `Shared/Commerce` |
+| Price a cart exactly as checkout will | `IShopPricer` | `Api/Services/Storefront` |
+| Free stock for a PIN code | `IAvailabilityService` | `Api/Services/Inventory` |
+| Next document number (GRN, ORD...) inside a transaction | `DocumentNumbers.NextAsync` | `Api/Repositories` |
+| Show money, unit prices, percents, delivery windows | `.ToRupees()`, `.ToUnitPrice()`, `.ToPercent()`, `ToWindowText` | `Web/Extensions/SalesTextExtensions` |
+| A store page | derive from `ShopControllerBase` (area `Shop`), `[CustomerRequired]` where a customer is needed | `Web/Areas/Shop` |
+| Limit an endpoint that signs in, registers or spends | `[EnableRateLimiting(RateLimitPolicies.SignIn / Register / Checkout)]` | `Api/Security/RateLimiting` |
 
 If you find yourself copying a block, extract it into one of these (or a new
 generic helper next to them) instead.
@@ -168,3 +177,7 @@ Use the same module folder name in every layer.
 14. Add one line to `Web/Common/Navigation.cs` (title, controller, group, icon, view capability, description, count route) —
     the menu and dashboard tile appear for users holding that capability.
 15. `dotnet build` must pass with **0 warnings**.
+16. **SOP** — add the screen to its guide in `docs/sop/` (what it is for, who can
+    use it, step by step with exact labels, rules and messages), plus a scenario
+    in `07-scenarios.md` if it starts a new flow, and a change-log line in
+    `docs/sop/README.md`.
