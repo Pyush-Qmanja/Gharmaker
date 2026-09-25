@@ -1,4 +1,4 @@
-@* Line editor for stock documents: SKU code and unit come from pick lists (datalists), so they can be typed or chosen. "Add a line" copies the template row (site.js); without script, the blank rows are enough. *@
+@* Line editor for stock documents: the SKU code can be typed or picked; the unit is a drop-down of that SKU's own units (base unit first), filled here for SKUs already entered and by site.js as soon as one is picked. "Add a line" copies the template row (site.js); without script, the blank rows are enough. *@
 @using System.Globalization
 @model StockDocumentFormViewModel
 @{
@@ -26,7 +26,7 @@
                 <tr>
                     <td class="line-editor__no">@(i + 1)</td>
                     <td>
-                        <input type="text" name="Lines[@i].SkuCode" value="@line.SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code, line @(i + 1)"
+                        <input type="text" name="Lines[@i].SkuCode" value="@line.SkuCode" list="sku-options" class="form-control" autocomplete="off" data-sku-input aria-label="SKU code, line @(i + 1)"
                                placeholder="@(i == 0 && example is not null ? $"Type or pick, e.g. {example.Code}" : null)" />
                         @if (ErrorFor(i, "SkuCode") is { } skuError) { <span class="form-field__error">@skuError</span> }
                     </td>
@@ -35,7 +35,17 @@
                         @if (ErrorFor(i, "Quantity") is { } qtyError) { <span class="form-field__error">@qtyError</span> }
                     </td>
                     <td>
-                        <input type="text" name="Lines[@i].Uom" value="@line.Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit, line @(i + 1)" placeholder="@(i == 0 && example is not null ? example.BaseUom : null)" />
+                        @{ var units = Model.UnitsOf(line.SkuCode); }
+                        <select name="Lines[@i].Uom" class="form-select" data-unit-select aria-label="Unit, line @(i + 1)">
+                            @if (units.Count == 0)
+                            {
+                                <option value="">Pick a SKU first</option>
+                            }
+                            @foreach (var unit in units)
+                            {
+                                <option value="@unit" selected="@(string.Equals(unit, line.Uom, StringComparison.OrdinalIgnoreCase))">@unit</option>
+                            }
+                        </select>
                         @if (ErrorFor(i, "Uom") is { } uomError) { <span class="form-field__error">@uomError</span> }
                     </td>
                 </tr>
@@ -44,9 +54,9 @@
         <template data-line-template>
             <tr>
                 <td class="line-editor__no">__number__</td>
-                <td><input type="text" name="Lines[__index__].SkuCode" list="sku-options" class="form-control" autocomplete="off" aria-label="SKU code" /></td>
+                <td><input type="text" name="Lines[__index__].SkuCode" list="sku-options" class="form-control" autocomplete="off" data-sku-input aria-label="SKU code" /></td>
                 <td><input type="number" step="any" name="Lines[__index__].Quantity" class="form-control" aria-label="Amount" /></td>
-                <td><input type="text" name="Lines[__index__].Uom" list="unit-options" class="form-control" autocomplete="off" aria-label="Unit" /></td>
+                <td><select name="Lines[__index__].Uom" class="form-select" data-unit-select aria-label="Unit"><option value="">Pick a SKU first</option></select></td>
             </tr>
         </template>
     </table>
@@ -64,13 +74,7 @@
     <datalist id="sku-options">
         @foreach (var sku in Model.SkuOptions)
         {
-            <option value="@sku.Code">@sku.Name — in @string.Join(", ", sku.Units)</option>
-        }
-    </datalist>
-    <datalist id="unit-options">
-        @foreach (var unit in Model.UnitCodes)
-        {
-            <option value="@unit"></option>
+            <option value="@sku.Code" data-units="@string.Join(",", StockDocumentFormViewModel.OrderedUnits(sku))">@sku.Name — in @string.Join(", ", sku.Units)</option>
         }
     </datalist>
 </div>

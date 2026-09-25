@@ -99,8 +99,24 @@ public sealed class StockDocumentFormViewModel
     /// <summary>SKUs for the line picker.</summary>
     public IReadOnlyList<StockSkuOptionDto> SkuOptions { get; init; } = Array.Empty<StockSkuOptionDto>();
 
-    /// <summary>Every unit code any SKU can be entered in, for the unit picker.</summary>
-    public IReadOnlyList<string> UnitCodes { get; init; } = Array.Empty<string>();
+    /// <summary>
+    /// The units a SKU can be entered in, its base unit first, for a line's
+    /// unit drop-down. Empty for an unknown or blank SKU code.
+    /// </summary>
+    /// <param name="skuCode">SKU code as typed (any case).</param>
+    /// <returns>Unit codes.</returns>
+    public IReadOnlyList<string> UnitsOf(string? skuCode) =>
+        SkuOptions.FirstOrDefault(s => string.Equals(s.Code, skuCode?.Trim(), StringComparison.OrdinalIgnoreCase)) is { } sku
+            ? OrderedUnits(sku)
+            : Array.Empty<string>();
+
+    /// <summary>
+    /// A SKU's units with its base unit first, then the rest as listed.
+    /// </summary>
+    /// <param name="sku">SKU option.</param>
+    /// <returns>Unit codes.</returns>
+    public static IReadOnlyList<string> OrderedUnits(StockSkuOptionDto sku) =>
+        sku.Units.Where(u => u != sku.BaseUom).Prepend(sku.BaseUom).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     /// <summary>Words on the submit button, e.g. "Post receipt".</summary>
     public string SubmitText { get; init; } = "Post";

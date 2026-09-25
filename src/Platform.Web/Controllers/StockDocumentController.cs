@@ -260,7 +260,6 @@ public abstract class StockDocumentController<TCreate> : PlatformControllerBase
             WarehouseOptions = allowed.Select(w => new SelectListItem($"{w.Code} — {w.Name}", w.Id.ToString())).ToList(),
             DestinationOptions = await LoadDestinationsAsync(cancellationToken),
             SkuOptions = skus,
-            UnitCodes = skus.SelectMany(s => s.Units).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.Ordinal).ToList(),
             SubmitText = SubmitText,
             QuantityHint = QuantityHint,
         });

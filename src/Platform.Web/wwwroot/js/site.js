@@ -133,6 +133,51 @@
     }
 
     /**
+     * Fills a line's unit drop-down (data-unit-select) with the units of the SKU
+     * just typed or picked in the same row (data-sku-input). The units come from
+     * the SKU's option in the linked datalist (data-units, base unit first). The
+     * unit already chosen is kept when the new SKU allows it; otherwise the base
+     * unit is selected. An unknown code leaves "Pick a SKU first".
+     * @param {Event} event - An input or change event bubbling to the document.
+     */
+    function fillUnitsForSku(event) {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement) || !input.hasAttribute("data-sku-input")) {
+            return;
+        }
+
+        const row = input.closest("tr");
+        const select = row ? row.querySelector("select[data-unit-select]") : null;
+        if (!select) {
+            return;
+        }
+
+        const code = input.value.trim().toUpperCase();
+        let units = [];
+        if (input.list) {
+            Array.prototype.forEach.call(input.list.options, function (option) {
+                if (option.value.toUpperCase() === code && option.dataset.units) {
+                    units = option.dataset.units.split(",");
+                }
+            });
+        }
+
+        const current = select.value;
+        select.replaceChildren();
+        if (units.length === 0) {
+            select.add(new Option("Pick a SKU first", ""));
+            return;
+        }
+
+        units.forEach(function (unit) {
+            select.add(new Option(unit, unit, false, unit === current));
+        });
+        if (units.indexOf(current) < 0) {
+            select.selectedIndex = 0;
+        }
+    }
+
+    /**
      * Closes open menus and the mobile sidebar on Escape.
      * @param {KeyboardEvent} event - The keydown event bubbling to the document.
      */
@@ -152,6 +197,8 @@
 
     document.addEventListener("submit", confirmBeforeSubmit);
     document.addEventListener("change", autoSubmitOnChange);
+    document.addEventListener("input", fillUnitsForSku);
+    document.addEventListener("change", fillUnitsForSku);
     document.addEventListener("change", showChosenFileName);
     document.addEventListener("click", handleClick);
     document.addEventListener("keydown", handleEscape);

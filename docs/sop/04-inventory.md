@@ -67,7 +67,8 @@ warehouse).
 
 1. **"Receiving warehouse"**.
 2. **"Supplier"** (required), **"Supplier invoice / challan no."**, "Remarks".
-3. **Lines** — "SKU code" (type or pick), "Amount", "Unit" (any allowed unit). Blank rows
+3. **Lines** — "SKU code" (type or pick), "Amount", "Unit" (a drop-down of that SKU's own
+   units, base unit first; it fills in as soon as the SKU is chosen). Blank rows
    are ignored; **"Add a line"** for more (up to 100). One line per SKU.
 4. **"Post receipt"** → "GRN-… posted." Stock is added immediately.
 
