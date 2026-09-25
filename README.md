@@ -116,6 +116,7 @@ docs/
   adr/0001-database.md       PostgreSQL decision (superseded)
   adr/0002-firestore.md       Firestore only — how conventions map, accepted costs
   sop/                       user manual: every screen, scenarios, troubleshooting
+tests/scripts/               end-to-end suites against the Firebase emulators (see its README)
 firebase.json, firestore.rules, firestore.indexes.json
 ```
 

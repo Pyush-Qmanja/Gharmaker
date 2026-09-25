@@ -24,3 +24,7 @@ artifacts/
 # Firebase emulator logs
 firebase-debug.log
 firestore-debug.log
+
+# Test suite working files and page snapshots
+tests/scripts/.work/
+src/Platform.Web/wwwroot/_preview/
